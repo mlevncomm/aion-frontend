@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { ArrowUp, FileUp, Mic, SlidersHorizontal, WandSparkles } from "lucide-react";
+import { liveGlowHandlers } from "@/lib/liveGlow";
 
 interface ChatComposerProps {
   value: string;
@@ -38,7 +39,7 @@ export default function ChatComposer({
         <WandSparkles size={14} strokeWidth={2.2} aria-hidden="true" />
         <span data-testid="pro-banner-text">Pro ile daha fazla özelliğe eriş</span>
       </div>
-      <div className="composer-panel">
+      <div className="composer-panel live-glow-surface" {...liveGlowHandlers}>
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}

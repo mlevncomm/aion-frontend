@@ -5,6 +5,7 @@ import OrbAvatar from "@/components/OrbAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { liveGlowHandlers } from "@/lib/liveGlow";
 import {
   beginFrontendSession,
   clearLoginThrottle,
@@ -110,7 +111,7 @@ export default function Login() {
 
       <section className="login-panel" aria-label="Admin giriş paneli">
         <div className="login-mobile-brand" data-testid="login-mobile-brand">AION</div>
-        <div className="login-card" data-testid="login-card">
+        <div className="login-card live-glow-surface" data-testid="login-card" {...liveGlowHandlers}>
           <div className="login-card-icon" aria-hidden="true"><LockKeyhole size={22} /></div>
           <p className="login-card-kicker" data-testid="login-card-kicker">Admin erişimi</p>
           <h2 data-testid="login-card-heading">Tekrar hoş geldin.</h2>

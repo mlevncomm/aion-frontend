@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatComposer from "@/components/ChatComposer";
 import OrbAvatar from "@/components/OrbAvatar";
 import QuickActions from "@/components/QuickActions";
 import Sidebar from "@/components/Sidebar";
+import ThemePicker from "@/components/ThemePicker";
 import { endFrontendSession } from "@/lib/frontendAuth";
 
 const quickPrompts: Record<string, string> = {
@@ -29,10 +30,18 @@ export default function Home() {
   const [sentMessage, setSentMessage] = useState("");
   const [statusNote, setStatusNote] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const sendingTimer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (sendingTimer.current !== null) window.clearTimeout(sendingTimer.current);
+  }, []);
 
   const handleSidebarSelect = (item: string) => {
     setActiveItem(item);
     setMobileMenuOpen(false);
+    setSettingsOpen(false);
     if (item !== "home") setStatusNote(`${sectionNames[item] ?? item} seçildi`);
   };
 
@@ -44,6 +53,9 @@ export default function Home() {
     }
     setSentMessage(trimmedMessage);
     setMessage("");
+    setIsSending(true);
+    if (sendingTimer.current !== null) window.clearTimeout(sendingTimer.current);
+    sendingTimer.current = window.setTimeout(() => setIsSending(false), 900);
     setStatusNote("Mesajın AION için hazır");
   };
 
@@ -54,9 +66,19 @@ export default function Home() {
 
   const handleLogout = () => {
     setMobileMenuOpen(false);
+    setSettingsOpen(false);
     endFrontendSession();
     navigate("/giris", { replace: true });
   };
+
+  const handleSettings = () => {
+    setMobileMenuOpen(false);
+    setSettingsOpen((open) => !open);
+  };
+
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
+
+  const orbActivity = isSending ? "sending" : message.trim() ? "typing" : "idle";
 
   return (
     <div className="assistant-stage">
@@ -77,7 +99,14 @@ export default function Home() {
           mobileOpen={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
+          onSettings={handleSettings}
           onSelect={handleSidebarSelect}
+          settingsOpen={settingsOpen}
+        />
+        <ThemePicker
+          open={settingsOpen}
+          onClose={closeSettings}
+          onThemeChange={(themeLabel) => setStatusNote(`${themeLabel} teması etkinleştirildi`)}
         />
         <section className="assistant-content" aria-label="AION asistan ana sayfası">
           <div className="content-wash" aria-hidden="true" />
@@ -95,7 +124,7 @@ export default function Home() {
             <span className="mobile-brand" data-testid="mobile-brand">AION</span>
           </header>
           <div className="hero-content">
-            <OrbAvatar />
+            <OrbAvatar activity={orbActivity} />
             <div className="greeting" data-testid="greeting-block">
               <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Hendricks</p>
               <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>

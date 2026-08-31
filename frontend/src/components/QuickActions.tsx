@@ -1,4 +1,5 @@
 import { FileText, Image, MessageCircle, type LucideIcon } from "lucide-react";
+import { liveGlowHandlers } from "@/lib/liveGlow";
 
 interface QuickAction {
   id: string;
@@ -39,8 +40,9 @@ export default function QuickActions({ onAction }: QuickActionsProps) {
         <button
           type="button"
           key={id}
-          className="quick-action-card"
+          className="quick-action-card live-glow-surface"
           onClick={() => onAction(id)}
+          {...liveGlowHandlers}
           data-testid={`quick-action-${id}-button`}
         >
           <Icon className="quick-action-icon" size={17} strokeWidth={1.8} aria-hidden="true" />
