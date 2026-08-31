@@ -1,0 +1,67 @@
+{
+  "iteration": 2,
+  "summary": "All 8 UI-facing acceptance criteria for the AION client-side login gate verified via named browser checks. Auth is explicitly a frontend-only sessionStorage gate per spec deviations, so no backend API surface exists for this feature and no backend test file was needed.",
+  "passed": 8,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "Oturumsuz ziyaretçi korumalı ana sayfaya erişemez",
+      "name": "aion-login-redirect-unauthenticated",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "goto('/') with no session -> URL redirected to /giris, login-screen visible"
+    },
+    {
+      "criterion": "Giriş paneli AION tasarımına uygun ve Türkçedir",
+      "name": "aion-login-panel-branding-turkish",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "1400x900: login-brand-mark='AION', login-card-kicker='Admin erişimi', login-card-heading='Tekrar hoş geldin.', field labels 'Kullanıcı adı'/'Şifre', submit button contains \"AION'a giriş yap\""
+    },
+    {
+      "criterion": "Hatalı kimlik bilgileri reddedilir",
+      "name": "aion-login-invalid-credentials-rejected",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Submitted tscheck-baduser/wrongpass123 -> stayed on /giris, login-feedback contains 'deneme hakkın kaldı', password input cleared to empty value"
+    },
+    {
+      "criterion": "Beş hatalı deneme geçici kilit uygular",
+      "name": "aion-login-lockout-after-five-failures",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "5 sequential wrong-password submits -> login-feedback contains '30 saniye', username/password inputs and submit button all disabled"
+    },
+    {
+      "criterion": "Doğru admin bilgileri giriş sağlar",
+      "name": "aion-login-valid-credentials-succeeds",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "admin/AION#2026 submit -> URL became '/', assistant-home-screen visible"
+    },
+    {
+      "criterion": "Oturum sekme içinde yenilemede korunur",
+      "name": "aion-session-persists-on-refresh",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "After login and page.reload(), URL stayed on '/' and assistant-home-screen remained visible (no redirect back to /giris)"
+    },
+    {
+      "criterion": "Sidebar çıkışı oturumu kapatır",
+      "name": "aion-sidebar-logout-clears-session",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "sidebar-logout-button click -> redirected to /giris with login-screen visible; subsequent goto('/') also redirected back to /giris (session cleared)"
+    },
+    {
+      "criterion": "Giriş paneli mobilde responsive kalır",
+      "name": "aion-login-panel-mobile-responsive",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "390x844: login-mobile-brand, username/password inputs, password toggle, submit button all visible; login-card boundingBox width <= 390; password toggle switched input type to 'text'"
+    }
+  ]
+}

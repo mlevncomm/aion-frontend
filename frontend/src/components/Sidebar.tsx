@@ -13,6 +13,7 @@ interface SidebarProps {
   activeItem: string;
   mobileOpen: boolean;
   onClose: () => void;
+  onLogout: () => void;
   onSelect: (item: string) => void;
 }
 
@@ -29,7 +30,7 @@ const navigationItems: NavigationItem[] = [
   { id: "library", label: "Arşiv", icon: BookOpen },
 ];
 
-export default function Sidebar({ activeItem, mobileOpen, onClose, onSelect }: SidebarProps) {
+export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onSelect }: SidebarProps) {
   return (
     <aside
       className={`assistant-sidebar${mobileOpen ? " is-mobile-open" : ""}`}
@@ -85,7 +86,7 @@ export default function Sidebar({ activeItem, mobileOpen, onClose, onSelect }: S
         <button
           type="button"
           className="sidebar-button"
-          onClick={() => onSelect("logout")}
+          onClick={onLogout}
           aria-label="Çıkış yap"
           data-testid="sidebar-logout-button"
         >

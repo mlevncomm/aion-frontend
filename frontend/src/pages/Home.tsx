@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ChatComposer from "@/components/ChatComposer";
 import OrbAvatar from "@/components/OrbAvatar";
 import QuickActions from "@/components/QuickActions";
 import Sidebar from "@/components/Sidebar";
+import { endFrontendSession } from "@/lib/frontendAuth";
 
 const quickPrompts: Record<string, string> = {
   surprise: "Bugün için beni şaşırtacak yaratıcı bir fikir ver",
@@ -21,6 +23,7 @@ const sectionNames: Record<string, string> = {
 };
 
 export default function Home() {
+  const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("home");
   const [message, setMessage] = useState("");
   const [sentMessage, setSentMessage] = useState("");
@@ -49,6 +52,12 @@ export default function Home() {
     setStatusNote("İstem mesajına eklendi");
   };
 
+  const handleLogout = () => {
+    setMobileMenuOpen(false);
+    endFrontendSession();
+    navigate("/giris", { replace: true });
+  };
+
   return (
     <div className="assistant-stage">
       <div className="ambient-light ambient-light-one" aria-hidden="true" />
@@ -67,6 +76,7 @@ export default function Home() {
           activeItem={activeItem}
           mobileOpen={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
+          onLogout={handleLogout}
           onSelect={handleSidebarSelect}
         />
         <section className="assistant-content" aria-label="AION asistan ana sayfası">
