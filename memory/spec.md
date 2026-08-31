@@ -5,6 +5,7 @@
 - Full-viewport dark assistant shell with a desktop navigation rail, mobile slide-out navigation, animated orb, Turkish greeting, composer, and three quick actions.
 - Demo interactions are local-only: sidebar selection, prompt entry/submission, tool popover, file-picker trigger, microphone state, and quick-action prompt filling.
 - A Turkish AION admin login screen gates the app before the assistant workspace is rendered.
+- The visual system uses a deep emerald base, mint interaction accents, balanced glassmorphism, luminous borders, and a custom emerald glass orb across login and assistant views.
 
 ## Data model
 - No persisted data or backend integration. The UI uses local React state for the selected sidebar item, current prompt, submitted prompt preview, and interaction status.
