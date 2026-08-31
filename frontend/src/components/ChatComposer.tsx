@@ -36,7 +36,7 @@ export default function ChatComposer({
     <form className="composer-wrap" onSubmit={handleSubmit} data-testid="chat-composer-form">
       <div className="pro-banner" data-testid="pro-banner">
         <WandSparkles size={14} strokeWidth={2.2} aria-hidden="true" />
-        <span data-testid="pro-banner-text">Unlock more features with Pro</span>
+        <span data-testid="pro-banner-text">Pro ile daha fazla özelliğe eriş</span>
       </div>
       <div className="composer-panel">
         <textarea
@@ -49,8 +49,8 @@ export default function ChatComposer({
             }
           }}
           className="composer-input"
-          placeholder="Ask me anything ..."
-          aria-label="Ask LIX anything"
+          placeholder="AION'a bir şey sor..."
+          aria-label="AION'a bir şey sor"
           rows={2}
           data-testid="chat-message-input"
         />
@@ -70,7 +70,7 @@ export default function ChatComposer({
               data-testid="chat-import-file-button"
             >
               <FileUp size={14} strokeWidth={1.8} aria-hidden="true" />
-              <span>Import file</span>
+              <span>Dosya ekle</span>
             </button>
             <div className="tools-popover-wrap">
               <button
@@ -84,12 +84,12 @@ export default function ChatComposer({
                 data-testid="chat-tools-button"
               >
                 <SlidersHorizontal size={14} strokeWidth={1.8} aria-hidden="true" />
-                <span>Tools</span>
+                <span>Araçlar</span>
               </button>
               {toolsOpen ? (
                 <div className="tools-popover" data-testid="chat-tools-popover">
-                  <span className="tools-popover-title" data-testid="chat-tools-popover-title">Tools</span>
-                  <span data-testid="chat-tools-popover-copy">Browse actions for your next prompt.</span>
+                  <span className="tools-popover-title" data-testid="chat-tools-popover-title">Araçlar</span>
+                  <span data-testid="chat-tools-popover-copy">Sonraki istemin için kullanabileceğin araçları keşfet.</span>
                 </div>
               ) : null}
             </div>
@@ -99,7 +99,7 @@ export default function ChatComposer({
               type="button"
               className="icon-action-button"
               onClick={onMic}
-              aria-label="Use voice input"
+              aria-label="Sesli giriş kullan"
               data-testid="chat-microphone-button"
             >
               <Mic size={15} strokeWidth={1.8} aria-hidden="true" />
@@ -107,7 +107,7 @@ export default function ChatComposer({
             <button
               type="submit"
               className="send-button"
-              aria-label="Send message"
+              aria-label="Mesajı gönder"
               data-testid="chat-send-button"
             >
               <ArrowUp size={19} strokeWidth={2.3} aria-hidden="true" />

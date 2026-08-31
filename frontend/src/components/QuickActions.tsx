@@ -14,20 +14,20 @@ interface QuickActionsProps {
 const actions: QuickAction[] = [
   {
     id: "surprise",
-    title: "Surprise me!",
-    description: "Surprise me with a creative idea or story.",
+    title: "Beni şaşırt!",
+    description: "Yaratıcı bir fikir veya hikâyeyle beni şaşırt.",
     icon: MessageCircle,
   },
   {
     id: "create",
-    title: "Create image",
-    description: "Create an image from your idea or prompt.",
+    title: "Görsel oluştur",
+    description: "Fikrinden veya isteminden etkileyici bir görsel üret.",
     icon: Image,
   },
   {
     id: "summarise",
-    title: "Summarise",
-    description: "Summarise a document or text in seconds.",
+    title: "Özetle",
+    description: "Bir belgeyi veya metni saniyeler içinde özetle.",
     icon: FileText,
   },
 ];

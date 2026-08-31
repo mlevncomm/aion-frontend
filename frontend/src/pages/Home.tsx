@@ -1,13 +1,23 @@
 import { useState } from "react";
+import { Menu } from "lucide-react";
 import ChatComposer from "@/components/ChatComposer";
 import OrbAvatar from "@/components/OrbAvatar";
 import QuickActions from "@/components/QuickActions";
 import Sidebar from "@/components/Sidebar";
 
 const quickPrompts: Record<string, string> = {
-  surprise: "Give me a surprising creative idea for today",
-  create: "Create an image from this idea: ",
-  summarise: "Summarise this for me: ",
+  surprise: "Bugün için beni şaşırtacak yaratıcı bir fikir ver",
+  create: "Şu fikirden bir görsel oluştur: ",
+  summarise: "Bunu benim için özetle: ",
+};
+
+const sectionNames: Record<string, string> = {
+  discover: "Keşfet",
+  inbox: "Gelen Kutusu",
+  library: "Arşiv",
+  settings: "Ayarlar",
+  logout: "Çıkış",
+  profile: "Profil",
 };
 
 export default function Home() {
@@ -15,26 +25,28 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [sentMessage, setSentMessage] = useState("");
   const [statusNote, setStatusNote] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSidebarSelect = (item: string) => {
     setActiveItem(item);
-    if (item !== "home") setStatusNote(`${item[0].toUpperCase()}${item.slice(1)} selected`);
+    setMobileMenuOpen(false);
+    if (item !== "home") setStatusNote(`${sectionNames[item] ?? item} seçildi`);
   };
 
   const handleSubmit = () => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
-      setStatusNote("Type a message to get started");
+      setStatusNote("Başlamak için bir mesaj yaz");
       return;
     }
     setSentMessage(trimmedMessage);
     setMessage("");
-    setStatusNote("Your message is ready for LIX");
+    setStatusNote("Mesajın AION için hazır");
   };
 
   const handleQuickAction = (id: string) => {
     setMessage(quickPrompts[id] ?? "");
-    setStatusNote("Prompt added to your message");
+    setStatusNote("İstem mesajına eklendi");
   };
 
   return (
@@ -42,22 +54,49 @@ export default function Home() {
       <div className="ambient-light ambient-light-one" aria-hidden="true" />
       <div className="ambient-light ambient-light-two" aria-hidden="true" />
       <main className="assistant-shell" data-testid="assistant-home-screen">
-        <Sidebar activeItem={activeItem} onSelect={handleSidebarSelect} />
-        <section className="assistant-content" aria-label="LIX assistant home">
+        {mobileMenuOpen ? (
+          <button
+            type="button"
+            className="mobile-sidebar-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Menüyü kapat"
+            data-testid="mobile-sidebar-backdrop"
+          />
+        ) : null}
+        <Sidebar
+          activeItem={activeItem}
+          mobileOpen={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          onSelect={handleSidebarSelect}
+        />
+        <section className="assistant-content" aria-label="AION asistan ana sayfası">
           <div className="content-wash" aria-hidden="true" />
+          <header className="mobile-topbar" data-testid="mobile-topbar">
+            <button
+              type="button"
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Menüyü aç"
+              aria-expanded={mobileMenuOpen}
+              data-testid="mobile-menu-button"
+            >
+              <Menu size={21} aria-hidden="true" />
+            </button>
+            <span className="mobile-brand" data-testid="mobile-brand">AION</span>
+          </header>
           <div className="hero-content">
             <OrbAvatar />
             <div className="greeting" data-testid="greeting-block">
-              <p className="greeting-lead" data-testid="greeting-lead">Hi, Hendricks</p>
-              <h1 data-testid="greeting-heading">How can I help today?</h1>
+              <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Hendricks</p>
+              <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>
               <p className="greeting-subtitle" data-testid="greeting-subtitle">
-                I&apos;m here to help — from quick answers<br className="desktop-break" /> to smart recommendations.
+                Hızlı yanıtlardan akıllı önerilere kadar<br className="desktop-break" /> sana yardımcı olmak için buradayım.
               </p>
             </div>
 
             {sentMessage ? (
               <div className="sent-message" data-testid="sent-message-preview">
-                <span className="sent-message-label">Latest prompt</span>
+                <span className="sent-message-label">Son istem</span>
                 <span>{sentMessage}</span>
               </div>
             ) : null}
@@ -66,9 +105,9 @@ export default function Home() {
               value={message}
               onChange={setMessage}
               onSubmit={handleSubmit}
-              onImport={(fileName) => setStatusNote(`${fileName} added to your prompt`)}
-              onTools={() => setStatusNote("Tools are ready")}
-              onMic={() => setStatusNote("Voice input is ready")}
+              onImport={(fileName) => setStatusNote(`${fileName} istemine eklendi`)}
+              onTools={() => setStatusNote("Araçlar hazır")}
+              onMic={() => setStatusNote("Sesli giriş hazır")}
             />
             <QuickActions onAction={handleQuickAction} />
             <p className="status-note" aria-live="polite" data-testid="interaction-status">

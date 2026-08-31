@@ -1,6 +1,6 @@
 export default function OrbAvatar() {
   return (
-    <div className="orb-frame" data-testid="ai-orb-avatar" aria-label="LIX assistant avatar">
+    <div className="orb-frame" data-testid="ai-orb-avatar" aria-label="AION asistan avatarı">
       <div className="orb-halo" aria-hidden="true" />
       <img
         className="orb-image"

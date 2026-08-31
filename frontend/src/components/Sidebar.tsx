@@ -5,11 +5,14 @@ import {
   Mail,
   Settings,
   Sparkles,
+  X,
   type LucideIcon,
 } from "lucide-react";
 
 interface SidebarProps {
   activeItem: string;
+  mobileOpen: boolean;
+  onClose: () => void;
   onSelect: (item: string) => void;
 }
 
@@ -20,17 +23,32 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { id: "home", label: "Home", icon: House },
-  { id: "discover", label: "Discover", icon: Sparkles },
-  { id: "inbox", label: "Inbox", icon: Mail },
-  { id: "library", label: "Library", icon: BookOpen },
+  { id: "home", label: "Ana Sayfa", icon: House },
+  { id: "discover", label: "Keşfet", icon: Sparkles },
+  { id: "inbox", label: "Gelen Kutusu", icon: Mail },
+  { id: "library", label: "Arşiv", icon: BookOpen },
 ];
 
-export default function Sidebar({ activeItem, onSelect }: SidebarProps) {
+export default function Sidebar({ activeItem, mobileOpen, onClose, onSelect }: SidebarProps) {
   return (
-    <aside className="assistant-sidebar" aria-label="Primary navigation" data-testid="assistant-sidebar">
+    <aside
+      className={`assistant-sidebar${mobileOpen ? " is-mobile-open" : ""}`}
+      aria-label="Ana navigasyon"
+      data-testid="assistant-sidebar"
+    >
       <div className="sidebar-top">
-        <div className="brand-mark" data-testid="brand-mark">LIX</div>
+        <div className="sidebar-brand-row">
+          <div className="brand-mark" data-testid="brand-mark">AION</div>
+          <button
+            type="button"
+            className="mobile-sidebar-close"
+            onClick={onClose}
+            aria-label="Menüyü kapat"
+            data-testid="mobile-sidebar-close-button"
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
         <div className="sidebar-rule" aria-hidden="true" />
         <nav className="sidebar-navigation">
           {navigationItems.map(({ id, label, icon: Icon }) => {
@@ -46,7 +64,7 @@ export default function Sidebar({ activeItem, onSelect }: SidebarProps) {
                 data-testid={`sidebar-${id}-button`}
               >
                 <Icon strokeWidth={isActive ? 2.4 : 1.8} aria-hidden="true" />
-                <span className="sr-only">{label}</span>
+                <span className="sidebar-label">{label}</span>
               </button>
             );
           })}
@@ -58,27 +76,27 @@ export default function Sidebar({ activeItem, onSelect }: SidebarProps) {
           type="button"
           className="sidebar-button"
           onClick={() => onSelect("settings")}
-          aria-label="Settings"
+          aria-label="Ayarlar"
           data-testid="sidebar-settings-button"
         >
           <Settings strokeWidth={1.8} aria-hidden="true" />
-          <span className="sr-only">Settings</span>
+          <span className="sidebar-label">Ayarlar</span>
         </button>
         <button
           type="button"
           className="sidebar-button"
           onClick={() => onSelect("logout")}
-          aria-label="Sign out"
+          aria-label="Çıkış yap"
           data-testid="sidebar-logout-button"
         >
           <LogOut strokeWidth={1.8} aria-hidden="true" />
-          <span className="sr-only">Sign out</span>
+          <span className="sidebar-label">Çıkış Yap</span>
         </button>
         <button
           type="button"
           className="profile-button"
           onClick={() => onSelect("profile")}
-          aria-label="Open Hendricks profile"
+          aria-label="Hendricks profilini aç"
           data-testid="sidebar-profile-button"
         >
           <img
@@ -86,6 +104,7 @@ export default function Sidebar({ activeItem, onSelect }: SidebarProps) {
             alt="Hendricks"
             data-testid="sidebar-profile-avatar"
           />
+          <span className="profile-name" data-testid="sidebar-profile-name">Hendricks</span>
         </button>
       </div>
     </aside>

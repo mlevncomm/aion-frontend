@@ -1,0 +1,67 @@
+{
+  "iteration": 1,
+  "summary": "All 8 UI-facing acceptance criteria for the AION mobile demo verified via named browser checks. No backend criteria applicable (frontend-only demo, no persistent data, no auth).",
+  "passed": 8,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "AION arayüzü public URL’de ekranın tamamını doldurur",
+      "name": "aion-fullscreen-mobile-shell",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "390x844 viewport: assistant-home-screen boundingBox x=0,y=0,width>=388,height>=840; no outer card padding/rounded frame"
+    },
+    {
+      "criterion": "Arayüz Türkçe ve AION markalıdır",
+      "name": "aion-turkish-branding-visible",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "mobile-brand text 'AION', greeting-heading 'Bugün sana nasıl yardımcı olabilirim?', sidebar brand-mark 'AION' all visible"
+    },
+    {
+      "criterion": "Mobil navigasyon açılır menü olarak çalışır",
+      "name": "aion-mobile-drawer-navigation",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Drawer opened via mobile-menu-button revealed Ana Sayfa/Keşfet/Gelen Kutusu/Arşiv/Ayarlar/Çıkış Yap/Hendricks profile; selecting Keşfet closed drawer (is-mobile-open removed) and set status 'Keşfet seçildi'"
+    },
+    {
+      "criterion": "Mobil sohbet girişi dokunmaya uygun ve erişilebilirdir",
+      "name": "aion-mobile-composer-touch-accessible",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "chat-message-input and chat-send-button visible, positioned in lower ~70% of 844px viewport, send button >=24x24px touch target"
+    },
+    {
+      "criterion": "Mesaj gönderme demo akışı çalışır",
+      "name": "aion-message-send-demo-flow",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Typed 'tscheck-mesaj-gonderme-testi', clicked send: input cleared, sent-message-preview shows 'Son istem' + text, interaction-status = 'Mesajın AION için hazır'"
+    },
+    {
+      "criterion": "Hızlı aksiyonlar Türkçe istem doldurur",
+      "name": "aion-quick-actions-fill-prompt",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "quick-action-surprise-button filled input with 'Bugün için beni şaşırtacak yaratıcı bir fikir ver'; quick-action-summarise-button filled 'Bunu benim için özetle: '"
+    },
+    {
+      "criterion": "Composer yardımcı kontrolleri Türkçedir ve çalışır",
+      "name": "aion-composer-controls-turkish",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "chat-import-file-button 'Dosya ekle', chat-tools-button 'Araçlar' visible; clicking tools opened Turkish popover with title 'Araçlar' and copy text"
+    },
+    {
+      "criterion": "Tarayıcı akışı temizdir",
+      "name": "aion-clean-mobile-flow-no-errors",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Walked drawer open/select, quick action, tools popover, send flow while monitoring page 'response' events - zero responses with status>=400; no thrown console errors during flow"
+    }
+  ]
+}
