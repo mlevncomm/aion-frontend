@@ -1,0 +1,130 @@
+{
+  "theme": "dark",
+  "app_type": "saas_app",
+  "archetype": "Luxury & The 'Technical' Look",
+  "typography": {
+    "fonts": {
+      "headings": "Outfit",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-4xl md:text-5xl font-medium tracking-tight text-white",
+      "h2": "text-xl font-medium tracking-tight text-zinc-100",
+      "body": "text-base text-zinc-400 leading-relaxed",
+      "small": "text-sm text-zinc-500",
+      "label": "text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500"
+    }
+  },
+  "colors": {
+    "background": {
+      "page": "bg-slate-950",
+      "app_shell": "bg-[#09090b]/80",
+      "sidebar": "bg-transparent",
+      "composer": "bg-zinc-900",
+      "quick_action_card": "bg-zinc-900/50"
+    },
+    "text": {
+      "primary": "text-white",
+      "secondary": "text-zinc-400",
+      "muted": "text-zinc-600",
+      "accent": "text-white"
+    },
+    "border": {
+      "default": "border-zinc-800",
+      "active": "border-zinc-600"
+    },
+    "interactive": {
+      "hover": "hover:bg-zinc-800",
+      "focus": "focus:ring-2 focus:ring-zinc-600 focus:outline-none",
+      "active": "active:scale-95"
+    }
+  },
+  "layout": {
+    "global": "h-screen w-full flex items-center justify-center p-4 md:p-8 overflow-hidden",
+    "app_shell": "w-full max-w-7xl h-full max-h-[900px] rounded-3xl border border-zinc-800 shadow-2xl flex overflow-hidden backdrop-blur-3xl relative",
+    "sidebar": "w-20 border-r border-zinc-800 flex flex-col items-center py-8 gap-8 shrink-0 z-10",
+    "main_content": "flex-1 flex flex-col items-center justify-center p-8 relative z-10 overflow-y-auto"
+  },
+  "components": {
+    "Sidebar": {
+      "path": "/app/frontend/src/components/Sidebar.jsx",
+      "instructions": "Vertical flex container. Map through navigation items. Active state gets a subtle glowing background (e.g., bg-zinc-800 text-white) and rounded-xl. Inactive items are text-zinc-500 hover:text-white hover:bg-zinc-800/50."
+    },
+    "ChatComposer": {
+      "path": "/app/frontend/src/components/ChatComposer.jsx",
+      "instructions": "Large rounded-2xl container (bg-zinc-900 border border-zinc-800). Flex column. Top area for input textarea (bg-transparent, no ring). Bottom area for 'Import file' (paperclip) and 'Tools' controls, plus a distinct 'Send' action button (e.g., bg-white text-black rounded-full p-2 hover:bg-zinc-200)."
+    },
+    "QuickActions": {
+      "path": "/app/frontend/src/components/QuickActions.jsx",
+      "instructions": "Bento-style grid (grid-cols-1 md:grid-cols-3 gap-4). Cards with hover:-translate-y-1 transition-transform. Titles: 'Surprise me', 'Create image', 'Summarise'. Soft icons inside."
+    },
+    "OrbAvatar": {
+      "path": "/app/frontend/src/components/OrbAvatar.jsx",
+      "instructions": "Centered glowing 3D orb using the provided image URL. w-24 h-24 rounded-full overflow-hidden border border-zinc-700/50 shadow-[0_0_40px_rgba(255,255,255,0.05)]."
+    }
+  },
+  "mock_data": {
+    "user": {
+      "name": "Hendricks",
+      "avatar": "https://images.unsplash.com/photo-1622483066841-ae4c61da3db8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcG9ydHJhaXQlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3ODgyMTIzNjl8MA&ixlib=rb-4.1.0&q=85"
+    },
+    "quick_actions": [
+      {
+        "id": "surprise",
+        "title": "Surprise me",
+        "description": "Discover something new",
+        "icon": "Sparkles"
+      },
+      {
+        "id": "create",
+        "title": "Create image",
+        "description": "Generate visual art",
+        "icon": "Image"
+      },
+      {
+        "id": "summarise",
+        "title": "Summarise",
+        "description": "Condense long texts",
+        "icon": "FileText"
+      }
+    ]
+  },
+  "media": {
+    "image_urls": {
+      "ai_orb": "https://images.pexels.com/photos/32159928/pexels-photo-32159928.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "hendricks_avatar": "https://images.unsplash.com/photo-1622483066841-ae4c61da3db8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcG9ydHJhaXQlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3ODgyMTIzNjl8MA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "motion": {
+    "hover": "transition-all duration-300 ease-out",
+    "entrance": "animate-in fade-in slide-in-from-bottom-4 duration-700"
+  },
+  "accessibility": {
+    "contrast": "Ensure text contrast against dark backgrounds meets APCA standards.",
+    "focus": "All interactive elements must have visible focus states (e.g., focus-visible:ring-2 focus-visible:ring-zinc-400).",
+    "testing_attributes": "All interactive and key informational elements MUST include a data-testid attribute (e.g., data-testid='chat-send-button')."
+  },
+  "instructions_to_main_agent": [
+    "Install lucide-react for icons.",
+    "Implement the layout as a floating app shell on a dark background (bg-slate-950).",
+    "The sidebar should have an active state for the Home tab (data-testid='sidebar-home-active').",
+    "Center the OrbAvatar above the Greeting ('Good morning, Hendricks').",
+    "The Composer must have a 'Send' button, an 'Import file' button, and 'Tools' controls. Use the mock data provided.",
+    "Ensure all components are responsive, breaking down gracefully on smaller screens.",
+    "Use standard .jsx files for React components.",
+    "Add 'data-testid' to all buttons, inputs, and navigation links.",
+    "Apply Framer Motion or Tailwind transitions for hover states on the quick action cards (hover:-translate-y-1 shadow-lg)."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition (e.g., transition: all). Always add transitions for specific interactive elements.",
+    "You MUST NOT center align the app container in global CSS. Do not disrupt human natural reading flow of text.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style.",
+    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons. Use lucide-react.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Prioritize using pre-existing components from src/components/ui when applicable."
+  ]
+}
