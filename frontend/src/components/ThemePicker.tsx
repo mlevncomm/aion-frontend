@@ -15,6 +15,7 @@ interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
+  { id: "reference", label: "Gece mavisi", description: "Video ve referans görünümü" },
   { id: "emerald", label: "Zümrüt", description: "Derin yeşil ve mint" },
   { id: "amber", label: "Koyu amber", description: "Sıcak ve odaklı" },
   { id: "mono", label: "Monokrom", description: "Sade ve zamansız" },

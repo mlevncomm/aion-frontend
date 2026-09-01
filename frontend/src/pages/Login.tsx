@@ -86,11 +86,12 @@ export default function Login() {
 
   return (
     <main className="login-stage" data-testid="login-screen">
-      <div className="login-grid" aria-hidden="true" />
-      <div className="login-glow login-glow-one" aria-hidden="true" />
-      <div className="login-glow login-glow-two" aria-hidden="true" />
+      <div className="login-shell" data-testid="login-shell">
+        <div className="login-grid" aria-hidden="true" />
+        <div className="login-glow login-glow-one" aria-hidden="true" />
+        <div className="login-glow login-glow-two" aria-hidden="true" />
 
-      <section className="login-visual" aria-label="AION özel çalışma alanı">
+        <section className="login-visual" aria-label="AION özel çalışma alanı">
         <div className="login-brand-mark" data-testid="login-brand-mark">AION</div>
         <div className="login-visual-content">
           <div className="login-orb-wrap"><OrbAvatar /></div>
@@ -107,9 +108,9 @@ export default function Login() {
           </div>
         </div>
         <p className="login-domain" data-testid="login-domain">aion.wexon.dev</p>
-      </section>
+        </section>
 
-      <section className="login-panel" aria-label="Admin giriş paneli">
+        <section className="login-panel" aria-label="Admin giriş paneli">
         <div className="login-mobile-brand" data-testid="login-mobile-brand">AION</div>
         <div className="login-card live-glow-surface" data-testid="login-card" {...liveGlowHandlers}>
           <div className="login-card-icon" aria-hidden="true"><LockKeyhole size={22} /></div>
@@ -188,7 +189,8 @@ export default function Login() {
             <ShieldCheck size={14} aria-hidden="true" /> Yalnızca yetkili erişim
           </div>
         </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }
