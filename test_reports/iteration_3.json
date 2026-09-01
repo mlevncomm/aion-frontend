@@ -1,0 +1,67 @@
+{
+  "iteration": 3,
+  "summary": "All 8 UI-facing acceptance criteria for the personalized AION assistant (Mehmet greeting, hidden-until-triggered chat panel, Pro-text/border removal, local mocked chat flow, voice fallback, mobile responsive chat, and preserved login/theme/logout flows) verified via named browser checks. No new backend API surface was introduced for this feature set (chat responses are local/MOCKED per spec_deviations), so no backend test files were needed.",
+  "passed": 8,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "AION asistanı masaüstünde kenar boşluksuz tam ekrandır",
+      "name": "aion-fullscreen-no-margin-desktop",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "1280x720: assistant-home-screen boundingBox x=0,y=0, width>=1279, height>=719 after admin login"
+    },
+    {
+      "criterion": "Arayüz Mehmet için kişiselleştirilmiştir",
+      "name": "aion-personalized-mehmet-greeting",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "greeting-lead='Merhaba, Mehmet'; sidebar-profile-avatar='M'; sidebar-profile-name='Mehmet'"
+    },
+    {
+      "criterion": "Sohbet başlangıçta gizlidir ve gerektiğinde açılır",
+      "name": "aion-chat-hidden-until-triggered",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "conversation-panel absent from DOM (count=0) right after login; clicking voice-assistant-button opens conversation-panel (visible)"
+    },
+    {
+      "criterion": "Pro metni ve composer dikdörtgen border'ı kaldırılmıştır",
+      "name": "aion-no-pro-text-and-borderless-composer",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "body innerText does not contain 'Pro ile daha fazla özelliğe eriş'; .composer-panel computed borderWidth='0px'; chat-message-input focused outlineStyle='none'"
+    },
+    {
+      "criterion": "Yerel yazılı sohbet akışı çalışır",
+      "name": "aion-local-chat-flow-mehmet-response",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Sent 'Merhaba, bir plan yapmama yardım eder misin?' -> sent-message-preview shows user text, conversation-processing-indicator appeared, conversation-message-list later contains 'Mehmet' (local assistant reply)"
+    },
+    {
+      "criterion": "Sesli asistan kontrolü güvenli fallback sunar",
+      "name": "aion-voice-assistant-safe-fallback",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "voice-assistant-button/label visible ('AION ile konuş'); click opens conversation-panel with chat-microphone-button visible, conversation-voice-status one of expected fallback/listening states, no pageerror events, home screen remained mounted (no crash)"
+    },
+    {
+      "criterion": "Mobil sohbet paneli responsive ve dokunmaya uygundur",
+      "name": "aion-mobile-chat-panel-responsive-touch",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "390x844: panel hidden pre-trigger, opened via voice-assistant-button, boundingBox width>=385 (full width), message list/close/send/microphone controls all visible; close button removes panel from DOM"
+    },
+    {
+      "criterion": "Mevcut erişim ve tema akışları korunmuştur",
+      "name": "aion-existing-access-and-theme-flows",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "admin/AION#2026 login succeeds -> assistant-home-screen visible; sidebar-settings-button toggles theme picker without error; sidebar-logout-button click -> URL '/giris' with login-screen visible"
+    }
+  ]
+}

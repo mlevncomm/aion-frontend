@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { ArrowUp, FileUp, Mic, SlidersHorizontal, WandSparkles } from "lucide-react";
+import { ArrowUp, FileUp, Mic, SlidersHorizontal } from "lucide-react";
 import { liveGlowHandlers } from "@/lib/liveGlow";
 
 interface ChatComposerProps {
@@ -9,6 +9,7 @@ interface ChatComposerProps {
   onImport: (fileName: string) => void;
   onTools: () => void;
   onMic: () => void;
+  voiceActive?: boolean;
 }
 
 export default function ChatComposer({
@@ -18,6 +19,7 @@ export default function ChatComposer({
   onImport,
   onTools,
   onMic,
+  voiceActive = false,
 }: ChatComposerProps) {
   const [toolsOpen, setToolsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,10 +37,6 @@ export default function ChatComposer({
 
   return (
     <form className="composer-wrap" onSubmit={handleSubmit} data-testid="chat-composer-form">
-      <div className="pro-banner" data-testid="pro-banner">
-        <WandSparkles size={14} strokeWidth={2.2} aria-hidden="true" />
-        <span data-testid="pro-banner-text">Pro ile daha fazla özelliğe eriş</span>
-      </div>
       <div className="composer-panel live-glow-surface" {...liveGlowHandlers}>
         <textarea
           value={value}
@@ -98,9 +96,10 @@ export default function ChatComposer({
           <div className="composer-actions">
             <button
               type="button"
-              className="icon-action-button"
+              className={`icon-action-button${voiceActive ? " is-listening" : ""}`}
               onClick={onMic}
               aria-label="Sesli giriş kullan"
+              aria-pressed={voiceActive}
               data-testid="chat-microphone-button"
             >
               <Mic size={15} strokeWidth={1.8} aria-hidden="true" />

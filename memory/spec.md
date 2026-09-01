@@ -9,6 +9,9 @@
 - The Settings control opens a theme picker for Reference Night Blue, Emerald, Dark Amber, and Monochrome themes; the choice persists in `localStorage` across visits and also applies to the login screen.
 - The assistant orb uses a subtle pulse while a prompt is being typed and a restrained light wave/spin after send.
 - Login card, composer, and quick actions use very faint pointer-following glass highlights; touch interactions trigger the same restrained highlight on mobile.
+- The assistant workspace is full-viewport on desktop and mobile. The text chat stays hidden until Mehmet clicks the orb, a quick action, or the “AION ile konuş” control.
+- Browser speech recognition captures Turkish speech when supported; local demo responses are spoken with the browser speech synthesis API. Unsupported browsers fall back to the written panel.
+- The visible profile and greeting are personalised for Mehmet. The previous Pro upsell banner and composer focus rectangle have been removed.
 
 ## Data model
 - No persisted data or backend integration. The UI uses local React state for the selected sidebar item, current prompt, submitted prompt preview, and interaction status.

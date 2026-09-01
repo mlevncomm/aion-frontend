@@ -1,15 +1,11 @@
 interface OrbAvatarProps {
-  activity?: "idle" | "typing" | "sending";
+  activity?: "idle" | "typing" | "sending" | "listening" | "speaking";
+  onClick?: () => void;
 }
 
-export default function OrbAvatar({ activity = "idle" }: OrbAvatarProps) {
-  return (
-    <div
-      className={`orb-frame is-${activity}`}
-      data-activity={activity}
-      data-testid="ai-orb-avatar"
-      aria-label="AION asistan avatarı"
-    >
+export default function OrbAvatar({ activity = "idle", onClick }: OrbAvatarProps) {
+  const orbContent = (
+    <>
       <span className="orb-wave" aria-hidden="true" />
       <div className="orb-mask">
         <div className="orb-halo" aria-hidden="true" />
@@ -20,6 +16,32 @@ export default function OrbAvatar({ activity = "idle" }: OrbAvatarProps) {
           aria-hidden="true"
         />
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`orb-frame is-${activity} is-interactive`}
+        data-activity={activity}
+        data-testid="ai-orb-avatar"
+        onClick={onClick}
+        aria-label="AION sohbetini aç"
+      >
+        {orbContent}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className={`orb-frame is-${activity}`}
+      data-activity={activity}
+      data-testid="ai-orb-avatar"
+      aria-label="AION asistan avatarı"
+    >
+      {orbContent}
     </div>
   );
 }

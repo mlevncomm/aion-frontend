@@ -100,15 +100,11 @@ export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onS
           type="button"
           className="profile-button"
           onClick={() => onSelect("profile")}
-          aria-label="Hendricks profilini aç"
+          aria-label="Mehmet profilini aç"
           data-testid="sidebar-profile-button"
         >
-          <img
-            src="https://images.unsplash.com/photo-1622483066841-ae4c61da3db8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcG9ydHJhaXQlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3ODgyMTIzNjl8MA&ixlib=rb-4.1.0&q=85"
-            alt="Hendricks"
-            data-testid="sidebar-profile-avatar"
-          />
-          <span className="profile-name" data-testid="sidebar-profile-name">Hendricks</span>
+          <span className="profile-monogram" data-testid="sidebar-profile-avatar" aria-hidden="true">M</span>
+          <span className="profile-name" data-testid="sidebar-profile-name">Mehmet</span>
         </button>
       </div>
     </aside>
