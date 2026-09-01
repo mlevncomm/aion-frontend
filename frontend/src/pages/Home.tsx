@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AudioLines, Menu, Mic } from "lucide-react";
+import { AudioLines, MessageCircle, Menu, Mic, MicOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConversationPanel, { type ChatMessage } from "@/components/ConversationPanel";
 import OrbAvatar from "@/components/OrbAvatar";
@@ -29,10 +29,11 @@ const initialMessages: ChatMessage[] = [
 ];
 
 const voiceStatusText: Record<VoiceStatus, string> = {
-  idle: "Konuşmaya başla",
-  listening: "Seni dinliyorum...",
+  idle: "Sürekli dinlemeyi etkinleştir",
+  listening: "Sürekli dinleme açık",
   processing: "Düşünüyorum...",
   speaking: "AION yanıtlıyor",
+  muted: "Mikrofon susturuldu",
   unsupported: "Yazılı sohbeti kullan",
   error: "Mikrofonu yeniden dene",
 };
@@ -133,10 +134,32 @@ export default function Home() {
     setChatOpen(true);
   };
 
-  const handleVoice = () => {
+  const handleVoicePrimary = () => {
+    if (!voice.recognitionSupported) {
+      voice.activateContinuous();
+      openChat();
+      return;
+    }
+    if (voice.muted) {
+      openChat();
+      return;
+    }
+    if (!voice.continuousEnabled) {
+      voice.activateContinuous();
+      setStatusNote("Sürekli dinleme başlatılıyor");
+      return;
+    }
     openChat();
-    voice.toggleListening();
-    setStatusNote(voice.recognitionSupported ? "Mikrofon hazırlanıyor" : "Sesli giriş desteklenmiyor; yazılı sohbet açıldı");
+  };
+
+  const handleMute = () => {
+    if (!voice.recognitionSupported) {
+      voice.activateContinuous();
+      openChat();
+      return;
+    }
+    voice.toggleMute();
+    setStatusNote(voice.muted ? "Mikrofon yeniden açılıyor" : "Mikrofon susturuldu");
   };
 
   const orbActivity = voice.status === "listening"
@@ -193,31 +216,52 @@ export default function Home() {
             <span className="mobile-brand" data-testid="mobile-brand">AION</span>
           </header>
           <div className="hero-content">
-            <OrbAvatar activity={orbActivity} onClick={openChat} />
+            <OrbAvatar activity={orbActivity} onClick={handleVoicePrimary} />
             <div className="greeting" data-testid="greeting-block">
               <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Mehmet</p>
               <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>
-              <p className="greeting-subtitle" data-testid="greeting-subtitle">
-                Hızlı yanıtlardan akıllı önerilere kadar<br className="desktop-break" /> sana yardımcı olmak için buradayım.
-              </p>
             </div>
 
-            <button
-              type="button"
-              className={`voice-trigger is-${voice.status}`}
-              onClick={handleVoice}
-              aria-label="AION ile sesli konuş"
-              aria-pressed={voice.status === "listening"}
-              data-testid="voice-assistant-button"
-            >
-              <span className="voice-trigger-icon" aria-hidden="true">
-                {voice.status === "speaking" ? <AudioLines size={19} /> : <Mic size={19} />}
-              </span>
-              <span className="voice-trigger-copy">
-                <strong data-testid="voice-assistant-label">AION ile konuş</strong>
-                <small data-testid="voice-assistant-status">{voiceStatusText[voice.status]}</small>
-              </span>
-            </button>
+            <div className={`voice-console is-${voice.status}${voice.muted ? " is-muted" : ""}`} data-testid="voice-console">
+              <button
+                type="button"
+                className="voice-console-primary"
+                onClick={handleVoicePrimary}
+                aria-label={voice.muted ? "Yazılı sohbeti aç" : "AION sürekli dinlemeyi başlat"}
+                aria-pressed={voice.continuousEnabled && !voice.muted}
+                data-testid="voice-assistant-button"
+              >
+                <span className="voice-console-presence" aria-hidden="true">
+                  {voice.status === "speaking" ? <AudioLines size={18} /> : voice.muted ? <MicOff size={18} /> : <Mic size={18} />}
+                </span>
+                <span className="voice-console-copy">
+                  <strong data-testid="voice-assistant-label">
+                    {voice.muted ? "Mikrofon susturuldu" : voice.continuousEnabled ? "AION aktif" : "AION hazır"}
+                  </strong>
+                  <small data-testid="voice-assistant-status">{voiceStatusText[voice.status]}</small>
+                </span>
+              </button>
+              <span className="voice-console-divider" aria-hidden="true" />
+              <button
+                type="button"
+                className="voice-console-control"
+                onClick={handleMute}
+                aria-label={voice.muted ? "Mikrofonu aç" : "Mikrofonu sustur"}
+                aria-pressed={voice.muted}
+                data-testid="voice-mute-button"
+              >
+                {voice.muted ? <MicOff size={17} aria-hidden="true" /> : <Mic size={17} aria-hidden="true" />}
+              </button>
+              <button
+                type="button"
+                className="voice-console-control"
+                onClick={openChat}
+                aria-label="Yazılı sohbeti aç"
+                data-testid="voice-chat-button"
+              >
+                <MessageCircle size={17} aria-hidden="true" />
+              </button>
+            </div>
             <QuickActions onAction={handleQuickAction} />
             <p className="status-note" aria-live="polite" data-testid="interaction-status">
               {statusNote}
@@ -231,7 +275,7 @@ export default function Home() {
           onChange={setMessage}
           onClose={() => setChatOpen(false)}
           onImport={(fileName) => setStatusNote(`${fileName} istemine eklendi`)}
-          onMic={handleVoice}
+          onMic={handleMute}
           onSubmit={handleSubmit}
           onTools={() => setStatusNote("Araçlar hazır")}
           open={chatOpen}

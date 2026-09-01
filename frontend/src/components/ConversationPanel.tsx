@@ -29,6 +29,7 @@ const voiceLabels: Record<VoiceStatus, string> = {
   listening: "Seni dinliyorum",
   processing: "Düşünüyorum",
   speaking: "Yanıtlıyorum",
+  muted: "Mikrofon susturuldu",
   unsupported: "Yazılı mod",
   error: "Mikrofon beklemede",
 };

@@ -2,15 +2,15 @@
 
 ## What it does
 - Frontend-only, full-screen AION AI assistant home screen based on the supplied visual reference.
-- Reference-matched floating desktop shell with large rounded corners, a compact navigation rail, mobile slide-out navigation, animated orb, Turkish greeting, composer, and three quick actions.
+- Full-viewport responsive assistant with a compact desktop navigation rail, mobile slide-out navigation, CSS audio orb, Turkish greeting, hidden composer, and three quick actions.
 - Demo interactions are local-only: sidebar selection, prompt entry/submission, tool popover, file-picker trigger, microphone state, and quick-action prompt filling.
 - A Turkish AION admin login screen gates the app before the assistant workspace is rendered.
-- The default visual system follows the supplied Dribbble video and image: charcoal page surround, near-black shell, deep blue/turquoise atmospheric light, restrained glass, and a custom iridescent blue orb.
-- The Settings control opens a theme picker for Reference Night Blue, Emerald, Dark Amber, and Monochrome themes; the choice persists in `localStorage` across visits and also applies to the login screen.
-- The assistant orb uses a subtle pulse while a prompt is being typed and a restrained light wave/spin after send.
+- The default visual system uses near-black surfaces with deep emerald and soft mint accents, restrained glass, and Urbanist typography.
+- The Settings control opens a theme picker for AION Green, Forest, Dark Amber, and Monochrome themes; the choice persists in `localStorage` across visits and also applies to the login screen.
+- The assistant orb is built entirely with CSS layers (no image) and reacts to live microphone level through the Web Audio API, plus listening/speaking states.
 - Login card, composer, and quick actions use very faint pointer-following glass highlights; touch interactions trigger the same restrained highlight on mobile.
-- The assistant workspace is full-viewport on desktop and mobile. The text chat stays hidden until Mehmet clicks the orb, a quick action, or the “AION ile konuş” control.
-- Browser speech recognition captures Turkish speech when supported; local demo responses are spoken with the browser speech synthesis API. Unsupported browsers fall back to the written panel.
+- The assistant workspace is full-viewport on desktop and mobile. The text chat stays hidden until Mehmet chooses chat, clicks a quick action, or uses the muted primary control.
+- After one user activation, browser speech recognition stays in continuous mode when supported. Mehmet can mute/unmute the microphone or continue through chat; local demo responses are spoken with the browser speech synthesis API.
 - The visible profile and greeting are personalised for Mehmet. The previous Pro upsell banner and composer focus rectangle have been removed.
 
 ## Data model
@@ -24,7 +24,7 @@
 5. On mobile, open the slide-out menu from the top bar and select an item.
 6. Use sidebar controls, Tools, Import file, and microphone controls to show local interaction feedback.
 7. Select Çıkış Yap to clear the session and return to `/giris`.
-8. Open Ayarlar to switch the persistent visual theme between Gece mavisi, Zümrüt, Koyu amber, and Monokrom.
+8. Open Ayarlar to switch the persistent visual theme between AION Yeşil, Orman, Koyu amber, and Monokrom.
 
 ## Auth and roles
 - One frontend-only admin role. Login: `admin` / `AION#2026`.
