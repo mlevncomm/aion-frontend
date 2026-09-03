@@ -6,11 +6,7 @@ interface OrbAvatarProps {
 export default function OrbAvatar({ activity = "idle", onClick }: OrbAvatarProps) {
   const orbContent = (
     <>
-      <span className="orb-rings" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </span>
+      <span className="orb-aura" aria-hidden="true" />
       <span className="orb-wave" aria-hidden="true" />
       <div className="orb-mask">
         <div className="orb-halo" aria-hidden="true" />

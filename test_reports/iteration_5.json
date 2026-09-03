@@ -1,0 +1,67 @@
+{
+  "iteration": 5,
+  "summary": "Retest of the redesigned AION frontend (bug-fix overflow, orb aura redesign, premium responsive login, voice-first chat, automations rail/drawer, quick actions, logout, console cleanliness). All 8 acceptance criteria verified via new named browser checks at desktop (1366x820) and mobile (390x780). No API-bearing criteria exist (frontend-only app per spec_deviations), so no backend test files were needed.",
+  "passed": 8,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "BUG FIX: no horizontal overflow / no visible scrollbars",
+      "name": "no-horizontal-overflow-desktop-mobile",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "scrollWidth-clientWidth === 0 for both documentElement and body at /giris and home, at 1366x820 and 390x780; opening mobile-automations-button drawer (automations-backdrop visible) introduced no overflow"
+    },
+    {
+      "criterion": "Orb redesign: soft aura, no hard ring",
+      "name": "orb-soft-aura-no-hard-ring",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "ai-orb-avatar visible with boundingBox >=90x90; .orb-aura count=1 present; .orb-rings count=0 (absent)"
+    },
+    {
+      "criterion": "Login screen premium redesign + responsive",
+      "name": "login-premium-redesign-responsive",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Desktop 1366: login-card, login-submit-button, ai-orb-avatar, login-hero-heading (two-column) all visible; mobile 390: login-card visible, single column, overflow delta=0; successful admin/AION#2026 login reaches assistant-home-screen"
+    },
+    {
+      "criterion": "Voice-first: chat hidden until opened",
+      "name": "voice-first-chat-hidden-until-opened",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "chat-message-input count=0 on home before opening chat; voice-chat-button click opens conversation-panel with chat-message-input/chat-send-button visible; sending 'tscheck merhaba' shows user bubble and list grows (canned assistant reply appended within ~3s)"
+    },
+    {
+      "criterion": "Automations panel works (desktop rail + mobile drawer)",
+      "name": "automations-panel-desktop-rail-mobile-drawer",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Desktop 1366: automations-panel visible without interaction (rail); automations-summary '2 / 5 otomasyon aktif' -> toggling automation-news-toggle -> '3 / 5 otomasyon aktif'. Mobile 390: automations-panel hidden by default, mobile-automations-button opens automations-backdrop+panel, automations-close-button closes it"
+    },
+    {
+      "criterion": "Quick action fills composer and opens chat",
+      "name": "quick-action-fills-composer-opens-chat",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "quick-action-surprise-button/create-button/summarise-button each open conversation-panel and populate chat-message-input with non-empty Turkish text"
+    },
+    {
+      "criterion": "Logout returns to login",
+      "name": "logout-returns-to-login-v2",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "sidebar-logout-button click -> URL matches /giris and login-card visible"
+    },
+    {
+      "criterion": "No console errors across the journey (desktop + mobile)",
+      "name": "no-console-errors-full-journey-desktop-mobile",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Console 'error' listener and response>=400 listener both empty across: login -> home -> open chat/send message+reply -> close -> toggle automation -> open/close theme picker (desktop), then reload to mobile -> open/close automations drawer"
+    }
+  ]
+}
