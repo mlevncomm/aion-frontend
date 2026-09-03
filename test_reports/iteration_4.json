@@ -1,0 +1,67 @@
+{
+  "iteration": 4,
+  "summary": "All 8 UI-facing acceptance criteria for the blue holographic AION reference-design home (login gate, greeting/orb/composer/quick-actions, local canned chat reply, quick-action composer fill, tools/import controls, theme picker switch+persist across emerald/amber/mono/reference, logout, and console/network cleanliness) verified via named browser checks. This is a frontend-only app (no backend/AI integration per spec_deviations); no API-bearing criteria exist, so no backend test files were required.",
+  "passed": 8,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "Admin login gate works",
+      "name": "aion-login-gate-redirects-home",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "login-card visible at /giris; admin/AION#2026 submit redirects to '/' with assistant-home-screen and greeting-heading visible"
+    },
+    {
+      "criterion": "Blue holographic home renders (reference design)",
+      "name": "aion-blue-holographic-home-renders",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "ai-orb-avatar, greeting-lead='Merhaba, Mehmet', greeting-heading, greeting-subtitle, chat-composer-form, composer-pro-banner, 3 quick-action cards all visible; document.documentElement data-aion-theme='reference'"
+    },
+    {
+      "criterion": "Sending a prompt opens the conversation panel with a reply",
+      "name": "aion-send-prompt-opens-conversation-panel",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Typed tscheck-prompt into chat-message-input, clicked chat-send-button -> conversation-panel visible, user text shown in conversation-message-list, list grows to >=3 children after ~650ms (canned assistant reply appended)"
+    },
+    {
+      "criterion": "Quick actions fill the composer",
+      "name": "aion-quick-actions-fill-composer",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "quick-action-surprise-button/create-button/summarise-button each populate chat-message-input with non-empty Turkish text; interaction-status visible after click"
+    },
+    {
+      "criterion": "Import file and Tools controls respond",
+      "name": "aion-import-file-and-tools-controls",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "chat-tools-button toggles chat-tools-popover open/closed; chat-import-file-button triggers a native filechooser event; assistant-home-screen remains mounted (no crash)"
+    },
+    {
+      "criterion": "Theme picker switches and persists",
+      "name": "aion-theme-picker-switches-and-persists",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "sidebar-settings-button opens theme-picker; theme-option-emerald/amber/mono each set data-aion-theme accordingly; after page.reload() theme remained 'mono' (localStorage persistence); theme-option-reference restores 'reference'"
+    },
+    {
+      "criterion": "Logout returns to login",
+      "name": "aion-logout-returns-to-login",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "sidebar-logout-button click -> URL matches /giris and login-card visible"
+    },
+    {
+      "criterion": "No console errors on the core journey",
+      "name": "aion-no-console-errors-core-journey",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Console 'error' listener and response listener (status>=400) both empty across login -> home render -> send message + reply -> close panel -> open theme picker"
+    }
+  ]
+}

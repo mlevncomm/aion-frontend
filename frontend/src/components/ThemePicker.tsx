@@ -15,7 +15,7 @@ interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
-  { id: "reference", label: "AION Yeşil", description: "Derin zümrüt ve yumuşak mint" },
+  { id: "reference", label: "AION Mavi", description: "İridesan holografik gökyüzü mavisi" },
   { id: "emerald", label: "Orman", description: "Mat ve doğal yeşil" },
   { id: "amber", label: "Koyu amber", description: "Sıcak ve odaklı" },
   { id: "mono", label: "Monokrom", description: "Sade ve zamansız" },

@@ -3061,3 +3061,154 @@ body {
     animation: none;
   }
 }
+
+/* ============================================================
+   AION — Dribbble mavi holografik referans teması
+   Varsayilan "reference" temasini derin obsidyen + elektrik mavisi
+   + iridesan holografik orb'a tasir. Diger temalar etkilenmez.
+   ============================================================ */
+html[data-aion-theme="reference"] {
+  --aion-base: #0b0d13;
+  --aion-surface: #10141d;
+  --aion-surface-strong: #161d2b;
+  --aion-accent: #3b82f6;
+  --aion-accent-bright: #93c5fd;
+  --aion-accent-deep: #1d4ed8;
+  --aion-accent-rgb: 59 130 246;
+  --aion-bright-rgb: 147 197 253;
+  --aion-active: #2563eb;
+  --aion-active-bright: #3b82f6;
+  --aion-active-rgb: 37 99 235;
+  --aion-panel-rgb: 16 20 29;
+  --aion-text-tint: #e8eefc;
+  --aion-muted: #7e8ba3;
+}
+
+/* Alt taraftaki canli mavi atmosfer parlamasi */
+html[data-aion-theme="reference"] .assistant-stage::before {
+  background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.95), rgba(29, 78, 216, 0.5) 40%, transparent 74%);
+  filter: blur(46px);
+}
+
+html[data-aion-theme="reference"] .content-wash {
+  background: radial-gradient(ellipse at calc(50% - 50px) 90%, rgba(37, 99, 235, 0.4), rgba(59, 130, 246, 0.14) 42%, transparent 66%);
+}
+
+/* Iridesan holografik orb */
+html[data-aion-theme="reference"] .orb-mask {
+  border-color: rgba(120, 150, 220, 0.3);
+  background:
+    radial-gradient(circle at 34% 24%, rgba(147, 197, 253, 0.34), transparent 24%),
+    radial-gradient(circle at 66% 74%, rgba(37, 99, 235, 0.6), transparent 46%),
+    radial-gradient(circle at 50% 50%, #1e1b4b, #030712 76%);
+  box-shadow: inset 0 1px rgba(220, 230, 255, 0.16), inset 0 -24px 48px rgba(0, 0, 0, 0.4);
+}
+
+html[data-aion-theme="reference"] .orb-halo {
+  inset: -20%;
+  background: conic-gradient(from 180deg at 50% 50%, #38bdf8, #818cf8, #c084fc, #f472b6, #22d3ee, #38bdf8);
+  filter: blur(18px);
+  opacity: 0.62;
+  mix-blend-mode: screen;
+  animation: orb-turn 14s linear infinite;
+}
+
+html[data-aion-theme="reference"] .orb-fluid-one {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.9), rgba(129, 140, 248, 0.18) 52%, rgba(6, 10, 40, 0.72));
+}
+
+html[data-aion-theme="reference"] .orb-fluid-two {
+  background: linear-gradient(145deg, rgba(8, 10, 40, 0.8), rgba(168, 85, 247, 0.7) 46%, rgba(236, 72, 153, 0.34));
+}
+
+html[data-aion-theme="reference"] .orb-fluid-three {
+  border-color: rgba(34, 211, 238, 0.28);
+}
+
+html[data-aion-theme="reference"] .orb-glass {
+  background:
+    radial-gradient(circle at 31% 20%, rgba(255, 255, 255, 0.28), transparent 22%),
+    radial-gradient(circle at 74% 78%, transparent 46%, rgba(0, 0, 0, 0.3) 88%);
+}
+
+html[data-aion-theme="reference"] .orb-spectrum i {
+  background: linear-gradient(to top, rgba(59, 130, 246, 0.26), rgba(191, 219, 254, 0.96));
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.22);
+}
+
+/* Composer, hizli aksiyonlar ve sohbet yuzeyleri */
+html[data-aion-theme="reference"] .composer-wrap {
+  border-color: rgba(90, 120, 200, 0.2);
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.2), rgba(18, 26, 48, 0.5));
+}
+
+html[data-aion-theme="reference"] .composer-wrap:focus-within {
+  border-color: rgba(59, 130, 246, 0.42);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+html[data-aion-theme="reference"] .composer-panel {
+  background: rgba(9, 12, 20, 0.96);
+}
+
+html[data-aion-theme="reference"] .pro-banner {
+  color: rgba(210, 224, 255, 0.9);
+}
+
+html[data-aion-theme="reference"] .quick-action-card {
+  border-color: rgba(80, 110, 190, 0.14);
+  background: rgba(18, 28, 54, 0.2);
+}
+
+html[data-aion-theme="reference"] .quick-action-card:hover {
+  border-color: rgba(59, 130, 246, 0.42);
+  background: rgba(28, 42, 78, 0.3);
+  box-shadow: 0 14px 30px -6px rgba(37, 99, 235, 0.28);
+}
+
+html[data-aion-theme="reference"] .voice-console {
+  background: linear-gradient(145deg, rgba(18, 26, 44, 0.86), rgba(8, 12, 22, 0.9));
+}
+
+html[data-aion-theme="reference"] .conversation-panel {
+  border-color: rgba(90, 120, 200, 0.18);
+  background: linear-gradient(155deg, rgba(16, 22, 36, 0.96), rgba(6, 10, 18, 0.98));
+}
+
+html[data-aion-theme="reference"] .sent-message {
+  border-left-color: rgba(59, 130, 246, 0.6);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+html[data-aion-theme="reference"] .greeting-lead {
+  color: #8792a8;
+}
+
+html[data-aion-theme="reference"] .login-eyebrow,
+html[data-aion-theme="reference"] .login-card-kicker {
+  color: #93a4cf;
+}
+
+html[data-aion-theme="reference"] .sidebar-button.is-active {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+html[data-aion-theme="reference"] .theme-swatch-reference {
+  background: linear-gradient(145deg, #060910, #2563eb 68%, #93c5fd);
+}
+
+/* Pro rozeti */
+.pro-banner-badge {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--aion-active);
+  box-shadow: 0 0 12px rgb(var(--aion-active-rgb) / 0.5);
+}
+
+.greeting-subtitle {
+  color: rgba(140, 150, 172, 0.78);
+}
