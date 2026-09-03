@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Menu } from "lucide-react";
+import { AudioLines, Menu, MessageCircle, Mic, MicOff, Workflow } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ChatComposer from "@/components/ChatComposer";
+import AutomationsPanel from "@/components/AutomationsPanel";
 import ConversationPanel, { type ChatMessage } from "@/components/ConversationPanel";
 import OrbAvatar from "@/components/OrbAvatar";
 import QuickActions from "@/components/QuickActions";
 import Sidebar from "@/components/Sidebar";
 import ThemePicker from "@/components/ThemePicker";
 import { endFrontendSession } from "@/lib/frontendAuth";
-import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
+import { useVoiceAssistant, type VoiceStatus } from "@/hooks/useVoiceAssistant";
 
 const quickPrompts: Record<string, string> = {
   surprise: "Bugün için beni şaşırtacak yaratıcı bir fikir ver",
@@ -28,6 +28,16 @@ const sectionNames: Record<string, string> = {
 const initialMessages: ChatMessage[] = [
   { id: "welcome", role: "assistant", text: "Merhaba Mehmet. Buradayım; konuşabilir veya yazabilirsin." },
 ];
+
+const voiceStatusText: Record<VoiceStatus, string> = {
+  idle: "Konuşmak için dokun",
+  listening: "Seni dinliyorum",
+  processing: "Düşünüyorum...",
+  speaking: "AION yanıtlıyor",
+  muted: "Mikrofon susturuldu",
+  unsupported: "Yazılı sohbeti kullan",
+  error: "Mikrofonu yeniden dene",
+};
 
 function createLocalResponse(prompt: string): string {
   const normalized = prompt.toLocaleLowerCase("tr-TR");
@@ -52,6 +62,7 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [automationsOpen, setAutomationsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const responseTimer = useRef<number | null>(null);
   const voice = useVoiceAssistant();
@@ -100,14 +111,23 @@ export default function Home() {
     voice.consumeTranscript();
   }, [submitPrompt, voice.consumeTranscript, voice.transcript]);
 
+  const openChat = () => {
+    setMobileMenuOpen(false);
+    setSettingsOpen(false);
+    setAutomationsOpen(false);
+    setChatOpen(true);
+  };
+
   const handleQuickAction = (id: string) => {
     setMessage(quickPrompts[id] ?? "");
+    openChat();
     setStatusNote("İstem mesajına eklendi");
   };
 
   const handleLogout = () => {
     setMobileMenuOpen(false);
     setSettingsOpen(false);
+    setAutomationsOpen(false);
     setChatOpen(false);
     endFrontendSession();
     navigate("/giris", { replace: true });
@@ -115,17 +135,12 @@ export default function Home() {
 
   const handleSettings = () => {
     setMobileMenuOpen(false);
+    setAutomationsOpen(false);
     setChatOpen(false);
     setSettingsOpen((open) => !open);
   };
 
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
-
-  const openChat = () => {
-    setMobileMenuOpen(false);
-    setSettingsOpen(false);
-    setChatOpen(true);
-  };
 
   const handleVoicePrimary = () => {
     if (!voice.recognitionSupported) {
@@ -207,6 +222,16 @@ export default function Home() {
               <Menu size={21} aria-hidden="true" />
             </button>
             <span className="mobile-brand" data-testid="mobile-brand">AION</span>
+            <button
+              type="button"
+              className="mobile-menu-button"
+              onClick={() => setAutomationsOpen(true)}
+              aria-label="Otomasyonları aç"
+              aria-expanded={automationsOpen}
+              data-testid="mobile-automations-button"
+            >
+              <Workflow size={20} aria-hidden="true" />
+            </button>
           </header>
           <div className="hero-content">
             <OrbAvatar activity={orbActivity} onClick={handleVoicePrimary} />
@@ -214,20 +239,50 @@ export default function Home() {
               <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Mehmet</p>
               <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>
               <p className="greeting-subtitle" data-testid="greeting-subtitle">
-                Hızlı yanıtlardan akıllı önerilere kadar buradayım.
+                Konuşmaya başlamak için orba dokun; yazmak istersen sohbeti aç.
               </p>
             </div>
 
-            <ChatComposer
-              value={message}
-              voiceActive={voice.status === "listening"}
-              onChange={setMessage}
-              onSubmit={handleSubmit}
-              onImport={(fileName) => setStatusNote(`${fileName} istemine eklendi`)}
-              onTools={() => setStatusNote("Araçlar hazır")}
-              onMic={handleMute}
-              showProBanner
-            />
+            <div className={`voice-console is-${voice.status}${voice.muted ? " is-muted" : ""}`} data-testid="voice-console">
+              <button
+                type="button"
+                className="voice-console-primary"
+                onClick={handleVoicePrimary}
+                aria-label={voice.muted ? "Yazılı sohbeti aç" : "AION sürekli dinlemeyi başlat"}
+                aria-pressed={voice.continuousEnabled && !voice.muted}
+                data-testid="voice-assistant-button"
+              >
+                <span className="voice-console-presence" aria-hidden="true">
+                  {voice.status === "speaking" ? <AudioLines size={18} /> : voice.muted ? <MicOff size={18} /> : <Mic size={18} />}
+                </span>
+                <span className="voice-console-copy">
+                  <strong data-testid="voice-assistant-label">
+                    {voice.muted ? "Mikrofon susturuldu" : voice.continuousEnabled ? "AION aktif" : "AION hazır"}
+                  </strong>
+                  <small data-testid="voice-assistant-status">{voiceStatusText[voice.status]}</small>
+                </span>
+              </button>
+              <span className="voice-console-divider" aria-hidden="true" />
+              <button
+                type="button"
+                className="voice-console-control"
+                onClick={handleMute}
+                aria-label={voice.muted ? "Mikrofonu aç" : "Mikrofonu sustur"}
+                aria-pressed={voice.muted}
+                data-testid="voice-mute-button"
+              >
+                {voice.muted ? <MicOff size={17} aria-hidden="true" /> : <Mic size={17} aria-hidden="true" />}
+              </button>
+              <button
+                type="button"
+                className="voice-console-control"
+                onClick={openChat}
+                aria-label="Yazılı sohbeti aç"
+                data-testid="voice-chat-button"
+              >
+                <MessageCircle size={17} aria-hidden="true" />
+              </button>
+            </div>
 
             <QuickActions onAction={handleQuickAction} />
             <p className="status-note" aria-live="polite" data-testid="interaction-status">
@@ -235,6 +290,31 @@ export default function Home() {
             </p>
           </div>
         </section>
+
+        <AutomationsPanel
+          open={automationsOpen}
+          onClose={() => setAutomationsOpen(false)}
+          onStatus={setStatusNote}
+        />
+        {automationsOpen ? (
+          <button
+            type="button"
+            className="automations-backdrop"
+            onClick={() => setAutomationsOpen(false)}
+            aria-label="Otomasyon panelini kapat"
+            data-testid="automations-backdrop"
+          />
+        ) : null}
+        <button
+          type="button"
+          className="automations-fab"
+          onClick={() => setAutomationsOpen(true)}
+          aria-label="Otomasyonları aç"
+          data-testid="automations-fab"
+        >
+          <Workflow size={22} aria-hidden="true" />
+        </button>
+
         <ConversationPanel
           draft={message}
           interimTranscript={voice.interimTranscript}

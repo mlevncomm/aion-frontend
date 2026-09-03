@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { ArrowUp, FileUp, Mic, SlidersHorizontal, Zap } from "lucide-react";
+import { ArrowUp, FileUp, Mic, SlidersHorizontal } from "lucide-react";
 import { liveGlowHandlers } from "@/lib/liveGlow";
 
 interface ChatComposerProps {
@@ -10,7 +10,6 @@ interface ChatComposerProps {
   onTools: () => void;
   onMic: () => void;
   voiceActive?: boolean;
-  showProBanner?: boolean;
 }
 
 export default function ChatComposer({
@@ -21,7 +20,6 @@ export default function ChatComposer({
   onTools,
   onMic,
   voiceActive = false,
-  showProBanner = false,
 }: ChatComposerProps) {
   const [toolsOpen, setToolsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,14 +37,6 @@ export default function ChatComposer({
 
   return (
     <form className="composer-wrap" onSubmit={handleSubmit} data-testid="chat-composer-form">
-      {showProBanner ? (
-        <div className="pro-banner" data-testid="composer-pro-banner">
-          <span className="pro-banner-badge" aria-hidden="true">
-            <Zap size={12} strokeWidth={2.4} />
-          </span>
-          <span data-testid="composer-pro-banner-text">Pro ile daha fazla özelliğin kilidini aç</span>
-        </div>
-      ) : null}
       <div className="composer-panel live-glow-surface" {...liveGlowHandlers}>
         <textarea
           value={value}
@@ -58,8 +48,8 @@ export default function ChatComposer({
             }
           }}
           className="composer-input"
-          placeholder="AION'a bir şey sor..."
-          aria-label="AION'a bir şey sor"
+          placeholder="AION'a bir şey yaz..."
+          aria-label="AION'a bir şey yaz"
           rows={2}
           data-testid="chat-message-input"
         />

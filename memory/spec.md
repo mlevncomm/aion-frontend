@@ -3,8 +3,10 @@
 ## What it does
 - Frontend-only, full-screen AION AI assistant home screen modelled on the supplied Dribbble reference (LIX-style holographic AI home).
 - **No backend / no real AI**: the user explicitly requested frontend-only ("backend istemiyorum frontend geliştir"). All interactions are local React demos.
-- Full-viewport responsive assistant: compact vertical circular-icon sidebar rail, mobile slide-out navigation, an iridescent holographic CSS orb, Turkish greeting cluster with subtitle, an inline text composer (with a "Pro" pill banner, "Dosya ekle" + "Araçlar" chips, mic + electric-blue send button), and three quick-action cards.
-- Demo interactions are local-only: sidebar selection, prompt entry/submission (opens a slide-up conversation panel with a local canned Turkish reply), tool popover, file-picker trigger, microphone/voice state, and quick-action prompt filling.
+- Full-viewport responsive assistant: compact vertical circular-icon left sidebar rail, a large iridescent holographic CSS orb with voice-style concentric ripples, Turkish greeting cluster with subtitle, a voice-first control dock (tap-to-talk mic + mute + open-chat), three quick-action cards, and a right-hand vertical "Otomasyonlar" (automations) panel.
+- Voice-first interaction: the text composer/chat is hidden by default and opens on demand (tap the orb, the chat button, a quick action, or the mobile chat control) as a modern slide-up conversation panel. No Pro banner.
+- Right "Otomasyonlar" panel (frontend-only demo): lists automations (Günaydın Özeti, Toplantı Hatırlatıcı, Haber Derlemesi, Odak Modu, E-posta Taslağı) each with a description, schedule and an on/off switch; shows an active count and a "Yeni otomasyon" action. Static right rail on desktop (>=1200px), a slide-in drawer with FAB on tablet, and a top-bar button on mobile.
+- Demo interactions are local-only: sidebar selection, voice/mic state, prompt entry/submission (local canned Turkish reply), tool popover, file-picker trigger, quick-action prompt filling, and automation toggles.
 - A Turkish AION admin login screen gates the app before the assistant workspace is rendered.
 
 ## Visual system

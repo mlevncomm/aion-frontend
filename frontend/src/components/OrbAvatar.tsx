@@ -6,6 +6,11 @@ interface OrbAvatarProps {
 export default function OrbAvatar({ activity = "idle", onClick }: OrbAvatarProps) {
   const orbContent = (
     <>
+      <span className="orb-rings" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
       <span className="orb-wave" aria-hidden="true" />
       <div className="orb-mask">
         <div className="orb-halo" aria-hidden="true" />
@@ -28,7 +33,7 @@ export default function OrbAvatar({ activity = "idle", onClick }: OrbAvatarProps
         data-activity={activity}
         data-testid="ai-orb-avatar"
         onClick={onClick}
-        aria-label="AION sohbetini aç"
+        aria-label="AION ile konuşmak için dokun"
       >
         {orbContent}
       </button>

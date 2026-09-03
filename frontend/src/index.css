@@ -3212,3 +3212,312 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .greeting-subtitle {
   color: rgba(140, 150, 172, 0.78);
 }
+
+/* ============================================================
+   Voice-first orb dalgalari + daha buyuk orb (masaustu)
+   ============================================================ */
+.orb-rings {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.orb-rings i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgb(var(--aion-active-rgb) / 0.42);
+  opacity: 0;
+  animation: orb-ripple 3.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.orb-rings i:nth-child(2) { animation-delay: 1.2s; }
+.orb-rings i:nth-child(3) { animation-delay: 2.4s; }
+
+@keyframes orb-ripple {
+  0% { opacity: 0.55; transform: scale(0.82); }
+  70% { opacity: 0.12; }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+
+.orb-frame.is-listening .orb-rings i,
+.orb-frame.is-speaking .orb-rings i {
+  animation-duration: 1.9s;
+  border-color: rgb(var(--aion-bright-rgb) / 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-rings i { animation: none; }
+}
+
+@media (min-width: 768px) {
+  .orb-frame {
+    width: clamp(196px, 19vw, 252px);
+  }
+
+  .hero-content {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   Sag Otomasyonlar paneli (masaustu sabit ray / mobil cekmece)
+   ============================================================ */
+.automations-panel {
+  display: flex;
+  z-index: 25;
+  width: 340px;
+  height: 100svh;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 40px 20px 24px;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 8, 12, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.automations-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.automations-kicker {
+  margin: 0 0 4px;
+  color: rgb(var(--aion-bright-rgb) / 0.82);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.automations-header h2 {
+  margin: 0;
+  color: #f4f6fb;
+  font-family: "Outfit Variable", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.automations-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #aeb8c8;
+  background: rgba(255, 255, 255, 0.03);
+  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.automations-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+  transform: rotate(4deg);
+}
+
+.automations-summary {
+  margin: 15px 0 16px;
+  color: var(--aion-muted);
+  font-size: 12px;
+}
+
+.automations-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--aion-accent-rgb) / 0.28) transparent;
+}
+
+.automation-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 240ms ease, background-color 240ms ease, transform 240ms ease;
+}
+
+.automation-card.is-on {
+  border-color: rgb(var(--aion-active-rgb) / 0.42);
+  background: rgb(var(--aion-active-rgb) / 0.1);
+}
+
+.automation-card:hover {
+  transform: translateY(-2px);
+}
+
+.automation-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 12px;
+  color: rgb(var(--aion-bright-rgb) / 0.95);
+  background: rgb(var(--aion-accent-rgb) / 0.16);
+}
+
+.automation-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.automation-title {
+  color: #eef2f8;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.automation-desc {
+  color: rgba(150, 162, 180, 0.82);
+  font-size: 11.5px;
+  line-height: 1.42;
+}
+
+.automation-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(140, 155, 180, 0.7);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.automation-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.automation-switch.is-on {
+  background: var(--aion-active);
+  box-shadow: 0 0 12px rgb(var(--aion-active-rgb) / 0.5);
+}
+
+.automation-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.automation-switch.is-on .automation-knob {
+  transform: translateX(18px);
+}
+
+.automations-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  margin-top: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  color: rgb(var(--aion-bright-rgb) / 0.95);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13px;
+  font-weight: 560;
+  transition: border-color 220ms ease, background-color 220ms ease;
+}
+
+.automations-add:hover {
+  border-color: rgb(var(--aion-active-rgb) / 0.5);
+  background: rgb(var(--aion-active-rgb) / 0.08);
+}
+
+.automations-fab,
+.automations-backdrop {
+  display: none;
+}
+
+@media (max-width: 1199px) {
+  .automations-panel {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 46;
+    width: min(88vw, 366px);
+    padding: max(34px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    background: linear-gradient(200deg, rgba(12, 16, 26, 0.98), rgba(6, 9, 15, 0.98));
+    box-shadow: -24px 0 60px rgba(0, 0, 0, 0.5);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(102%);
+    transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease, visibility 0s linear 300ms;
+  }
+
+  .automations-panel.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0s;
+  }
+
+  .automations-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    display: block;
+    border: 0;
+    background: rgba(1, 4, 8, 0.6);
+    backdrop-filter: blur(2px);
+    animation: backdrop-in 220ms ease-out both;
+  }
+
+  .automations-fab {
+    position: fixed;
+    right: 18px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    z-index: 30;
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    color: #fff;
+    background: var(--aion-active);
+    box-shadow: 0 10px 26px rgb(var(--aion-active-rgb) / 0.4);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .automations-fab:hover {
+    transform: translateY(-2px) scale(1.04);
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-topbar {
+    justify-content: space-between;
+  }
+
+  .automations-fab {
+    display: none;
+  }
+}
