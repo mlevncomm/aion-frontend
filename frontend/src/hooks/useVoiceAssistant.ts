@@ -66,6 +66,7 @@ export function useVoiceAssistant() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const meterFrameRef = useRef<number | null>(null);
   const meterStartingRef = useRef(false);
+  const speakMeterRef = useRef<number | null>(null);
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [continuousEnabled, setContinuousEnabled] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -73,6 +74,13 @@ export function useVoiceAssistant() {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [error, setError] = useState("");
   const recognitionSupported = getRecognitionConstructor() !== null;
+
+  const applyLevel = useCallback((rawLevel: number) => {
+    const level = Math.min(1, Math.max(0, rawLevel));
+    document.documentElement.style.setProperty("--voice-scale", (1 + level * 0.14).toFixed(3));
+    document.documentElement.style.setProperty("--voice-level", level.toFixed(3));
+    document.documentElement.style.setProperty("--voice-bar-scale", (0.22 + level * 1.5).toFixed(3));
+  }, []);
 
   const stopAudioMeter = useCallback(() => {
     if (meterFrameRef.current !== null) window.cancelAnimationFrame(meterFrameRef.current);
@@ -119,9 +127,7 @@ export function useVoiceAssistant() {
           energy += normalized * normalized;
         }
         const level = Math.min(1, Math.sqrt(energy / samples.length) * 4.6);
-        document.documentElement.style.setProperty("--voice-scale", (1 + level * 0.075).toFixed(3));
-        document.documentElement.style.setProperty("--voice-level", level.toFixed(3));
-        document.documentElement.style.setProperty("--voice-bar-scale", (0.22 + level * 1.35).toFixed(3));
+        applyLevel(level);
         meterFrameRef.current = window.requestAnimationFrame(updateMeter);
       };
       updateMeter();
@@ -130,7 +136,32 @@ export function useVoiceAssistant() {
     } finally {
       meterStartingRef.current = false;
     }
+  }, [applyLevel]);
+
+  const stopSpeakingMeter = useCallback(() => {
+    if (speakMeterRef.current !== null) window.cancelAnimationFrame(speakMeterRef.current);
+    speakMeterRef.current = null;
+    document.documentElement.style.setProperty("--voice-scale", "1");
+    document.documentElement.style.setProperty("--voice-level", "0");
+    document.documentElement.style.setProperty("--voice-bar-scale", "0.22");
   }, []);
+
+  // speechSynthesis canli genlik vermez; konusma temposunu taklit eden
+  // sentetik bir zarf ureterek orbu AI konustukca hareketlendiririz.
+  const startSpeakingMeter = useCallback(() => {
+    if (speakMeterRef.current !== null) return;
+    const start = performance.now();
+    const tick = () => {
+      const t = (performance.now() - start) / 1000;
+      const syllable = 0.5 + 0.5 * Math.sin(t * 12.5);
+      const wobble = 0.5 + 0.5 * Math.sin(t * 3.1 + 1.2);
+      const gate = Math.sin(t * 1.9) > -0.4 ? 1 : 0.12;
+      const jitter = Math.random() * 0.3;
+      applyLevel((syllable * 0.5 + wobble * 0.2 + jitter * 0.4) * gate);
+      speakMeterRef.current = window.requestAnimationFrame(tick);
+    };
+    tick();
+  }, [applyLevel]);
 
   const stopRecognition = useCallback(() => {
     recognitionRef.current?.stop();
@@ -238,6 +269,7 @@ export function useVoiceAssistant() {
   const speak = useCallback((text: string) => {
     pausedForResponseRef.current = true;
     stopRecognition();
+    stopAudioMeter();
     if (!("speechSynthesis" in window)) {
       setStatus("idle");
       pausedForResponseRef.current = false;
@@ -252,18 +284,27 @@ export function useVoiceAssistant() {
     utterance.pitch = 0.94;
     const turkishVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("tr"));
     if (turkishVoice) utterance.voice = turkishVoice;
-    utterance.onstart = () => setStatus("speaking");
+    utterance.onstart = () => {
+      setStatus("speaking");
+      startSpeakingMeter();
+    };
     utterance.onend = () => {
+      stopSpeakingMeter();
       pausedForResponseRef.current = false;
-      if (continuousEnabledRef.current && !mutedRef.current) launchRecognitionRef.current();
-      else setStatus(mutedRef.current ? "muted" : "idle");
+      if (continuousEnabledRef.current && !mutedRef.current) {
+        void startAudioMeter();
+        launchRecognitionRef.current();
+      } else {
+        setStatus(mutedRef.current ? "muted" : "idle");
+      }
     };
     utterance.onerror = () => {
+      stopSpeakingMeter();
       pausedForResponseRef.current = false;
       setStatus("error");
     };
     window.speechSynthesis.speak(utterance);
-  }, [stopRecognition]);
+  }, [startAudioMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markProcessing = useCallback(() => {
     pausedForResponseRef.current = true;
@@ -277,8 +318,9 @@ export function useVoiceAssistant() {
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     recognitionRef.current?.abort();
     window.speechSynthesis?.cancel();
+    stopSpeakingMeter();
     stopAudioMeter();
-  }, [stopAudioMeter]);
+  }, [stopAudioMeter, stopSpeakingMeter]);
 
   return {
     activateContinuous,

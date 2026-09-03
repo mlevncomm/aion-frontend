@@ -11,7 +11,7 @@
 
 ## Visual system
 - Default theme is **"AION Mavi"** (`data-aion-theme="reference"`): deep obsidian `#0B0D13` surfaces, a vibrant electric-blue (`#2563EB`) atmospheric glow rising from the bottom-centre, restrained glass panels, Urbanist typography.
-- The assistant orb is built entirely with layered CSS (no image): a spinning conic iridescent halo (cyan→indigo→violet→pink→cyan), fluid plasma blobs, a glass specular highlight and a voice spectrum; it reacts to idle / typing / sending / listening / speaking states.
+- The assistant orb is built entirely with layered CSS (no image): a spinning conic iridescent halo, fluid plasma blobs, a glass specular highlight, a soft glow aura and a voice spectrum. It is **sound/level reactive** — the voice hook writes `--voice-level`/`--voice-scale`/`--voice-bar-scale` onto `<html>` (from the mic analyser while listening, and from a synthetic speech-envelope while the AI speaks), and the orb scales, pulses (a reactive ring) and brightens with that level so it visibly moves as AION talks. Idle/typing/sending/listening/speaking states also drive its motion.
 - The Settings control opens a theme picker: AION Mavi (default, blue holographic), Orman (green), Koyu amber, Monokrom. The choice persists in `localStorage` and also applies to the login screen. (Alternate themes keep the earlier green/amber/mono orb + accents; only the default is the blue holographic reference look.)
 - Login card, composer, and quick actions use faint pointer-following glass highlights (`liveGlow`).
 
