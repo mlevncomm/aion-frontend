@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AudioLines, Menu, MessageCircle, Mic, MicOff, Workflow } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AutomationsPanel from "@/components/AutomationsPanel";
@@ -9,6 +9,7 @@ import Sidebar from "@/components/Sidebar";
 import ThemePicker from "@/components/ThemePicker";
 import { endFrontendSession } from "@/lib/frontendAuth";
 import { useVoiceAssistant, type VoiceStatus } from "@/hooks/useVoiceAssistant";
+import { useHermesChat } from "@/hooks/useHermesChat";
 
 const quickPrompts: Record<string, string> = {
   surprise: "Bugün için beni şaşırtacak yaratıcı bir fikir ver",
@@ -39,19 +40,6 @@ const voiceStatusText: Record<VoiceStatus, string> = {
   error: "Mikrofonu yeniden dene",
 };
 
-function createLocalResponse(prompt: string): string {
-  const normalized = prompt.toLocaleLowerCase("tr-TR");
-  if (normalized.includes("merhaba") || normalized.includes("selam")) {
-    return "Merhaba Mehmet. Seni dinliyorum; bugün birlikte neye odaklanalım?";
-  }
-  if (normalized.includes("plan")) {
-    return "Elbette Mehmet. Önce hedefi netleştirip ardından küçük ve uygulanabilir adımlara bölebiliriz.";
-  }
-  if (normalized.includes("özet")) {
-    return "Metni sohbete eklediğinde ana fikirleri kısa ve anlaşılır biçimde özetleyebilirim.";
-  }
-  return "Mesajını aldım Mehmet. Bu yerel demoda sesli yanıt veriyorum; gerçek yapay zekâ bağlantısı eklendiğinde ayrıntılı şekilde yardımcı olacağım.";
-}
 
 export default function Home() {
   const navigate = useNavigate();
@@ -63,13 +51,12 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [automationsOpen, setAutomationsOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const responseTimer = useRef<number | null>(null);
   const voice = useVoiceAssistant();
+  const { isSending, assistantText, send, connect } = useHermesChat();
 
-  useEffect(() => () => {
-    if (responseTimer.current !== null) window.clearTimeout(responseTimer.current);
-  }, []);
+  useEffect(() => {
+    connect();
+  }, [connect]);
 
   const handleSidebarSelect = (item: string) => {
     setActiveItem(item);
@@ -85,23 +72,14 @@ export default function Home() {
       return;
     }
     const userMessage: ChatMessage = { id: `user-${Date.now()}`, role: "user", text: trimmedPrompt };
-    const response = createLocalResponse(trimmedPrompt);
     setMessages((current) => [...current, userMessage]);
     setMessage("");
-    setIsSending(true);
-    voice.markProcessing();
-    if (responseTimer.current !== null) window.clearTimeout(responseTimer.current);
-    responseTimer.current = window.setTimeout(() => {
-      setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", text: response }]);
-      setIsSending(false);
-      voice.speak(response);
-    }, 650);
+    send(trimmedPrompt);
     setStatusNote("AION yanıtını hazırlıyor");
-  }, [voice.markProcessing, voice.speak]);
+  }, [send]);
 
   const handleSubmit = () => {
-    if (message.trim()) setChatOpen(true);
-    submitPrompt(message);
+    if (message.trim()) submitPrompt(message);
   };
 
   useEffect(() => {
@@ -110,6 +88,12 @@ export default function Home() {
     submitPrompt(voice.transcript);
     voice.consumeTranscript();
   }, [submitPrompt, voice.consumeTranscript, voice.transcript]);
+
+  useEffect(() => {
+    if (assistantText && !isSending) {
+      setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", text: assistantText }]);
+    }
+  }, [assistantText, isSending]);
 
   const openChat = () => {
     setMobileMenuOpen(false);
