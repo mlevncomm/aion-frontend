@@ -2,8 +2,7 @@
 // same code works in dev (Vite proxies /api → :8001) and behind a single origin in prod.
 const BASE = "/api";
 
-// Fields are declared, not constructor parameter properties: tsconfig sets
-// erasableSyntaxOnly, which rejects `constructor(readonly status: number)`.
+// Fields declared individually to avoid tsconfig erasableSyntaxOnly rejection.
 export class ApiError extends Error {
   status: number;
   body: unknown;
