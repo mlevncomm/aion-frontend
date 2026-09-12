@@ -6,8 +6,6 @@ interface ChatComposerProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
-  onImport: (fileName: string) => void;
-  onTools: () => void;
   onMic: () => void;
   voiceActive?: boolean;
 }

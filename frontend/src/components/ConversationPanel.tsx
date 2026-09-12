@@ -15,11 +15,9 @@ interface ConversationPanelProps {
   messages: ChatMessage[];
   onChange: (value: string) => void;
   onClose: () => void;
-  onImport: (fileName: string) => void;
   onMic: () => void;
   onNewChat: () => void;
   onSubmit: () => void;
-  onTools: () => void;
   open: boolean;
   voiceError: string;
   voiceStatus: VoiceStatus;
@@ -41,11 +39,9 @@ export default function ConversationPanel({
   messages,
   onChange,
   onClose,
-  onImport,
   onMic,
   onNewChat,
   onSubmit,
-  onTools,
   open,
   voiceError,
   voiceStatus,
@@ -141,8 +137,6 @@ export default function ConversationPanel({
           voiceActive={voiceStatus === "listening"}
           onChange={onChange}
           onSubmit={onSubmit}
-          onImport={onImport}
-          onTools={onTools}
           onMic={onMic}
         />
       </section>

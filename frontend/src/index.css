@@ -7005,3 +7005,483 @@ select {
     max-height: 100dvh;
   }
 }
+
+
+/* ============================================================
+   AION Product Polish v4 — refined navigation + pearl/graphite atmosphere
+   Blue is now an accent inside the orb, never a large background wash.
+   ============================================================ */
+html[data-aion-theme="reference"] {
+  --aion-base: #08090d;
+  --aion-surface: #0d0f15;
+  --aion-surface-strong: #151823;
+  --aion-accent: #8e87cf;
+  --aion-accent-bright: #d8d5f2;
+  --aion-accent-deep: #5d588f;
+  --aion-accent-rgb: 142 135 207;
+  --aion-bright-rgb: 216 213 242;
+  --aion-active: #8078c6;
+  --aion-active-bright: #a49ce2;
+  --aion-active-rgb: 128 120 198;
+  --aion-panel-rgb: 13 15 21;
+  --aion-text-tint: #ecebf5;
+  --aion-muted: #8d8f9a;
+}
+
+html[data-aion-theme="reference"] body,
+html[data-aion-theme="reference"] .assistant-stage {
+  background:
+    radial-gradient(ellipse 72% 42% at 50% 112%, rgba(126, 112, 196, 0.13), transparent 70%),
+    radial-gradient(circle at 86% 12%, rgba(211, 203, 244, 0.035), transparent 32%),
+    radial-gradient(circle at 12% 34%, rgba(255, 255, 255, 0.018), transparent 30%),
+    #08090d;
+}
+
+html[data-aion-theme="reference"] .assistant-stage::before {
+  width: min(76vw, 1040px);
+  height: min(32vh, 310px);
+  background: radial-gradient(ellipse at center, rgba(143, 132, 211, 0.22), rgba(101, 91, 160, 0.075) 44%, transparent 73%);
+  filter: blur(70px);
+  opacity: 0.78;
+}
+
+html[data-aion-theme="reference"] .content-wash {
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(146, 133, 205, 0.105), transparent 48%),
+    radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.018), transparent 28%);
+}
+
+html[data-aion-theme="reference"] .assistant-sidebar {
+  border-right-color: rgba(255, 255, 255, 0.055);
+  background:
+    linear-gradient(180deg, rgba(15, 17, 23, 0.96), rgba(9, 10, 14, 0.985)),
+    #0b0c10;
+  box-shadow: 18px 0 54px rgba(0, 0, 0, 0.18), inset -1px 0 rgba(255, 255, 255, 0.018);
+}
+
+html[data-aion-theme="reference"] .quick-action-button,
+html[data-aion-theme="reference"] .voice-console,
+html[data-aion-theme="reference"] .home-system-strip,
+html[data-aion-theme="reference"] .workspace-project-card,
+html[data-aion-theme="reference"] .workspace-automation-card,
+html[data-aion-theme="reference"] .workspace-setting-card,
+html[data-aion-theme="reference"] .workspace-profile-grid article,
+html[data-aion-theme="reference"] .workspace-kpi,
+html[data-aion-theme="reference"] .workspace-alert-card,
+html[data-aion-theme="reference"] .workspace-session-card,
+html[data-aion-theme="reference"] .workspace-profile-card {
+  border-color: rgba(255, 255, 255, 0.07);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    rgba(12, 14, 19, 0.72);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.026);
+}
+
+html[data-aion-theme="reference"] .quick-action-button:hover,
+html[data-aion-theme="reference"] .quick-action-button:focus-visible,
+html[data-aion-theme="reference"] .workspace-setting-card.is-button:hover {
+  border-color: rgba(173, 166, 226, 0.28);
+  background:
+    linear-gradient(145deg, rgba(145, 133, 205, 0.075), rgba(255, 255, 255, 0.018)),
+    rgba(13, 14, 20, 0.84);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.045);
+}
+
+html[data-aion-theme="reference"] .quick-action-icon,
+html[data-aion-theme="reference"] .workspace-card-icon,
+html[data-aion-theme="reference"] .workspace-session-icon,
+html[data-aion-theme="reference"] .workspace-kpi-icon,
+html[data-aion-theme="reference"] .workspace-setting-card > span,
+html[data-aion-theme="reference"] .workspace-profile-grid article > svg {
+  border-color: rgba(181, 174, 231, 0.13);
+  color: #d8d4f2;
+  background: rgba(134, 124, 198, 0.065);
+}
+
+html[data-aion-theme="reference"] .conversation-panel {
+  border-color: rgba(255, 255, 255, 0.075);
+  background:
+    radial-gradient(circle at 50% 108%, rgba(128, 116, 190, 0.09), transparent 46%),
+    linear-gradient(165deg, rgba(17, 19, 27, 0.985), rgba(7, 8, 12, 0.995));
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+html[data-aion-theme="reference"] .conversation-panel .composer-panel {
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(7, 8, 12, 0.92);
+}
+
+html[data-aion-theme="reference"] .conversation-message.is-user p {
+  background: rgba(128, 120, 198, 0.13);
+}
+
+html[data-aion-theme="reference"] .voice-console.is-listening,
+html[data-aion-theme="reference"] .voice-console.is-speaking {
+  border-color: rgba(168, 158, 225, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(162, 151, 220, 0.05);
+}
+
+html[data-aion-theme="reference"] .login-stage {
+  background:
+    radial-gradient(ellipse 75% 45% at 50% 110%, rgba(128, 116, 190, 0.16), transparent 68%),
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.022), transparent 28%),
+    #08090d;
+}
+
+html[data-aion-theme="reference"] .login-visual {
+  background: linear-gradient(150deg, rgba(12, 14, 19, 0.92), rgba(18, 18, 27, 0.62));
+}
+
+html[data-aion-theme="reference"] .login-panel {
+  background: rgba(7, 8, 12, 0.68);
+}
+
+html[data-aion-theme="reference"] .login-card {
+  border-color: rgba(202, 197, 231, 0.105);
+  background: linear-gradient(160deg, rgba(23, 24, 32, 0.88), rgba(9, 10, 14, 0.95));
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.48), 0 0 60px rgba(130, 119, 191, 0.055), inset 0 1px rgba(255, 255, 255, 0.045);
+}
+
+html[data-aion-theme="reference"] .login-card::before {
+  background: linear-gradient(90deg, transparent, rgba(210, 205, 239, 0.24), transparent);
+}
+
+html[data-aion-theme="reference"] .login-card-icon {
+  border-color: rgba(190, 182, 229, 0.14);
+  color: #d7d3ef;
+  background: rgba(128, 120, 198, 0.075);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.045);
+}
+
+html[data-aion-theme="reference"] .login-input:hover,
+html[data-aion-theme="reference"] .login-input:focus {
+  border-color: rgba(164, 154, 219, 0.26);
+  box-shadow: 0 0 0 3px rgba(128, 120, 198, 0.055);
+}
+
+html[data-aion-theme="reference"] .login-submit {
+  color: #fbfaff;
+  background: linear-gradient(135deg, #726bb4, #938bd1);
+  box-shadow: 0 14px 30px rgba(92, 84, 155, 0.23), inset 0 1px rgba(255, 255, 255, 0.2);
+}
+
+html[data-aion-theme="reference"] .login-submit:hover:not(:disabled) {
+  box-shadow: 0 18px 38px rgba(92, 84, 155, 0.3), inset 0 1px rgba(255, 255, 255, 0.24);
+}
+
+html[data-aion-theme="reference"] .theme-swatch-reference {
+  background: linear-gradient(145deg, #090a0e, #7770b8 58%, #e2def5);
+}
+
+/* Refined sidebar information architecture. */
+.assistant-sidebar {
+  gap: 0;
+}
+
+.sidebar-top {
+  gap: 22px;
+}
+
+.sidebar-brand-row > div:first-child {
+  min-width: 0;
+}
+
+.sidebar-brand-row .sidebar-product-label {
+  margin-top: 6px;
+  padding: 0;
+}
+
+.sidebar-section {
+  display: grid;
+  width: 100%;
+  gap: 7px;
+}
+
+.sidebar-section-title {
+  display: block;
+  padding: 0 11px;
+  color: rgba(150, 153, 165, 0.48);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sidebar-navigation {
+  display: grid;
+  gap: 6px;
+}
+
+.sidebar-new-chat {
+  display: flex;
+  width: 100%;
+  min-height: 47px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid rgba(188, 181, 229, 0.13);
+  border-radius: 14px;
+  color: rgba(243, 241, 251, 0.92);
+  background: linear-gradient(135deg, rgba(130, 121, 197, 0.16), rgba(255, 255, 255, 0.025));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  font-weight: 630;
+  transition: transform 170ms ease, border-color 170ms ease, background-color 170ms ease, box-shadow 170ms ease;
+}
+
+.sidebar-new-chat:hover,
+.sidebar-new-chat:focus-visible {
+  border-color: rgba(188, 181, 229, 0.3);
+  background: linear-gradient(135deg, rgba(130, 121, 197, 0.23), rgba(255, 255, 255, 0.035));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.17), inset 0 1px rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.sidebar-button {
+  position: relative;
+  border: 1px solid transparent;
+  color: rgba(187, 190, 200, 0.68);
+  background: transparent;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.sidebar-button:hover,
+.sidebar-button:focus-visible {
+  color: rgba(240, 239, 246, 0.9);
+  border-color: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.sidebar-button.is-active,
+html[data-aion-theme="reference"] .sidebar-button.is-active {
+  color: #f4f2fb;
+  border-color: rgba(179, 171, 225, 0.13);
+  background:
+    linear-gradient(90deg, rgba(135, 125, 197, 0.13), rgba(135, 125, 197, 0.035)),
+    rgba(255, 255, 255, 0.018);
+  box-shadow: inset 3px 0 rgba(166, 157, 219, 0.68), inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.sidebar-icon-wrap {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 10px;
+  color: inherit;
+  background: transparent;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.sidebar-icon-wrap svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar-button.is-active .sidebar-icon-wrap {
+  color: #dedaf5;
+  background: rgba(143, 134, 205, 0.09);
+}
+
+.sidebar-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-badge,
+.sidebar-live-pill {
+  display: inline-flex;
+  min-width: 22px;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 999px;
+  color: rgba(199, 201, 210, 0.68);
+  background: rgba(255, 255, 255, 0.035);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.sidebar-badge.is-alert {
+  border-color: rgba(220, 174, 101, 0.17);
+  color: #dfbc84;
+  background: rgba(178, 123, 47, 0.07);
+}
+
+.sidebar-live-pill {
+  min-width: auto;
+  border-color: rgba(103, 187, 146, 0.13);
+  color: #91cbb0;
+  background: rgba(66, 148, 107, 0.055);
+  letter-spacing: 0.04em;
+}
+
+.sidebar-system-section {
+  margin-bottom: 11px;
+}
+
+.profile-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+  text-align: left;
+}
+
+.profile-copy strong,
+.profile-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-copy small {
+  color: rgba(143, 147, 157, 0.48);
+  font-size: 8px;
+}
+
+.profile-button {
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.profile-button:hover,
+.profile-button.is-active {
+  border-color: rgba(174, 166, 219, 0.15);
+  background: rgba(133, 124, 194, 0.055);
+}
+
+/* Tablet uses an intentional icon rail instead of crushed labels. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .sidebar-brand-row .sidebar-product-label,
+  .sidebar-section-title,
+  .sidebar-new-chat span,
+  .sidebar-label,
+  .sidebar-live-pill,
+  .profile-copy,
+  .sidebar-badge {
+    display: none;
+  }
+
+  .sidebar-top {
+    gap: 18px;
+  }
+
+  .sidebar-new-chat {
+    width: 48px;
+    min-height: 48px;
+    margin: 0 auto;
+    padding: 0;
+    border-radius: 14px;
+  }
+
+  .sidebar-section,
+  .sidebar-navigation {
+    justify-items: center;
+  }
+
+  .sidebar-button {
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+    justify-content: center;
+    padding: 0;
+    border-radius: 15px;
+  }
+
+  .sidebar-button.is-active,
+  html[data-aion-theme="reference"] .sidebar-button.is-active {
+    box-shadow: inset 0 0 0 1px rgba(166, 157, 219, 0.1);
+  }
+
+  .sidebar-icon-wrap {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .profile-button {
+    width: 52px;
+    min-height: 52px;
+    justify-content: center;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .profile-status-dot {
+    position: absolute;
+    right: 3px;
+    bottom: 4px;
+    margin: 0;
+  }
+}
+
+/* Mobile restores complete labels and large touch targets. */
+@media (max-width: 767px) {
+  html[data-aion-theme="reference"] .assistant-sidebar {
+    background:
+      radial-gradient(circle at 30% 0%, rgba(146, 136, 205, 0.07), transparent 28%),
+      linear-gradient(180deg, rgba(15, 17, 23, 0.995), rgba(8, 9, 13, 0.995));
+  }
+
+  .sidebar-brand-row .sidebar-product-label,
+  .sidebar-section-title,
+  .sidebar-new-chat span,
+  .sidebar-label,
+  .profile-copy {
+    display: block;
+  }
+
+  .sidebar-top {
+    gap: 18px;
+  }
+
+  .sidebar-new-chat {
+    min-height: 52px;
+    font-size: 13px;
+  }
+
+  .sidebar-section-title {
+    padding: 0 10px;
+    font-size: 8.5px;
+  }
+
+  .sidebar-button {
+    min-height: 52px;
+    padding: 0 11px;
+  }
+
+  .sidebar-badge,
+  .sidebar-live-pill {
+    display: inline-flex;
+  }
+
+  .profile-copy {
+    display: grid;
+  }
+
+  .profile-copy small {
+    font-size: 9px;
+  }
+
+  html[data-aion-theme="reference"] .conversation-panel {
+    background:
+      radial-gradient(circle at 50% 110%, rgba(128, 116, 190, 0.075), transparent 42%),
+      #090a0f;
+  }
+
+  html[data-aion-theme="reference"] .mobile-topbar {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+    background: rgba(9, 10, 14, 0.9);
+  }
+}

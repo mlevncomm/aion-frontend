@@ -118,6 +118,7 @@ export default function Home() {
     setActiveItem(item);
     setMobileMenuOpen(false);
     setThemePickerOpen(false);
+    setChatOpen(false);
     setStatusNote(item === "home" ? "" : `${sectionNames[item] ?? item} açıldı`);
   };
 
@@ -177,6 +178,8 @@ export default function Home() {
   };
 
   const handleNewChat = useCallback(async () => {
+    setMobileMenuOpen(false);
+    setThemePickerOpen(false);
     if (isSending) {
       setStatusNote("Mevcut yanıt tamamlanınca yeni sohbet açabilirsin");
       return;
@@ -226,15 +229,17 @@ export default function Home() {
   }, [chatSessionId]);
 
   const handleQuickAction = (id: string) => {
-    setMessage(quickPrompts[id] ?? "");
+    const prompt = quickPrompts[id];
+    if (!prompt) return;
     openChat();
-    setStatusNote("İstem sohbet alanına eklendi");
+    setStatusNote("AION komutu çalıştırılıyor");
+    void submitPrompt(prompt);
   };
 
   const handleAskFromWorkspace = (prompt: string) => {
-    setMessage(prompt);
     openChat();
-    setStatusNote("AION'a sorulacak istem hazır");
+    setStatusNote("AION gerçek kaynakları kontrol ediyor");
+    void submitPrompt(prompt);
   };
 
   const handleLogout = () => {
@@ -300,9 +305,14 @@ export default function Home() {
         <Sidebar
           activeItem={activeItem}
           mobileOpen={mobileMenuOpen}
+          projectCount={projectCount}
+          alertCount={alertCount}
+          chatOpen={chatOpen}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
           onSelect={handleSidebarSelect}
+          onOpenChat={openChat}
+          onNewChat={() => { void handleNewChat(); }}
         />
 
         <ThemePicker
@@ -439,11 +449,9 @@ export default function Home() {
           messages={messages}
           onChange={setMessage}
           onClose={() => setChatOpen(false)}
-          onImport={(fileName) => setStatusNote(`${fileName} seçildi; dosya yükleme backend bağlantısı hazır olduğunda gönderilecek`)}
           onMic={handleMute}
           onNewChat={() => { void handleNewChat(); }}
           onSubmit={handleSubmit}
-          onTools={() => setStatusNote("Araç kullanımı AION backend izin politikasıyla yönetiliyor")}
           open={chatOpen}
           voiceError={voice.error}
           voiceStatus={voice.status}
