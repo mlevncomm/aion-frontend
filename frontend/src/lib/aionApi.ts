@@ -300,7 +300,7 @@ export async function getAionControlKey(): Promise<{ key: string; masked: string
 export async function listAionChatSessions(limit = 40): Promise<AgentChatSession[]> {
   const safeLimit = Math.max(1, Math.min(limit, 100));
   const result = await apiGet<{ sessions: AgentChatSession[] }>(
-    `/agent-chat/sessions?surface=agent&limit=${safeLimit}`,
+    `/agent-chat/sessions?surface=jarvis&limit=${safeLimit}`,
   );
   return result.sessions ?? [];
 }
@@ -345,7 +345,7 @@ export async function createAionChatSession(): Promise<string> {
     model: DEFAULT_AION_MODEL,
     permission_mode: "ask",
     title: "AION",
-    surface: "agent",
+    surface: "jarvis",
   });
   selectAionChatSession(session.session_id);
   return session.session_id;
@@ -355,8 +355,13 @@ export async function ensureAionChatSession(): Promise<string> {
   const current = sessionStorage.getItem(CHAT_SESSION_KEY);
   if (current) {
     try {
-      await apiGet<AgentChatSnapshot>(`/agent-chat/sessions/${encodeURIComponent(current)}`);
-      return current;
+      const snapshot = await apiGet<AgentChatSnapshot>(`/agent-chat/sessions/${encodeURIComponent(current)}`);
+      // AION used the generic `agent` surface before connected-account tools
+      // were safely bounded. Migrate the browser to the dedicated Jarvis/AION
+      // surface so future turns can use real connected services through the
+      // ToolExecutor risk/approval gates. Old sessions remain persisted.
+      if (snapshot.session.surface === "jarvis") return current;
+      sessionStorage.removeItem(CHAT_SESSION_KEY);
     } catch {
       sessionStorage.removeItem(CHAT_SESSION_KEY);
     }
