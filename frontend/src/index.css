@@ -5959,3 +5959,1049 @@ html[data-aion-theme="mono"] .orb-reactive-color-four {
   background: rgba(122, 112, 218, 0.12);
 }
 .workspace-access-actions button:disabled { cursor: not-allowed; opacity: .38; }
+
+
+/* ============================================================
+   AION Mobile-first responsive hardening — 2026-09-12
+   One final override layer so every product surface behaves like a native app.
+   ============================================================ */
+html {
+  min-width: 320px;
+  min-height: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  background: var(--aion-base);
+}
+
+body,
+#root,
+.assistant-stage,
+.assistant-shell,
+.login-stage,
+.login-shell {
+  min-width: 0;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.assistant-content,
+.hero-content,
+.workspace-view,
+.workspace-view-header > div,
+.workspace-project-card,
+.workspace-alert-card > div,
+.workspace-session-copy,
+.workspace-setting-card > div,
+.workspace-profile-copy,
+.conversation-heading > div,
+.conversation-message p,
+.quick-action-copy {
+  min-width: 0;
+}
+
+.workspace-view-copy,
+.workspace-project-card > p,
+.workspace-alert-card p,
+.workspace-setting-card p,
+.workspace-profile-grid article p,
+.conversation-message p,
+.interim-transcript,
+.voice-error {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.assistant-content.is-home,
+.assistant-content.is-workspace,
+.conversation-messages,
+.assistant-sidebar,
+.theme-picker {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (pointer: coarse) {
+  .mobile-menu-button,
+  .mobile-sidebar-close,
+  .conversation-close,
+  .voice-console-control,
+  .workspace-refresh,
+  .workspace-card-action,
+  .workspace-primary-action,
+  .workspace-alert-card > button,
+  .workspace-access-actions button,
+  .theme-picker-close,
+  .password-toggle,
+  .icon-action-button,
+  .send-button,
+  .global-chat-fab {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .sidebar-button,
+  .profile-button,
+  .quick-action-button,
+  .theme-option,
+  .workspace-session-main,
+  .workspace-setting-card.is-button {
+    min-height: 48px;
+  }
+}
+
+/* Tablet keeps the desktop information density, but never squeezes cards. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .assistant-content.is-home {
+    padding-right: clamp(22px, 4vw, 42px);
+    padding-left: clamp(22px, 4vw, 42px);
+  }
+
+  .hero-content {
+    max-width: 780px;
+    padding-bottom: 52px;
+  }
+
+  .greeting h1 {
+    max-width: 720px;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assistant-content.is-workspace {
+    padding-right: clamp(24px, 4vw, 42px);
+    padding-left: clamp(24px, 4vw, 42px);
+  }
+
+  .workspace-view {
+    padding-top: 42px;
+  }
+
+  .workspace-project-grid,
+  .workspace-settings-grid,
+  .workspace-automation-grid,
+  .workspace-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workspace-project-card {
+    min-height: 0;
+  }
+
+  .conversation-panel {
+    width: min(640px, calc(100vw - 110px));
+  }
+}
+
+/* Phones — native-app shell, full safe-area support, no desktop leftovers. */
+@media (max-width: 767px) {
+  html,
+  body,
+  #root,
+  .assistant-stage,
+  .assistant-shell {
+    width: 100%;
+    min-height: 100dvh;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  .assistant-stage,
+  .assistant-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .assistant-stage {
+    overflow: hidden;
+  }
+
+  .assistant-content {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .mobile-topbar {
+    height: calc(64px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(14px, env(safe-area-inset-right));
+    padding-left: max(14px, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--aion-base) 91%, transparent);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(18px) saturate(1.08);
+    -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  }
+
+  .mobile-menu-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .mobile-brand {
+    max-width: calc(100vw - 142px);
+    overflow: hidden;
+    font-size: 14px;
+    letter-spacing: 0.11em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .assistant-sidebar {
+    top: 0;
+    bottom: 0;
+    width: min(88vw, 340px);
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding:
+      calc(18px + env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      calc(18px + env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+  }
+
+  .sidebar-top {
+    gap: 16px;
+  }
+
+  .sidebar-navigation {
+    gap: 7px;
+  }
+
+  .sidebar-button {
+    min-height: 52px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .sidebar-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .profile-button {
+    min-height: 58px;
+  }
+
+  .assistant-content.is-home,
+  .assistant-content.is-workspace {
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+
+  .assistant-content.is-home {
+    padding-top: calc(72px + env(safe-area-inset-top));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 540px;
+    min-height: auto;
+    margin: 0 auto;
+    padding: 14px 0 calc(94px + env(safe-area-inset-bottom));
+  }
+
+  .orb-frame.pearl-orb {
+    width: min(64vw, 240px);
+    max-width: 240px;
+  }
+
+  .greeting {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  .greeting-lead {
+    font-size: clamp(25px, 7.3vw, 32px);
+    line-height: 1.05;
+  }
+
+  .greeting h1 {
+    width: 100%;
+    max-width: 460px;
+    font-size: clamp(31px, 9vw, 42px);
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  .greeting-subtitle {
+    max-width: 400px;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .voice-console {
+    width: 100%;
+    max-width: 440px;
+    min-height: 60px;
+    margin-top: 20px;
+    border-radius: 18px;
+  }
+
+  .voice-console-primary {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 8px 10px 8px 11px;
+  }
+
+  .voice-console-copy {
+    min-width: 0;
+  }
+
+  .voice-console-copy strong,
+  .voice-console-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .voice-console-control {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+  }
+
+  .quick-actions {
+    width: 100%;
+    max-width: 520px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .quick-action-button {
+    min-height: 76px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 17px;
+  }
+
+  .quick-action-icon {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .quick-action-copy strong {
+    font-size: 12px;
+  }
+
+  .quick-action-copy small {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 9.5px;
+    line-height: 1.25;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .home-system-strip {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 14px;
+    border-radius: 15px;
+  }
+
+  .home-system-strip button {
+    min-width: 0;
+    min-height: 58px;
+    padding: 6px 4px;
+  }
+
+  .home-system-strip strong {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-system-strip span {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .status-note {
+    width: 100%;
+    min-height: 16px;
+    margin-top: 12px;
+    font-size: 9.5px;
+    line-height: 1.4;
+  }
+
+  .assistant-content.is-workspace {
+    padding-top: calc(70px + env(safe-area-inset-top));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .workspace-view {
+    width: 100%;
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 18px 0 36px;
+  }
+
+  .workspace-view-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    padding-bottom: 18px;
+  }
+
+  .workspace-eyebrow {
+    font-size: 9px;
+  }
+
+  .workspace-view-header h1 {
+    font-size: clamp(32px, 9vw, 40px);
+    line-height: 1;
+  }
+
+  .workspace-view-copy {
+    max-width: none;
+    margin-top: 9px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .workspace-refresh {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 14px;
+    font-size: 0;
+  }
+
+  .workspace-refresh svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .workspace-toolbar {
+    gap: 10px;
+    margin: 16px 0;
+  }
+
+  .workspace-search {
+    width: 100%;
+    height: 48px;
+    border-radius: 14px;
+  }
+
+  .workspace-search input,
+  .composer-input,
+  .login-input {
+    font-size: 16px;
+  }
+
+  .workspace-observed {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .workspace-project-grid,
+  .workspace-kpi-row,
+  .workspace-automation-grid,
+  .workspace-settings-grid,
+  .workspace-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .workspace-project-card,
+  .workspace-automation-card,
+  .workspace-setting-card,
+  .workspace-profile-grid article,
+  .workspace-profile-card,
+  .workspace-alert-card,
+  .workspace-session-card,
+  .workspace-kpi {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .workspace-project-card {
+    min-height: 0;
+    padding: 18px;
+    border-radius: 19px;
+  }
+
+  .workspace-project-card h2,
+  .workspace-automation-card h2,
+  .workspace-profile-card h2 {
+    font-size: 21px;
+  }
+
+  .workspace-project-card > p,
+  .workspace-automation-card p,
+  .workspace-profile-grid article p {
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .workspace-project-meta {
+    gap: 6px;
+  }
+
+  .workspace-project-meta span {
+    max-width: 100%;
+    font-size: 10px;
+  }
+
+  .workspace-card-topline,
+  .workspace-check-row {
+    align-items: flex-start;
+  }
+
+  .workspace-status-pill {
+    max-width: min(58vw, 220px);
+    min-height: 28px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+
+  .workspace-check-row > span:first-child {
+    flex: 1 1 auto;
+    padding-top: 5px;
+    overflow: visible;
+    font-size: 10.5px;
+    text-overflow: initial;
+    white-space: normal;
+  }
+
+  .workspace-card-action,
+  .workspace-primary-action,
+  .workspace-alert-card > button {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 11px;
+  }
+
+  .workspace-kpi {
+    min-height: 72px;
+    padding: 14px;
+  }
+
+  .workspace-kpi strong {
+    font-size: 20px;
+  }
+
+  .workspace-kpi div span {
+    font-size: 10px;
+  }
+
+  .workspace-alert-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 11px;
+    padding: 14px;
+  }
+
+  .workspace-alert-card strong {
+    font-size: 12.5px;
+  }
+
+  .workspace-alert-card p {
+    font-size: 11.5px;
+  }
+
+  .workspace-alert-card > button {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .workspace-session-card {
+    min-height: 96px;
+  }
+
+  .workspace-session-main {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 11px;
+    min-height: 96px;
+    padding: 14px 52px 14px 14px;
+  }
+
+  .workspace-session-main > svg {
+    display: none;
+  }
+
+  .workspace-session-copy strong {
+    font-size: 13px;
+  }
+
+  .workspace-session-copy small {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .workspace-session-copy > span {
+    font-size: 9px;
+  }
+
+  .workspace-delete {
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .workspace-automation-card,
+  .workspace-setting-card,
+  .workspace-profile-grid article {
+    min-height: 0;
+    padding: 17px;
+  }
+
+  .workspace-setting-card,
+  .workspace-setting-card.is-button {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .workspace-setting-card.is-button > svg {
+    display: none;
+  }
+
+  .workspace-setting-card strong {
+    font-size: 13px;
+  }
+
+  .workspace-setting-card p {
+    font-size: 11px;
+  }
+
+  .workspace-access-key {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .workspace-access-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workspace-access-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .workspace-profile-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .workspace-profile-card .workspace-status-pill {
+    grid-column: 1 / -1;
+    width: fit-content;
+    margin: 0;
+    text-align: left;
+  }
+
+  .workspace-empty {
+    min-height: 210px;
+    padding: 24px 12px;
+  }
+
+  .global-chat-fab {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+  }
+
+  /* Conversation is a real full-screen mobile surface. The composer stays
+     reachable when the virtual keyboard resizes the visual viewport. */
+  .conversation-layer {
+    align-items: stretch;
+    width: 100%;
+    height: 100dvh;
+    padding: 0;
+  }
+
+  .conversation-backdrop {
+    display: none;
+  }
+
+  .conversation-panel {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    padding:
+      calc(10px + env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      calc(10px + env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: linear-gradient(180deg, rgba(10, 14, 22, 0.99), rgba(5, 8, 13, 1));
+  }
+
+  .conversation-handle {
+    display: none;
+  }
+
+  .conversation-header {
+    flex: 0 0 auto;
+    min-height: 60px;
+    gap: 10px;
+    padding: 4px 2px 12px;
+  }
+
+  .conversation-heading {
+    min-width: 0;
+    gap: 9px;
+  }
+
+  .conversation-heading h2 {
+    font-size: 17px;
+  }
+
+  .conversation-heading p {
+    font-size: 10px;
+  }
+
+  .conversation-voice-dot {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+  }
+
+  .conversation-header-actions {
+    gap: 6px;
+  }
+
+  .conversation-close {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .conversation-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    gap: 11px;
+    padding: 14px 2px 12px;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .conversation-message {
+    max-width: 94%;
+    gap: 8px;
+  }
+
+  .conversation-message-avatar {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+
+  .conversation-message p {
+    max-width: calc(100vw - 76px);
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .conversation-panel .composer-wrap {
+    position: relative;
+    bottom: auto;
+    z-index: 2;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .conversation-panel .composer-panel {
+    min-height: 112px;
+    max-height: 38dvh;
+    padding: 10px 10px 9px 14px;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  .conversation-panel .composer-input {
+    min-height: 52px;
+    max-height: 22dvh;
+    resize: none;
+    overflow-y: auto;
+    line-height: 1.45;
+  }
+
+  .composer-toolbar {
+    align-items: center;
+    gap: 8px;
+  }
+
+  .composer-hint {
+    display: none;
+  }
+
+  .composer-actions {
+    margin-left: auto;
+  }
+
+  .icon-action-button,
+  .send-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Theme chooser becomes a bottom sheet and respects the home indicator. */
+  .theme-picker-backdrop {
+    background: rgba(1, 4, 8, 0.62);
+    backdrop-filter: blur(3px);
+  }
+
+  .theme-picker {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: min(82dvh, 650px);
+    padding:
+      18px
+      max(16px, env(safe-area-inset-right))
+      calc(18px + env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .theme-picker-header {
+    margin-bottom: 12px;
+  }
+
+  .theme-picker-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .theme-option {
+    min-height: 66px;
+    padding: 10px;
+  }
+
+  .theme-option-copy {
+    font-size: 13px;
+  }
+
+  .theme-option-copy small {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  /* Login stays centered but remains scrollable on tiny/keyboard viewports. */
+  .login-stage {
+    display: block;
+    min-height: 100dvh;
+    height: auto;
+    padding:
+      calc(70px + env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      calc(22px + env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .login-panel {
+    width: 100%;
+    min-height: calc(100dvh - 110px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    align-items: center;
+  }
+
+  .login-mobile-brand {
+    top: calc(18px + env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+  }
+
+  .login-card {
+    width: min(100%, 460px);
+    margin: 0 auto;
+    padding: clamp(24px, 7vw, 34px);
+    border-radius: 24px;
+  }
+
+  .login-card h2 {
+    font-size: clamp(32px, 9vw, 39px);
+  }
+
+  .login-form {
+    gap: 18px;
+    margin-top: 28px;
+  }
+
+  .login-input {
+    height: 54px;
+  }
+
+  .login-submit {
+    height: 54px;
+  }
+}
+
+/* Small phones: one-column actions, tighter but still finger-friendly. */
+@media (max-width: 519px) {
+  .quick-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quick-action-button {
+    min-height: 64px;
+  }
+
+  .orb-frame.pearl-orb {
+    width: min(67vw, 230px);
+  }
+
+  .greeting h1 {
+    font-size: clamp(30px, 9.7vw, 39px);
+  }
+
+  .voice-console {
+    border-radius: 16px;
+  }
+
+  .voice-console-presence {
+    width: 36px;
+    height: 36px;
+  }
+
+  .workspace-view-header h1 {
+    font-size: clamp(30px, 9vw, 37px);
+  }
+}
+
+@media (max-width: 359px) {
+  .assistant-content.is-home,
+  .assistant-content.is-workspace {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .mobile-topbar {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .mobile-brand {
+    max-width: calc(100vw - 132px);
+    font-size: 13px;
+  }
+
+  .orb-frame.pearl-orb {
+    width: min(66vw, 210px);
+  }
+
+  .greeting-lead {
+    font-size: 24px;
+  }
+
+  .greeting h1 {
+    font-size: 29px;
+  }
+
+  .voice-console-copy small {
+    display: none;
+  }
+
+  .home-system-strip strong {
+    font-size: 10px;
+  }
+
+  .home-system-strip span {
+    font-size: 8px;
+  }
+}
+
+/* Landscape phones / short tablets: prioritize vertical fit and scrollability. */
+@media (max-height: 560px) and (max-width: 900px) {
+  .assistant-content.is-home {
+    padding-top: calc(66px + env(safe-area-inset-top));
+  }
+
+  .hero-content {
+    padding-top: 8px;
+  }
+
+  .orb-frame.pearl-orb {
+    width: min(34vh, 190px);
+  }
+
+  .greeting {
+    margin-top: 10px;
+  }
+
+  .greeting-lead {
+    font-size: 23px;
+  }
+
+  .greeting h1 {
+    font-size: 30px;
+  }
+
+  .greeting-subtitle {
+    margin-top: 7px;
+  }
+
+  .voice-console {
+    margin-top: 12px;
+  }
+
+  .quick-actions {
+    margin-top: 12px;
+  }
+
+  .conversation-panel {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+}
