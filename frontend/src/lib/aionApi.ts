@@ -74,6 +74,10 @@ export async function getAionSettings(): Promise<AionSettings> {
   return apiGet<AionSettings>("/aion/settings");
 }
 
+export async function getAionControlKey(): Promise<{ key: string; masked: string }> {
+  return apiGet<{ key: string; masked: string }>("/control/api-key");
+}
+
 export async function listAionChatSessions(limit = 40): Promise<AgentChatSession[]> {
   const safeLimit = Math.max(1, Math.min(limit, 100));
   const result = await apiGet<{ sessions: AgentChatSession[] }>(

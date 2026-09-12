@@ -8,7 +8,10 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   Clock3,
+  Copy,
   Database,
+  Eye,
+  EyeOff,
   Gauge,
   History,
   KeyRound,
@@ -22,7 +25,7 @@ import {
   UserRound,
   Workflow,
 } from "lucide-react";
-import type { AgentChatSession, AionSettings, AionStatusSummary } from "@/lib/aionApi";
+import { getAionControlKey, type AgentChatSession, type AionSettings, type AionStatusSummary } from "@/lib/aionApi";
 
 export type WorkspaceViewId = "projects" | "inbox" | "library" | "automations" | "settings" | "profile";
 
@@ -140,6 +143,11 @@ export default function WorkspaceView({
   onOpenTheme,
 }: WorkspaceViewProps) {
   const [query, setQuery] = useState("");
+  const [controlKey, setControlKey] = useState("");
+  const [controlMasked, setControlMasked] = useState("");
+  const [controlKeyVisible, setControlKeyVisible] = useState(false);
+  const [controlKeyLoading, setControlKeyLoading] = useState(false);
+  const [controlKeyNote, setControlKeyNote] = useState("");
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
   const alerts = useMemo(() => listValue(status?.alerts).map((item) => stringValue(item, "Bilinmeyen uyarı")), [status]);
   const filteredProjects = useMemo(() => {
@@ -152,6 +160,35 @@ export default function WorkspaceView({
     if (!q) return sessions;
     return sessions.filter((session) => `${session.title} ${session.preview ?? ""}`.toLocaleLowerCase("tr-TR").includes(q));
   }, [query, sessions]);
+
+  const revealControlKey = async () => {
+    if (controlKey) {
+      setControlKeyVisible((visible) => !visible);
+      return;
+    }
+    setControlKeyLoading(true);
+    setControlKeyNote("");
+    try {
+      const data = await getAionControlKey();
+      setControlKey(data.key);
+      setControlMasked(data.masked);
+      setControlKeyVisible(true);
+    } catch {
+      setControlKeyNote("Erişim anahtarı bu oturumda okunamadı.");
+    } finally {
+      setControlKeyLoading(false);
+    }
+  };
+
+  const copyControlKey = async () => {
+    if (!controlKey) return;
+    try {
+      await navigator.clipboard.writeText(controlKey);
+      setControlKeyNote("Erişim anahtarı panoya kopyalandı.");
+    } catch {
+      setControlKeyNote("Panoya kopyalama başarısız oldu.");
+    }
+  };
 
   if (view === "projects") {
     return (
@@ -296,6 +333,19 @@ export default function WorkspaceView({
           <article className="workspace-setting-card"><span><ShieldCheck size={17} /></span><div><small>Onaylar</small><strong>Güvenlik sınırı</strong><p>{stringValue(settings?.approvals, "Durum alınamadı")}</p></div></article>
           <article className="workspace-setting-card"><span><Activity size={17} /></span><div><small>Ses</small><strong>Türkçe</strong><p>{stringValue(settings?.voice, "Ses durumu alınamadı")}</p></div></article>
           <article className="workspace-setting-card"><span><Gauge size={17} /></span><div><small>AION Trade</small><strong>{stringValue(settings?.trade, "Durum alınamadı")}</strong><p>Canlı işlem yetkisi UI tarafından varsayılmaz.</p></div></article>
+          <article className="workspace-setting-card workspace-access-card">
+            <span><KeyRound size={17} /></span>
+            <div>
+              <small>Public erişim</small>
+              <strong>aion.wexon.dev</strong>
+              <p className="workspace-access-key">{controlKey ? (controlKeyVisible ? controlKey : controlMasked || "••••••••") : "Anahtarı yalnız gerektiğinde göster."}</p>
+              {controlKeyNote ? <p className="workspace-access-note" role="status">{controlKeyNote}</p> : null}
+              <div className="workspace-access-actions">
+                <button type="button" onClick={() => { void revealControlKey(); }} disabled={controlKeyLoading}>{controlKeyVisible ? <EyeOff size={14} /> : <Eye size={14} />}{controlKeyLoading ? "Alınıyor" : controlKeyVisible ? "Gizle" : "Göster"}</button>
+                <button type="button" onClick={() => { void copyControlKey(); }} disabled={!controlKey}><Copy size={14} /> Kopyala</button>
+              </div>
+            </div>
+          </article>
           <button type="button" className="workspace-setting-card is-button" onClick={onOpenTheme}><span><Palette size={17} /></span><div><small>Görünüm</small><strong>Tema ve atmosfer</strong><p>Renk temasını bu tarayıcı için değiştir.</p></div><ArrowUpRight size={15} /></button>
         </div>
       </div>

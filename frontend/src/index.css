@@ -5922,3 +5922,40 @@ html[data-aion-theme="mono"] .orb-reactive-color-four {
   .pearl-ribbon-field,
   .pearl-blob { animation: none !important; }
 }
+
+.workspace-access-card > div { min-width: 0; }
+.workspace-access-key {
+  min-height: 18px;
+  overflow: hidden;
+  color: rgba(220, 226, 255, 0.74) !important;
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-access-note { color: rgba(157, 187, 170, 0.72) !important; }
+.workspace-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.workspace-access-actions button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid rgba(180, 181, 255, 0.12);
+  border-radius: 9px;
+  color: rgba(226, 231, 244, 0.78);
+  background: rgba(122, 112, 218, 0.06);
+  font-size: 9px;
+  font-weight: 600;
+  transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
+}
+.workspace-access-actions button:hover:not(:disabled) {
+  border-color: rgba(187, 182, 255, 0.3);
+  background: rgba(122, 112, 218, 0.12);
+}
+.workspace-access-actions button:disabled { cursor: not-allowed; opacity: .38; }
