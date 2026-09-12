@@ -26,6 +26,10 @@ async function mockProductData(page: Page) {
         observed_at: Date.now(),
         stale: false,
         alerts: ['Test uyarısı', 'İkinci test uyarısı'],
+        metrics: { tracked_projects: 3, attention_items: 2, open_internal_tasks: 1, active_services: 4, total_services: 4, blocked_integrations: 2, repository_work_items: 3 },
+        today: { priorities: ['AION: PDF sözleşmesini doğrula', 'WEXON: platform durumunu incele', 'AION Trade: API health kontrolü'] },
+        internal_tasks: [{ id: 'task-1', project: 'aion', title: 'PDF sözleşmesini doğrula', priority: 'high', status: 'pending' }],
+        tasks: [{ kind: 'internal_task', id: 'task-1' }, { kind: 'issue', repository: 'mlevncomm/aion' }],
         projects: [
           { id: 'aion', name: 'AION', status: 'CONNECTED', description: 'Kişisel AI OS', sources: { github: {} }, application: { checks: {} } },
           { id: 'wexon', name: 'WEXON', status: 'REACHABLE', description: 'WEXON platform', sources: { github: {} }, application: { checks: {} } },
@@ -40,6 +44,33 @@ async function mockProductData(page: Page) {
       contentType: 'application/json',
       body: JSON.stringify({ provider: 'OpenRouter', model: 'test-model', approvals: 'ask', daily_brief: 'active', voice: 'Türkçe', trade: 'PAPER' }),
     });
+  });
+  await page.route('**/api/aion/profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        owner: { name: 'Mehmet', relationship: 'single-user personal AI operating assistant', success_definition: 'Gerçek kaynakları takip eden kişisel AION.' },
+        projects: [
+          { id: 'aion', name: 'AION', description: 'Kişisel AI OS' },
+          { id: 'wexon', name: 'WEXON', description: 'Platform' },
+          { id: 'aion-trade', name: 'AION Trade', description: 'Trade' },
+        ],
+        workflows: [
+          { id: 'daily-brief', name: 'Günlük Yönetici Brief\'i', goal: 'Günlük özet' },
+          { id: 'task-follow-through', name: 'Görev Takibi', goal: 'Görevleri ilerlet' },
+        ],
+        operating_rules: ['Gerçek veri kullan', 'Riskli işlerde onay iste'],
+        autonomy: { automatic: ['read real connected sources'], approval_required: ['external writes'] },
+      }),
+    });
+  });
+  await page.route('**/api/aion/tasks', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'task-1', project: 'aion', title: 'PDF sözleşmesini doğrula', priority: 'high', status: 'completed' }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [] }) });
   });
   await page.route('**/api/agent-chat/sessions?**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [] }) });
@@ -93,6 +124,8 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
   await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  await expect(page.getByTestId('personal-metrics-grid')).toBeVisible();
+  await expect(page.getByTestId('today-focus-panel')).toContainText('PDF sözleşmesini doğrula');
 
   await expect(page.getByTestId('sidebar-home-button')).toHaveClass(/is-active/);
   await expect(page.getByTestId('sidebar-chat-button')).toBeVisible();
@@ -100,6 +133,7 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
 
   const sections = [
     ['projects', 'Projeler'],
+    ['tasks', 'Görevler'],
     ['inbox', 'Gelen Kutusu'],
     ['library', 'Geçmiş'],
     ['automations', 'Otomasyonlar'],
@@ -112,6 +146,12 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
     await expectNoHorizontalOverflow(page);
   }
 
+  await page.getByTestId('sidebar-tasks-button').click();
+  const taskRequest = page.waitForRequest((request) => request.url().includes('/api/aion/tasks') && request.method() === 'POST');
+  await page.getByTestId('task-complete-task-1').click();
+  const taskMutation = await taskRequest;
+  expect((taskMutation.postDataJSON() as { action?: string }).action).toBe('complete');
+
   await page.getByTestId('sidebar-settings-button').click();
   await expect(page.getByTestId('sidebar-settings-button')).toHaveClass(/is-active/);
   await expect(page.locator('.workspace-view h1')).toHaveText('Ayarlar');
@@ -123,7 +163,8 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
 
   await page.getByTestId('sidebar-profile-button').click();
   await expect(page.getByTestId('sidebar-profile-button')).toHaveClass(/is-active/);
-  await expect(page.locator('.workspace-view h1')).toHaveText('Profil');
+  await expect(page.locator('.workspace-view h1')).toHaveText("Mehmet'in AION'u");
+  await expect(page.locator('.personal-success-card')).toContainText('Gerçek kaynakları takip eden kişisel AION.');
 
   await page.getByTestId('sidebar-chat-button').click();
   await expect(page.getByTestId('conversation-panel')).toBeVisible();
@@ -154,7 +195,7 @@ test('mobile drawer, sections and full-screen chat stay usable', async ({ page }
   await expect(page.getByTestId('mobile-topbar')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  const sections = ['projects', 'inbox', 'library', 'automations'] as const;
+  const sections = ['projects', 'tasks', 'inbox', 'library', 'automations'] as const;
   for (const id of sections) {
     await page.getByTestId('mobile-menu-button').click();
     await expect(page.getByTestId('assistant-sidebar')).toHaveClass(/is-mobile-open/);

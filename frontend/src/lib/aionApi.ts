@@ -60,6 +60,53 @@ export interface AionSettings {
   [key: string]: unknown;
 }
 
+export interface AionPersonalProject {
+  id: string;
+  name: string;
+  description: string;
+  priority?: string;
+  tracking?: string[];
+  rules?: string[];
+}
+
+export interface AionPersonalProfile {
+  owner: {
+    id?: string;
+    name?: string;
+    language?: string;
+    timezone?: string;
+    assistant_name?: string;
+    relationship?: string;
+    success_definition?: string;
+    communication?: Record<string, unknown>;
+  };
+  projects?: AionPersonalProject[];
+  operating_rules?: string[];
+  tracked_areas?: string[];
+  workflows?: Array<{ id: string; name: string; goal: string }>;
+  autonomy?: {
+    automatic?: string[];
+    approval_required?: string[];
+    denied_by_default?: string[];
+  };
+  product_contract?: {
+    source?: string;
+    principles?: string[];
+  };
+}
+
+export interface AionTaskItem {
+  id: string;
+  project: string;
+  title: string;
+  note?: string;
+  priority?: "critical" | "high" | "normal" | "low";
+  status?: "pending" | "completed";
+  created_at?: number;
+  updated_at?: number;
+  completed_at?: number | null;
+}
+
 export interface AionConversationMessage {
   id: string;
   role: "assistant" | "user";
@@ -72,6 +119,26 @@ export async function getAionStatus(): Promise<AionStatusSummary> {
 
 export async function getAionSettings(): Promise<AionSettings> {
   return apiGet<AionSettings>("/aion/settings");
+}
+
+export async function getAionProfile(): Promise<AionPersonalProfile> {
+  return apiGet<AionPersonalProfile>("/aion/profile");
+}
+
+export async function listAionTasks(): Promise<AionTaskItem[]> {
+  const result = await apiGet<{ items: AionTaskItem[] }>("/aion/tasks");
+  return result.items ?? [];
+}
+
+export async function mutateAionTask(payload: {
+  action: "list" | "create" | "update" | "complete" | "reopen";
+  task_id?: string;
+  project?: string;
+  title?: string;
+  note?: string;
+  priority?: "critical" | "high" | "normal" | "low";
+}): Promise<AionTaskItem | { items: AionTaskItem[] }> {
+  return apiPost<AionTaskItem | { items: AionTaskItem[] }>("/aion/tasks", payload);
 }
 
 export async function getAionControlKey(): Promise<{ key: string; masked: string }> {

@@ -7485,3 +7485,522 @@ html[data-aion-theme="reference"] .sidebar-button.is-active {
     background: rgba(9, 10, 14, 0.9);
   }
 }
+
+
+/* ============================================================
+   AION PDF contract integration — Mehmet personal command center
+   ============================================================ */
+.personal-os-kicker {
+  margin: 0 0 9px;
+  color: rgba(184, 179, 220, 0.62);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.personal-metrics-grid {
+  display: grid;
+  width: min(100%, 930px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.personal-metrics-grid button {
+  display: grid;
+  min-width: 0;
+  min-height: 82px;
+  align-content: center;
+  gap: 2px;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 17px;
+  color: rgba(227, 226, 236, 0.9);
+  text-align: left;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+    rgba(10, 11, 16, 0.62);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.022);
+  transition: transform 170ms ease, border-color 170ms ease, background-color 170ms ease;
+}
+
+.personal-metrics-grid button:hover,
+.personal-metrics-grid button:focus-visible {
+  border-color: rgba(175, 168, 220, 0.22);
+  background:
+    linear-gradient(145deg, rgba(131, 120, 190, 0.07), rgba(255, 255, 255, 0.015)),
+    rgba(11, 12, 17, 0.8);
+  transform: translateY(-1px);
+}
+
+.personal-metrics-grid button.has-alert {
+  border-color: rgba(212, 169, 101, 0.14);
+}
+
+.personal-metrics-grid strong,
+.personal-metrics-grid span,
+.personal-metrics-grid small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personal-metrics-grid strong {
+  color: #f1eff8;
+  font-family: "Outfit Variable", sans-serif;
+  font-size: 20px;
+  font-weight: 610;
+  line-height: 1.05;
+}
+
+.personal-metrics-grid span {
+  margin-top: 3px;
+  color: rgba(188, 188, 200, 0.68);
+  font-size: 9.5px;
+}
+
+.personal-metrics-grid small {
+  color: rgba(142, 143, 155, 0.45);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 7.5px;
+}
+
+.today-focus-panel {
+  width: min(100%, 930px);
+  margin-top: 11px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(139, 128, 201, 0.055), transparent 31%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.009)),
+    rgba(9, 10, 14, 0.7);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.024);
+}
+
+.today-focus-heading,
+.personal-rules-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.today-focus-heading > div,
+.personal-rules-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.today-focus-heading span,
+.personal-rules-heading small,
+.personal-success-card small {
+  color: rgba(151, 153, 165, 0.5);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.today-focus-heading strong,
+.personal-rules-heading strong,
+.personal-success-card strong {
+  color: rgba(239, 238, 246, 0.92);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.today-focus-heading > button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(173, 165, 220, 0.13);
+  border-radius: 10px;
+  color: rgba(220, 216, 239, 0.78);
+  background: rgba(128, 117, 190, 0.05);
+  font-size: 9px;
+  font-weight: 620;
+}
+
+.today-focus-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.today-focus-list > button {
+  display: grid;
+  min-width: 0;
+  min-height: 68px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 13px;
+  color: rgba(214, 215, 223, 0.82);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.014);
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.today-focus-list > button:hover,
+.today-focus-list > button:focus-visible {
+  border-color: rgba(175, 167, 221, 0.17);
+  background: rgba(130, 119, 191, 0.04);
+  transform: translateY(-1px);
+}
+
+.today-focus-list > button > span,
+.personal-rules-list > div > span {
+  color: rgba(173, 166, 216, 0.48);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.today-focus-list p {
+  display: -webkit-box;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.42;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.workspace-automation-grid.is-personal {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace-autonomy-card {
+  border-color: rgba(168, 158, 216, 0.1);
+}
+
+.is-personal-profile .workspace-profile-copy span {
+  max-width: 620px;
+}
+
+.personal-success-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 13px;
+  margin: 14px 0;
+  padding: 18px;
+  border: 1px solid rgba(174, 167, 219, 0.09);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 95% 10%, rgba(141, 129, 202, 0.065), transparent 32%),
+    rgba(255, 255, 255, 0.015);
+}
+
+.personal-success-card > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  color: #d9d5ef;
+  background: rgba(132, 122, 196, 0.075);
+}
+
+.personal-success-card > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.personal-success-card p {
+  max-width: 880px;
+  margin: 3px 0 0;
+  color: rgba(186, 188, 199, 0.68);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.personal-rules-panel {
+  margin-top: 14px;
+  padding: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.personal-rules-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 12px;
+  margin-top: 13px;
+}
+
+.personal-rules-list > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.014);
+}
+
+.personal-rules-list p {
+  margin: 0;
+  color: rgba(184, 186, 197, 0.67);
+  font-size: 10px;
+  line-height: 1.48;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .personal-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .today-focus-list {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-automation-grid.is-personal {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .personal-os-kicker {
+    margin-bottom: 7px;
+    font-size: 8px;
+  }
+
+  .personal-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .personal-metrics-grid button {
+    min-height: 74px;
+    padding: 11px;
+  }
+
+  .personal-metrics-grid button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .personal-metrics-grid strong {
+    font-size: 18px;
+  }
+
+  .today-focus-panel {
+    padding: 13px;
+  }
+
+  .today-focus-heading {
+    align-items: flex-start;
+  }
+
+  .today-focus-heading > button {
+    min-height: 40px;
+    flex: 0 0 auto;
+  }
+
+  .today-focus-list > button {
+    min-height: 62px;
+  }
+
+  .personal-rules-list {
+    grid-template-columns: 1fr;
+  }
+
+  .personal-success-card {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 380px) {
+  .personal-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .personal-metrics-grid button:last-child {
+    grid-column: auto;
+  }
+
+  .today-focus-heading {
+    display: grid;
+  }
+
+  .today-focus-heading > button {
+    width: 100%;
+  }
+}
+
+
+/* Personal AION task tracking */
+.workspace-task-kpis {
+  margin-top: 14px;
+}
+
+.workspace-task-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 14px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.workspace-task-toolbar p {
+  min-width: 0;
+  margin: 0;
+  color: rgba(170, 173, 185, 0.58);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.workspace-task-toolbar button,
+.workspace-task-action {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(176, 168, 222, 0.14);
+  border-radius: 11px;
+  color: rgba(227, 223, 244, 0.84);
+  background: rgba(128, 118, 191, 0.055);
+  font-size: 9.5px;
+  font-weight: 620;
+  transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
+}
+
+.workspace-task-toolbar button:hover,
+.workspace-task-action:hover:not(:disabled) {
+  border-color: rgba(181, 173, 229, 0.27);
+  background: rgba(128, 118, 191, 0.095);
+}
+
+.workspace-task-action:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.workspace-task-list {
+  display: grid;
+  gap: 9px;
+}
+
+.workspace-task-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 17px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.008)),
+    rgba(10, 11, 16, 0.66);
+}
+
+.workspace-task-card.is-completed {
+  opacity: 0.62;
+}
+
+.workspace-task-check {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  color: rgba(210, 207, 234, 0.75);
+  background: rgba(131, 121, 192, 0.055);
+}
+
+.workspace-task-card.is-completed .workspace-task-check {
+  color: #8fc6aa;
+  background: rgba(77, 153, 112, 0.055);
+}
+
+.workspace-task-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.workspace-task-copy h2,
+.workspace-task-copy p {
+  margin: 0;
+}
+
+.workspace-task-copy h2 {
+  overflow: hidden;
+  color: rgba(235, 234, 242, 0.9);
+  font-size: 13px;
+  font-weight: 610;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-task-card.is-completed h2 {
+  text-decoration: line-through;
+  text-decoration-color: rgba(190, 190, 200, 0.28);
+}
+
+.workspace-task-copy p {
+  color: rgba(160, 163, 175, 0.56);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.workspace-task-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.workspace-task-meta > span:first-child {
+  overflow: hidden;
+  color: rgba(151, 153, 165, 0.5);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .workspace-task-toolbar {
+    display: grid;
+    gap: 10px;
+  }
+
+  .workspace-task-toolbar button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .workspace-task-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    padding: 13px;
+  }
+
+  .workspace-task-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .workspace-task-copy h2 {
+    white-space: normal;
+  }
+}

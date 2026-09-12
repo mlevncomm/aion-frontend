@@ -25,14 +25,15 @@ import {
   UserRound,
   Workflow,
 } from "lucide-react";
-import { getAionControlKey, type AgentChatSession, type AionSettings, type AionStatusSummary } from "@/lib/aionApi";
+import { getAionControlKey, mutateAionTask, type AgentChatSession, type AionPersonalProfile, type AionSettings, type AionStatusSummary } from "@/lib/aionApi";
 
-export type WorkspaceViewId = "projects" | "inbox" | "library" | "automations" | "settings" | "profile";
+export type WorkspaceViewId = "projects" | "tasks" | "inbox" | "library" | "automations" | "settings" | "profile";
 
 interface WorkspaceViewProps {
   view: WorkspaceViewId;
   status: AionStatusSummary | null;
   settings: AionSettings | null;
+  profile: AionPersonalProfile | null;
   sessions: AgentChatSession[];
   loading: boolean;
   onRefresh: () => void;
@@ -134,6 +135,7 @@ export default function WorkspaceView({
   view,
   status,
   settings,
+  profile,
   sessions,
   loading,
   onRefresh,
@@ -148,7 +150,10 @@ export default function WorkspaceView({
   const [controlKeyVisible, setControlKeyVisible] = useState(false);
   const [controlKeyLoading, setControlKeyLoading] = useState(false);
   const [controlKeyNote, setControlKeyNote] = useState("");
+  const [taskActionNote, setTaskActionNote] = useState("");
+  const [taskActionLoading, setTaskActionLoading] = useState("");
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
+  const internalTasks = useMemo(() => listValue(status?.internal_tasks).map(record), [status]);
   const alerts = useMemo(() => listValue(status?.alerts).map((item) => stringValue(item, "Bilinmeyen uyarı")), [status]);
   const filteredProjects = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr-TR");
@@ -187,6 +192,21 @@ export default function WorkspaceView({
       setControlKeyNote("Erişim anahtarı panoya kopyalandı.");
     } catch {
       setControlKeyNote("Panoya kopyalama başarısız oldu.");
+    }
+  };
+
+  const changeTaskState = async (taskId: string, action: "complete" | "reopen") => {
+    if (!taskId || taskActionLoading) return;
+    setTaskActionLoading(taskId);
+    setTaskActionNote("");
+    try {
+      await mutateAionTask({ action, task_id: taskId });
+      setTaskActionNote(action === "complete" ? "Görev tamamlandı." : "Görev yeniden açıldı.");
+      onRefresh();
+    } catch {
+      setTaskActionNote("Görev durumu güncellenemedi.");
+    } finally {
+      setTaskActionLoading("");
     }
   };
 
@@ -240,6 +260,66 @@ export default function WorkspaceView({
           })}
         </div>
         {!loading && filteredProjects.length === 0 ? <EmptyState icon={<BriefcaseBusiness size={20} />} title="Proje bulunamadı" copy="Arama filtresini temizle veya kaynakları yenile." /> : null}
+      </div>
+    );
+  }
+
+  if (view === "tasks") {
+    const sourceWorkCount = listValue(status?.tasks)
+      .map(record)
+      .filter((item) => ["issue", "pull_request"].includes(stringValue(item.kind, ""))).length;
+    const openCount = internalTasks.filter((task) => stringValue(task.status, "pending") !== "completed").length;
+    return (
+      <div className="workspace-view">
+        <Header
+          eyebrow="AION görev hafızası"
+          title="Görevler"
+          copy="Mehmet'in AION içinde gerçek olarak tutulan görevleri. Tamamla/yeniden aç işlemleri doğrudan kişisel görev hafızasına yazılır; dış sistemlerde sahte işlem yapılmaz."
+          loading={loading}
+          onRefresh={onRefresh}
+        />
+        <div className="workspace-kpi-row workspace-task-kpis">
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><Clock3 size={17} /></span><div><strong>{openCount}</strong><span>açık iç görev</span></div></div>
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><CheckCircle2 size={17} /></span><div><strong>{internalTasks.length - openCount}</strong><span>tamamlanan</span></div></div>
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><BriefcaseBusiness size={17} /></span><div><strong>{sourceWorkCount}</strong><span>repo işi / PR</span></div></div>
+        </div>
+        <div className="workspace-task-toolbar">
+          <p>{taskActionNote || "AION, doğrudan söylediğin görevleri proje bağlamıyla burada takip eder."}</p>
+          <button type="button" onClick={() => onAsk("AION, yeni bir görev eklemek istiyorum. Görevin hangi projemle ilgili olduğunu, başlığını ve önceliğini yalnızca gerekliyse sor; sonra AION iç görev takibine kaydet.")}>Yeni görev ekle</button>
+        </div>
+        <div className="workspace-task-list">
+          {internalTasks.map((task, index) => {
+            const id = stringValue(task.id, `task-${index}`);
+            const isCompleted = stringValue(task.status, "pending") === "completed";
+            const projectId = stringValue(task.project, "aion");
+            const projectName = profile?.projects?.find((project) => project.id === projectId)?.name || projectId;
+            return (
+              <article key={id} className={`workspace-task-card${isCompleted ? " is-completed" : ""}`}>
+                <div className="workspace-task-check" aria-hidden="true">{isCompleted ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</div>
+                <div className="workspace-task-copy">
+                  <div className="workspace-task-meta">
+                    <span>{projectName}</span>
+                    <StatusPill value={stringValue(task.priority, "normal")} />
+                  </div>
+                  <h2>{stringValue(task.title, "İsimsiz görev")}</h2>
+                  {stringValue(task.note, "") ? <p>{stringValue(task.note, "")}</p> : null}
+                </div>
+                <button
+                  type="button"
+                  className="workspace-task-action"
+                  disabled={taskActionLoading === id}
+                  onClick={() => { void changeTaskState(id, isCompleted ? "reopen" : "complete"); }}
+                  data-testid={`task-${isCompleted ? "reopen" : "complete"}-${id}`}
+                >
+                  {taskActionLoading === id ? "İşleniyor" : isCompleted ? "Yeniden aç" : "Tamamla"}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+        {!loading && internalTasks.length === 0 ? (
+          <EmptyState icon={<CheckCircle2 size={21} />} title="İç görev yok" copy="AION'a doğal şekilde bir görev söyle; görev gerçek kişisel görev hafızasına kaydedilir ve burada görünür." />
+        ) : null}
       </div>
     );
   }
@@ -298,25 +378,57 @@ export default function WorkspaceView({
 
   if (view === "automations") {
     const brief = settings?.daily_brief ? stringValue(settings.daily_brief) : "Durum alınamadı";
+    const workflows = profile?.workflows ?? [];
+    const icons = [Sparkles, Activity, AlertTriangle, Workflow, ShieldCheck];
     return (
       <div className="workspace-view">
-        <Header eyebrow="Arka plan akışları" title="Otomasyonlar" copy="Sadece gerçek backend durumları gösterilir; sahte aç/kapat anahtarları yok." loading={loading} onRefresh={onRefresh} />
-        <div className="workspace-automation-grid">
-          <article className="workspace-automation-card">
-            <span className="workspace-card-icon"><Sparkles size={17} /></span>
-            <div><p className="workspace-card-kicker">Sistem akışı</p><h2>Günlük Brief</h2><p>Projeler, servisler ve kritik uyarılar için AION özeti.</p></div>
-            <StatusPill value={brief} />
-            <button type="button" className="workspace-card-action" onClick={() => onAsk("AION, günlük brief sistemimin mevcut durumunu ve son çalışmasını gerçek kaynaklardan kontrol et.")}>Durumu sor <ArrowUpRight size={14} /></button>
-          </article>
-          <article className="workspace-automation-card">
+        <Header
+          eyebrow="Mehmet için çalışan akışlar"
+          title="Otomasyonlar"
+          copy="PDF sözleşmesindeki aktif asistan mantığına göre AION'un izlemesi ve ilerletmesi gereken kişisel akışlar. Sahte aç/kapat anahtarı gösterilmez."
+          loading={loading}
+          onRefresh={onRefresh}
+        />
+        <div className="workspace-automation-grid is-personal">
+          {workflows.map((workflow, index) => {
+            const Icon = icons[index % icons.length];
+            const isBrief = workflow.id === "daily-brief";
+            return (
+              <article key={workflow.id} className="workspace-automation-card">
+                <span className="workspace-card-icon"><Icon size={17} /></span>
+                <div>
+                  <p className="workspace-card-kicker">{isBrief ? "Zamanlanmış akış" : "AION iş akışı"}</p>
+                  <h2>{workflow.name}</h2>
+                  <p>{workflow.goal}</p>
+                </div>
+                {isBrief ? <StatusPill value={brief} /> : <StatusPill value="AION bağlamında" />}
+                <button
+                  type="button"
+                  className="workspace-card-action"
+                  onClick={() => onAsk(`AION, ${workflow.name} akışının şu an ne durumda olduğunu gerçek kaynaklardan kontrol et. Çalışan, eksik ve sıradaki adımı açıkça söyle.`)}
+                >
+                  Durumu sor <ArrowUpRight size={14} />
+                </button>
+              </article>
+            );
+          })}
+          <article className="workspace-automation-card workspace-autonomy-card">
             <span className="workspace-card-icon"><ShieldCheck size={17} /></span>
-            <div><p className="workspace-card-kicker">Güvenlik</p><h2>Onay Politikası</h2><p>Riskli, geri döndürülemez veya dış sisteme yazan işlemler için kullanıcı onayı.</p></div>
-            <StatusPill value={stringValue(settings?.approvals, "Durum alınamadı")} />
+            <div>
+              <p className="workspace-card-kicker">AION davranışı</p>
+              <h2>Otonomi sınırı</h2>
+              <p>Okuma, özetleme ve güvenli iç görev takibi otomatik; riskli dış yazma, finansal, hukuki veya geri döndürülemez işler açık onay sınırında.</p>
+            </div>
+            <StatusPill value={stringValue(settings?.approvals, "Onay politikası")} />
           </article>
           <article className="workspace-automation-card">
             <span className="workspace-card-icon"><Workflow size={17} /></span>
-            <div><p className="workspace-card-kicker">Yeni akış</p><h2>AION ile oluştur</h2><p>Yeni otomasyon ihtiyacını doğal dille tarif et; AION desteklenen altyapıya göre planlasın.</p></div>
-            <button type="button" className="workspace-primary-action" onClick={() => onAsk("Yeni bir otomasyon oluşturmak istiyorum. Önce desteklenen gerçek otomasyon altyapısını kontrol et ve benden yalnızca gerekli bilgileri iste.")}>AION ile başlat</button>
+            <div>
+              <p className="workspace-card-kicker">Yeni kişisel akış</p>
+              <h2>AION'a tarif et</h2>
+              <p>Takip etmesini veya otomatik ilerletmesini istediğin yeni süreci doğal Türkçe anlat; AION önce gerçek altyapı ve yetki sınırını kontrol etsin.</p>
+            </div>
+            <button type="button" className="workspace-primary-action" onClick={() => onAsk("Yeni bir kişisel AION iş akışı oluşturmak istiyorum. Önce gerçek mevcut altyapıyı ve izin sınırını kontrol et; yalnızca gerekli bilgileri sor ve sahte entegrasyon varsayma.")}>AION ile başlat</button>
           </article>
         </div>
       </div>
@@ -352,19 +464,66 @@ export default function WorkspaceView({
     );
   }
 
+  const owner = profile?.owner;
+  const operatingRules = profile?.operating_rules ?? [];
+  const autonomy = profile?.autonomy;
   return (
     <div className="workspace-view">
-      <Header eyebrow="Kişisel çalışma alanı" title="Profil" copy="AION bu çalışma alanını tek kullanıcı deneyimi olarak tasarlar." loading={loading} onRefresh={onRefresh} />
-      <div className="workspace-profile-card">
+      <Header
+        eyebrow="Kişisel AION sözleşmesi"
+        title="Mehmet'in AION'u"
+        copy="Bu profil generic bir kullanıcı ayarı değil; AION'un kimi desteklediğini, hangi işleri takip ettiğini ve hangi güvenlik sınırlarıyla çalıştığını tanımlar."
+        loading={loading}
+        onRefresh={onRefresh}
+      />
+      <div className="workspace-profile-card is-personal-profile">
         <div className="workspace-profile-avatar">M</div>
-        <div className="workspace-profile-copy"><p>Çalışma alanı sahibi</p><h2>Mehmet</h2><span>AION kişisel yapay zekâ işletim sistemi</span></div>
-        <StatusPill value="Yetkili oturum" />
+        <div className="workspace-profile-copy">
+          <p>Tek kullanıcı · Europe/Istanbul · Türkçe</p>
+          <h2>{owner?.name || "Mehmet"}</h2>
+          <span>{owner?.relationship || "AION kişisel yapay zekâ işletim sistemi"}</span>
+        </div>
+        <StatusPill value="Kişisel profil aktif" />
       </div>
+
+      <article className="personal-success-card">
+        <span><Sparkles size={18} /></span>
+        <div>
+          <small>Başarı tanımı</small>
+          <strong>Benim için gerçek AION ne demek?</strong>
+          <p>{owner?.success_definition || "Gerçek kaynakları takip eden, güvenli biçimde işleri ilerleten ve bana ne yaptığını anlatan kişisel AI OS."}</p>
+        </div>
+      </article>
+
       <div className="workspace-profile-grid">
-        <article><UserRound size={18} /><strong>Tek kullanıcı deneyimi</strong><p>Arayüz kişisel çalışma alanına göre sadeleştirildi; demo panelleri ve gereksiz geliştirici ekranları gösterilmez.</p></article>
-        <article><Server size={18} /><strong>Gerçek kaynaklar</strong><p>Proje ve sistem kartları AION backend'inin gördüğü kaynakları kullanır; bilinmeyen durumlar başarı gibi gösterilmez.</p></article>
-        <article><ShieldCheck size={18} /><strong>Onaylı eylemler</strong><p>Riskli veya geri döndürülemez işlemler, backend izin politikasından geçmeden UI tarafından çalıştırılmaz.</p></article>
+        <article>
+          <UserRound size={18} />
+          <strong>Sadece Mehmet için</strong>
+          <p>{profile?.projects?.length ?? 0} kişisel proje/alan; AION, WEXON, AION Trade, Moon Modes ve altyapı bağlamı tek çalışma alanında tutulur.</p>
+        </article>
+        <article>
+          <Server size={18} />
+          <strong>Gerçek kaynak politikası</strong>
+          <p>Bağlantısı olmayan veri başarı, boşluk veya sağlık olarak yorumlanmaz. AION yalnız gördüğü kanıt kadar iddialı konuşur.</p>
+        </article>
+        <article>
+          <ShieldCheck size={18} />
+          <strong>Otonomi sınırı</strong>
+          <p>{(autonomy?.automatic ?? []).slice(0, 2).join(" · ") || "Güvenli okuma ve iç organizasyon otomatik."}</p>
+        </article>
       </div>
+
+      <section className="personal-rules-panel">
+        <div className="personal-rules-heading">
+          <div><small>AION davranış kuralları</small><strong>Değişmeyen sınırlar</strong></div>
+          <StatusPill value={`${operatingRules.length} kural`} />
+        </div>
+        <div className="personal-rules-list">
+          {operatingRules.map((rule, index) => (
+            <div key={`${rule}-${index}`}><span>{String(index + 1).padStart(2, "0")}</span><p>{rule}</p></div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

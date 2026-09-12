@@ -3,6 +3,7 @@ import {
   History,
   House,
   Inbox,
+  ListTodo,
   LogOut,
   MessageCircle,
   Plus,
@@ -47,6 +48,7 @@ export default function Sidebar({
   const workspaceItems: NavigationItem[] = [
     { id: "home", label: "Ana Sayfa", icon: House },
     { id: "projects", label: "Projeler", icon: BriefcaseBusiness, badge: projectCount },
+    { id: "tasks", label: "Görevler", icon: ListTodo },
     { id: "inbox", label: "Gelen Kutusu", icon: Inbox, badge: alertCount },
     { id: "library", label: "Geçmiş", icon: History },
     { id: "automations", label: "Otomasyonlar", icon: Workflow },
@@ -127,7 +129,7 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar-section">
-          <span className="sidebar-section-title">Çalışma alanı</span>
+          <span className="sidebar-section-title">Mehmet'in alanı</span>
           <nav className="sidebar-navigation">
             {workspaceItems.map(renderNavigationItem)}
           </nav>

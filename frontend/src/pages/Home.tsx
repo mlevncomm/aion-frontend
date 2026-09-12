@@ -11,6 +11,7 @@ import { endFrontendSession } from "@/lib/frontendAuth";
 import {
   deleteAionChatSession,
   ensureAionChatSession,
+  getAionProfile,
   getAionSettings,
   getAionStatus,
   listAionChatSessions,
@@ -19,6 +20,7 @@ import {
   selectAionChatSession,
   sendAionMessage,
   type AgentChatSession,
+  type AionPersonalProfile,
   type AionSettings,
   type AionStatusSummary,
 } from "@/lib/aionApi";
@@ -30,11 +32,14 @@ const quickPrompts: Record<string, string> = {
   vps: "AION, VPS ve kritik servislerin mevcut durumunu gerçek kaynaklardan kontrol et. Sorun varsa açıkça belirt.",
   wexon: "AION, WEXON Growth OS ve WEXON Platform durumunu gerçek kaynaklardan kontrol et. Erişilebilirlik, son değişiklikler, açık işler ve bugün çözmem gereken problemi kısa Türkçe anlat.",
   trade: "AION, AION Trade durumunu yalnız PAPER / READ_ONLY sınırlarında gerçek kaynaklardan kontrol et. Web, API health, risk ve erişebildiğin telemetriyi özetle; bilinmeyen hiçbir şeyi varsayma.",
+  tasks: "AION, benim açık iç görevlerimi ve kaynaklardan görünen açık işleri kontrol et. Öncelik sırasına koy ve sıradaki en mantıklı adımı söyle.",
+  integrations: "AION, eksik veya kısmi entegrasyonları kontrol et. Hangisinin neyi engellediğini ve benim yapmam gereken bağlantı adımını kısa Türkçe anlat.",
 };
 
 const sectionNames: Record<string, string> = {
   home: "Ana Sayfa",
   projects: "Projeler",
+  tasks: "Görevler",
   inbox: "Gelen Kutusu",
   library: "Geçmiş",
   automations: "Otomasyonlar",
@@ -56,6 +61,18 @@ const voiceStatusText: Record<VoiceStatus, string> = {
   error: "Mikrofonu yeniden dene",
 };
 
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function numberValue(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("home");
@@ -70,12 +87,22 @@ export default function Home() {
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<AionStatusSummary | null>(null);
   const [aionSettings, setAionSettings] = useState<AionSettings | null>(null);
+  const [personalProfile, setPersonalProfile] = useState<AionPersonalProfile | null>(null);
   const [sessions, setSessions] = useState<AgentChatSession[]>([]);
   const voice = useVoiceAssistant();
   const { consumeTranscript, markIdle, markProcessing, speak, transcript } = voice;
 
   const projectCount = Array.isArray(systemStatus?.projects) ? systemStatus.projects.length : 0;
   const alertCount = Array.isArray(systemStatus?.alerts) ? systemStatus.alerts.length : 0;
+  const metrics = recordValue(systemStatus?.metrics);
+  const today = recordValue(systemStatus?.today);
+  const topPriorities = stringList(today.priorities).slice(0, 3);
+  const activeServices = numberValue(metrics.active_services);
+  const totalServices = numberValue(metrics.total_services);
+  const openInternalTasks = numberValue(metrics.open_internal_tasks);
+  const blockedIntegrations = numberValue(metrics.blocked_integrations);
+  const repositoryWorkItems = numberValue(metrics.repository_work_items);
+  const ownerName = personalProfile?.owner?.name?.trim() || "Mehmet";
 
   const observedLabel = useMemo(() => {
     if (!systemStatus?.observed_at) return "Kaynak bekleniyor";
@@ -86,17 +113,19 @@ export default function Home() {
 
   const refreshWorkspace = useCallback(async () => {
     setWorkspaceLoading(true);
-    const [statusResult, settingsResult, sessionsResult] = await Promise.allSettled([
+    const [statusResult, settingsResult, profileResult, sessionsResult] = await Promise.allSettled([
       getAionStatus(),
       getAionSettings(),
+      getAionProfile(),
       listAionChatSessions(),
     ]);
 
     if (statusResult.status === "fulfilled") setSystemStatus(statusResult.value);
     if (settingsResult.status === "fulfilled") setAionSettings(settingsResult.value);
+    if (profileResult.status === "fulfilled") setPersonalProfile(profileResult.value);
     if (sessionsResult.status === "fulfilled") setSessions(sessionsResult.value);
 
-    const failed = [statusResult, settingsResult, sessionsResult].filter((result) => result.status === "rejected").length;
+    const failed = [statusResult, settingsResult, profileResult, sessionsResult].filter((result) => result.status === "rejected").length;
     setStatusNote(failed === 0 ? "AION kaynakları güncel" : `${failed} kaynak görünümü alınamadı`);
     setWorkspaceLoading(false);
   }, []);
@@ -112,6 +141,13 @@ export default function Home() {
       });
     void refreshWorkspace();
     return () => { active = false; };
+  }, [refreshWorkspace]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshWorkspace();
+    }, 60_000);
+    return () => window.clearInterval(timer);
   }, [refreshWorkspace]);
 
   const handleSidebarSelect = (item: string) => {
@@ -350,10 +386,11 @@ export default function Home() {
             <div className="hero-content">
               <OrbAvatar activity={orbActivity} onClick={handleVoicePrimary} />
               <div className="greeting" data-testid="greeting-block">
-                <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Mehmet</p>
-                <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>
+                <p className="personal-os-kicker">AION · {ownerName} için kişisel AI OS</p>
+                <p className="greeting-lead" data-testid="greeting-lead">Merhaba, {ownerName}</p>
+                <h1 data-testid="greeting-heading">Bugün neyi ilerletelim?</h1>
                 <p className="greeting-subtitle" data-testid="greeting-subtitle">
-                  Konuş, yaz veya canlı sistem durumlarından birini seç.
+                  Projelerini, VPS'ini, görevlerini ve kritik değişiklikleri gerçek kaynaklardan takip ediyorum.
                 </p>
               </div>
 
@@ -400,17 +437,41 @@ export default function Home() {
 
               <QuickActions onAction={handleQuickAction} />
 
-              <div className="home-system-strip" aria-label="Canlı AION özeti">
+              <div className="personal-metrics-grid" aria-label="Mehmet için canlı AION metrikleri" data-testid="personal-metrics-grid">
                 <button type="button" onClick={() => handleSidebarSelect("projects")}>
-                  <strong>{workspaceLoading ? "…" : projectCount}</strong><span>proje</span>
+                  <strong>{workspaceLoading ? "…" : projectCount}</strong><span>aktif proje alanı</span><small>Projelerim</small>
                 </button>
                 <button type="button" onClick={() => handleSidebarSelect("inbox")} className={alertCount > 0 ? "has-alert" : undefined}>
-                  <strong>{workspaceLoading ? "…" : alertCount}</strong><span>uyarı</span>
+                  <strong>{workspaceLoading ? "…" : alertCount}</strong><span>dikkat isteyen konu</span><small>Gelen Kutusu</small>
                 </button>
-                <button type="button" onClick={() => { void refreshWorkspace(); }}>
-                  <strong>{systemStatus ? (systemStatus.stale ? "Eski" : "Canlı") : "Bilinmiyor"}</strong><span>{observedLabel}</span>
+                <button type="button" onClick={() => handleQuickAction("tasks")}>
+                  <strong>{workspaceLoading ? "…" : openInternalTasks}</strong><span>iç görev</span><small>{repositoryWorkItems} kaynak işi</small>
+                </button>
+                <button type="button" onClick={() => handleQuickAction("vps")}>
+                  <strong>{workspaceLoading ? "…" : `${activeServices}/${totalServices || "?"}`}</strong><span>aktif servis</span><small>VPS</small>
+                </button>
+                <button type="button" onClick={() => handleQuickAction("integrations")} className={blockedIntegrations > 0 ? "has-alert" : undefined}>
+                  <strong>{workspaceLoading ? "…" : blockedIntegrations}</strong><span>eksik bağlantı</span><small>{observedLabel}</small>
                 </button>
               </div>
+
+              <section className="today-focus-panel" aria-label="Bugünkü öncelikler" data-testid="today-focus-panel">
+                <div className="today-focus-heading">
+                  <div>
+                    <span>Bugün</span>
+                    <strong>AION'un gördüğü öncelikler</strong>
+                  </div>
+                  <button type="button" onClick={() => handleQuickAction("brief")}>Günlük brief</button>
+                </div>
+                <div className="today-focus-list">
+                  {(topPriorities.length > 0 ? topPriorities : ["Canlı kaynaklar yükleniyor; öncelikler birazdan netleşecek."]).map((priority, index) => (
+                    <button key={`${priority}-${index}`} type="button" onClick={() => handleAskFromWorkspace(`AION, şu önceliği gerçek kaynaklardan incele ve sıradaki güvenli adımı söyle: ${priority}`)}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <p>{priority}</p>
+                    </button>
+                  ))}
+                </div>
+              </section>
 
               <p className="status-note" aria-live="polite" data-testid="interaction-status">
                 {statusNote}
@@ -422,6 +483,7 @@ export default function Home() {
               view={activeItem as WorkspaceViewId}
               status={systemStatus}
               settings={aionSettings}
+              profile={personalProfile}
               sessions={sessions}
               loading={workspaceLoading}
               onRefresh={() => { void refreshWorkspace(); }}
