@@ -65,10 +65,57 @@ function prepareSpeechText(text: string): string {
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_#>~-]+/g, " ")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/[*_#>~]+/g, " ")
+    .replace(/\s*[:;]\s*/g, ", ")
+    .replace(/\s+([,.!?])/g, "$1")
+    .replace(/([,.!?])(?=\S)/g, "$1 ")
     .replace(/\s+/g, " ")
     .trim();
 }
+
+function splitSpeechChunks(text: string, maxChars = 170): string[] {
+  const sentences = text
+    .split(/(?<=[.!?…])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!sentences.length) return text.trim() ? [text.trim()] : [];
+
+  const chunks: string[] = [];
+  let current = "";
+  for (const sentence of sentences) {
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+      continue;
+    }
+    if (current) chunks.push(current);
+    if (sentence.length <= maxChars) {
+      current = sentence;
+      continue;
+    }
+    const pieces = sentence.split(/(?<=[,])\s+/);
+    current = "";
+    for (const piece of pieces) {
+      const next = current ? `${current} ${piece}` : piece;
+      if (next.length <= maxChars) current = next;
+      else {
+        if (current) chunks.push(current);
+        current = piece;
+      }
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+function speechPauseMs(chunk: string): number {
+  if (/[!?…]$/.test(chunk)) return 145;
+  if (/\.$/.test(chunk)) return 110;
+  return 75;
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 function preferredTurkishVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const turkish = voices.filter((voice) => voice.lang.toLowerCase().startsWith("tr"));
@@ -77,11 +124,16 @@ function preferredTurkishVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisV
   const score = (voice: SpeechSynthesisVoice) => {
     const name = voice.name.toLocaleLowerCase("tr-TR");
     let value = 0;
-    if (/emel|female|woman|feminine|kadın/.test(name)) value += 80;
-    if (/natural|neural|online|premium/.test(name)) value += 45;
-    if (/microsoft|google/.test(name)) value += 10;
-    if (/tolga|male|man|masculine|erkek/.test(name)) value -= 70;
-    if (voice.localService) value += 4;
+    // Windows/Edge often exposes Emel as the most natural Turkish feminine voice.
+    if (/emel/.test(name)) value += 140;
+    if (/female|woman|feminine|kadın/.test(name)) value += 90;
+    if (/natural|neural/.test(name)) value += 85;
+    if (/online|premium/.test(name)) value += 35;
+    if (/microsoft/.test(name)) value += 25;
+    if (/google/.test(name)) value += 12;
+    if (/tolga|male|man|masculine|erkek/.test(name)) value -= 120;
+    // Online/neural voices are preferred even when they are not local.
+    if (voice.localService && !/natural|neural/.test(name)) value -= 3;
     return value;
   };
 
@@ -450,21 +502,32 @@ export function useVoiceAssistant() {
         const voices = await waitForSpeechVoices();
         const turkishVoice = preferredTurkishVoice(voices);
         if (turkishVoice) {
-          await new Promise<void>((resolve) => {
-            const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.lang = "tr-TR";
-            utterance.voice = turkishVoice;
-            utterance.rate = /natural|neural|online/i.test(turkishVoice.name) ? 1.02 : 0.98;
-            utterance.pitch = /emel|female|woman|feminine|kadın/i.test(turkishVoice.name) ? 1.03 : 1.0;
-            utterance.volume = 1;
-            utterance.onstart = () => {
-              setStatus("speaking");
-              startSpeakingMeter();
-            };
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve();
-            window.speechSynthesis.speak(utterance);
-          });
+          const chunks = splitSpeechChunks(speechText);
+          const natural = /natural|neural|online/i.test(turkishVoice.name);
+          const feminine = /emel|female|woman|feminine|kadın/i.test(turkishVoice.name);
+          for (let index = 0; index < chunks.length; index += 1) {
+            const chunk = chunks[index];
+            await new Promise<void>((resolve) => {
+              const utterance = new SpeechSynthesisUtterance(chunk);
+              utterance.lang = "tr-TR";
+              utterance.voice = turkishVoice;
+              // Keep the cadence close to normal conversation. Questions get a
+              // tiny lift; long declarative chunks slow down just enough to breathe.
+              const questionLift = /\?$/.test(chunk) ? 0.015 : 0;
+              const longSentenceEase = chunk.length > 120 ? -0.015 : 0;
+              utterance.rate = (natural ? 1.0 : 0.96) + questionLift + longSentenceEase;
+              utterance.pitch = feminine ? 1.02 : 1.0;
+              utterance.volume = 1;
+              utterance.onstart = () => {
+                setStatus("speaking");
+                if (index === 0) startSpeakingMeter();
+              };
+              utterance.onend = () => resolve();
+              utterance.onerror = () => resolve();
+              window.speechSynthesis.speak(utterance);
+            });
+            if (index < chunks.length - 1) await sleep(speechPauseMs(chunk));
+          }
           resumeAfterSpeech();
           return;
         }
