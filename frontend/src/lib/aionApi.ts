@@ -94,9 +94,9 @@ export async function loadAionChatSession(sessionId: string): Promise<{
   const messages: AionConversationMessage[] = [];
   for (const event of snapshot.events) {
     if (event.kind === "user_message") {
-      const text = event.payload.text;
-      if (typeof text === "string" && text.trim()) {
-        messages.push({ id: `user-${event.seq}`, role: "user", text: text.trim() });
+      const visible = event.payload.typed ?? event.payload.text;
+      if (typeof visible === "string" && visible.trim()) {
+        messages.push({ id: `user-${event.seq}`, role: "user", text: visible.trim() });
       }
     }
     if (event.kind === "assistant_text") {
@@ -174,11 +174,21 @@ function turnFinished(events: AgentChatEvent[], turnId: string): { done: boolean
 
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
-export async function sendAionMessage(text: string, sessionId?: string): Promise<{ sessionId: string; text: string }> {
+export async function sendAionMessage(
+  text: string,
+  sessionId?: string,
+  inputMode: "text" | "voice" = "text",
+): Promise<{ sessionId: string; text: string }> {
   const activeSession = sessionId ?? await ensureAionChatSession();
   const accepted = await apiPost<TurnAccepted>(
     `/agent-chat/sessions/${encodeURIComponent(activeSession)}/messages`,
-    { text, attachments: [], tool_choices: [], timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul" },
+    {
+      text,
+      input_mode: inputMode,
+      attachments: [],
+      tool_choices: [],
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul",
+    },
   );
 
   const deadline = Date.now() + 90_000;

@@ -14,6 +14,7 @@ interface RecognitionResultLike {
 }
 
 interface RecognitionEventLike extends Event {
+  resultIndex?: number;
   results: {
     length: number;
     [index: number]: RecognitionResultLike;
@@ -56,6 +57,53 @@ const errorMessages: Record<string, string> = {
   network: "Ses tanıma servisine ulaşılamadı.",
 };
 
+const VOICE_TURN_SILENCE_MS = 850;
+const RECOGNITION_RESTART_MS = 180;
+
+function prepareSpeechText(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_#>~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function preferredTurkishVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const turkish = voices.filter((voice) => voice.lang.toLowerCase().startsWith("tr"));
+  if (!turkish.length) return null;
+
+  const score = (voice: SpeechSynthesisVoice) => {
+    const name = voice.name.toLocaleLowerCase("tr-TR");
+    let value = 0;
+    if (/emel|female|woman|feminine|kadın/.test(name)) value += 80;
+    if (/natural|neural|online|premium/.test(name)) value += 45;
+    if (/microsoft|google/.test(name)) value += 10;
+    if (/tolga|male|man|masculine|erkek/.test(name)) value -= 70;
+    if (voice.localService) value += 4;
+    return value;
+  };
+
+  return [...turkish].sort((a, b) => score(b) - score(a))[0] ?? null;
+}
+
+async function waitForSpeechVoices(): Promise<SpeechSynthesisVoice[]> {
+  const synthesis = window.speechSynthesis;
+  const immediate = synthesis.getVoices();
+  if (immediate.length) return immediate;
+
+  return new Promise((resolve) => {
+    const done = () => {
+      window.clearTimeout(timeout);
+      synthesis.removeEventListener("voiceschanged", done);
+      resolve(synthesis.getVoices());
+    };
+    const timeout = window.setTimeout(done, 900);
+    synthesis.addEventListener("voiceschanged", done, { once: true });
+  });
+}
+
 export function useVoiceAssistant() {
   const recognitionRef = useRef<RecognitionInstance | null>(null);
   const launchRecognitionRef = useRef<() => void>(() => undefined);
@@ -63,6 +111,8 @@ export function useVoiceAssistant() {
   const mutedRef = useRef(false);
   const pausedForResponseRef = useRef(false);
   const restartTimerRef = useRef<number | null>(null);
+  const voiceTurnTimerRef = useRef<number | null>(null);
+  const finalTranscriptRef = useRef("");
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const meterFrameRef = useRef<number | null>(null);
@@ -103,7 +153,14 @@ export function useVoiceAssistant() {
     if (!navigator.mediaDevices?.getUserMedia || mediaStreamRef.current || meterStartingRef.current) return;
     meterStartingRef.current = true;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
       if (mutedRef.current || !continuousEnabledRef.current) {
         stream.getTracks().forEach((track) => track.stop());
         meterStartingRef.current = false;
@@ -223,6 +280,20 @@ export function useVoiceAssistant() {
     setInterimTranscript("");
   }, []);
 
+  const finalizeVoiceTurn = useCallback(() => {
+    const finalText = finalTranscriptRef.current.replace(/\s+/g, " ").trim();
+    if (!finalText || pausedForResponseRef.current) return;
+    if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+    voiceTurnTimerRef.current = null;
+    finalTranscriptRef.current = "";
+    pausedForResponseRef.current = true;
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setInterimTranscript("");
+    setTranscript(finalText);
+    setStatus("processing");
+  }, []);
+
   const launchRecognition = useCallback(() => {
     if (!continuousEnabledRef.current || mutedRef.current || pausedForResponseRef.current || recognitionRef.current) return;
     const Recognition = getRecognitionConstructor();
@@ -235,30 +306,46 @@ export function useVoiceAssistant() {
     window.speechSynthesis?.cancel();
     setError("");
     const recognition = new Recognition();
-    let capturedFinal = false;
     recognition.lang = "tr-TR";
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onstart = () => setStatus("listening");
     recognition.onresult = (event) => {
-      let completed = "";
-      let interim = "";
-      for (let index = 0; index < event.results.length; index += 1) {
+      const completed: string[] = [];
+      const interim: string[] = [];
+      const startIndex = Math.max(0, event.resultIndex ?? 0);
+      for (let index = startIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
-        const text = result?.[0]?.transcript ?? "";
-        if (result?.isFinal) completed += text;
-        else interim += text;
+        const text = result?.[0]?.transcript?.trim() ?? "";
+        if (!text) continue;
+        if (result?.isFinal) completed.push(text);
+        else interim.push(text);
       }
-      setInterimTranscript(interim.trim());
-      if (completed.trim()) {
-        capturedFinal = true;
-        pausedForResponseRef.current = true;
-        setTranscript(completed.trim());
-        setInterimTranscript("");
-        setStatus("processing");
+
+      if (interim.length) {
+        setInterimTranscript(interim.join(" "));
+        if (voiceTurnTimerRef.current !== null) {
+          window.clearTimeout(voiceTurnTimerRef.current);
+          voiceTurnTimerRef.current = null;
+        }
+      }
+
+      if (completed.length) {
+        finalTranscriptRef.current = `${finalTranscriptRef.current} ${completed.join(" ")}`.trim();
+        setInterimTranscript(interim.join(" "));
+        if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+        if (!interim.length) {
+          voiceTurnTimerRef.current = window.setTimeout(finalizeVoiceTurn, VOICE_TURN_SILENCE_MS);
+        }
       }
     };
     recognition.onerror = (event) => {
+      if (event.error === "aborted") return;
+      if (event.error === "no-speech") {
+        setError("");
+        setStatus("listening");
+        return;
+      }
       setError(errorMessages[event.error] ?? "Sesli giriş başlatılamadı. Lütfen yeniden dene.");
       setStatus("error");
       if (event.error === "not-allowed") {
@@ -268,19 +355,24 @@ export function useVoiceAssistant() {
     };
     recognition.onend = () => {
       recognitionRef.current = null;
-      if (continuousEnabledRef.current && !mutedRef.current && !pausedForResponseRef.current && !capturedFinal) {
-        restartTimerRef.current = window.setTimeout(() => launchRecognitionRef.current(), 650);
+      if (!continuousEnabledRef.current || mutedRef.current || pausedForResponseRef.current) return;
+      if (finalTranscriptRef.current.trim()) {
+        if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+        voiceTurnTimerRef.current = window.setTimeout(finalizeVoiceTurn, 260);
+        return;
       }
+      restartTimerRef.current = window.setTimeout(() => launchRecognitionRef.current(), RECOGNITION_RESTART_MS);
     };
     recognitionRef.current = recognition;
 
     try {
       recognition.start();
     } catch {
+      recognitionRef.current = null;
       setStatus("error");
       setError("Mikrofon şu anda kullanılamıyor. Lütfen yeniden dene.");
     }
-  }, []);
+  }, [finalizeVoiceTurn]);
 
   launchRecognitionRef.current = launchRecognition;
 
@@ -293,6 +385,9 @@ export function useVoiceAssistant() {
     continuousEnabledRef.current = true;
     mutedRef.current = false;
     pausedForResponseRef.current = false;
+    finalTranscriptRef.current = "";
+    if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+    voiceTurnTimerRef.current = null;
     setContinuousEnabled(true);
     setMuted(false);
     void startAudioMeter();
@@ -307,6 +402,7 @@ export function useVoiceAssistant() {
     if (mutedRef.current) {
       mutedRef.current = false;
       pausedForResponseRef.current = false;
+      finalTranscriptRef.current = "";
       setMuted(false);
       setStatus("idle");
       void startAudioMeter();
@@ -314,6 +410,9 @@ export function useVoiceAssistant() {
       return;
     }
     mutedRef.current = true;
+    finalTranscriptRef.current = "";
+    if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+    voiceTurnTimerRef.current = null;
     setMuted(true);
     stopRecognition();
     stopAudioMeter();
@@ -328,19 +427,54 @@ export function useVoiceAssistant() {
     playbackRef.current = null;
     window.speechSynthesis?.cancel();
 
+    const speechText = prepareSpeechText(text) || text.trim();
     const resumeAfterSpeech = () => {
       stopSpeakingMeter();
       pausedForResponseRef.current = false;
       if (continuousEnabledRef.current && !mutedRef.current) {
         void startAudioMeter();
-        launchRecognitionRef.current();
+        restartTimerRef.current = window.setTimeout(
+          () => launchRecognitionRef.current(),
+          RECOGNITION_RESTART_MS,
+        );
       } else {
         setStatus(mutedRef.current ? "muted" : "idle");
       }
     };
 
+    // Prefer the device's Turkish system voice when a strong Turkish voice is
+    // available (Edge/Windows commonly exposes a Natural/Neural female voice).
+    // This is keyless and usually more fluid than the single local Piper voice.
+    if ("speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function") {
+      try {
+        const voices = await waitForSpeechVoices();
+        const turkishVoice = preferredTurkishVoice(voices);
+        if (turkishVoice) {
+          await new Promise<void>((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(speechText);
+            utterance.lang = "tr-TR";
+            utterance.voice = turkishVoice;
+            utterance.rate = /natural|neural|online/i.test(turkishVoice.name) ? 1.02 : 0.98;
+            utterance.pitch = /emel|female|woman|feminine|kadın/i.test(turkishVoice.name) ? 1.03 : 1.0;
+            utterance.volume = 1;
+            utterance.onstart = () => {
+              setStatus("speaking");
+              startSpeakingMeter();
+            };
+            utterance.onend = () => resolve();
+            utterance.onerror = () => resolve();
+            window.speechSynthesis.speak(utterance);
+          });
+          resumeAfterSpeech();
+          return;
+        }
+      } catch {
+        // The deterministic VPS voice below remains the no-browser-voice fallback.
+      }
+    }
+
     try {
-      const audio = await speakWithAion(text);
+      const audio = await speakWithAion(speechText);
       playbackRef.current = audio;
       await new Promise<void>((resolve, reject) => {
         audio.addEventListener("play", () => {
@@ -358,36 +492,19 @@ export function useVoiceAssistant() {
       playbackRef.current = null;
     }
 
-    if (!("speechSynthesis" in window)) {
-      setError("Sesli yanıt oynatılamadı. Yazılı yanıt kullanılabilir.");
-      setStatus("error");
-      pausedForResponseRef.current = false;
-      return;
-    }
-
-    await new Promise<void>((resolve) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "tr-TR";
-      utterance.rate = 0.96;
-      utterance.pitch = 0.94;
-      const turkishVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("tr"));
-      if (turkishVoice) utterance.voice = turkishVoice;
-      utterance.onstart = () => {
-        setStatus("speaking");
-        startSpeakingMeter();
-      };
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
-      window.speechSynthesis.speak(utterance);
-    });
-    resumeAfterSpeech();
+    setError("Sesli yanıt oynatılamadı. Yazılı yanıt kullanılabilir.");
+    setStatus("error");
+    pausedForResponseRef.current = false;
   }, [startAudioMeter, startPlaybackMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markProcessing = useCallback(() => {
     pausedForResponseRef.current = true;
+    if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+    voiceTurnTimerRef.current = null;
     stopRecognition();
+    stopAudioMeter();
     setStatus("processing");
-  }, [stopRecognition]);
+  }, [stopAudioMeter, stopRecognition]);
 
   const markIdle = useCallback(() => {
     pausedForResponseRef.current = false;
@@ -404,6 +521,8 @@ export function useVoiceAssistant() {
   useEffect(() => () => {
     continuousEnabledRef.current = false;
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
+    if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
+    finalTranscriptRef.current = "";
     recognitionRef.current?.abort();
     playbackRef.current?.pause();
     playbackRef.current = null;

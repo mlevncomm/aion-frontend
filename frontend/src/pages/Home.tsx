@@ -121,7 +121,7 @@ export default function Home() {
     setStatusNote(item === "home" ? "" : `${sectionNames[item] ?? item} açıldı`);
   };
 
-  const submitPrompt = useCallback(async (prompt: string) => {
+  const submitPrompt = useCallback(async (prompt: string, inputMode: "text" | "voice" = "text") => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || isSending) {
       if (!trimmedPrompt) setStatusNote("Başlamak için bir mesaj yaz");
@@ -136,7 +136,7 @@ export default function Home() {
     setStatusNote("AION gerçek kaynakları kontrol ediyor");
 
     try {
-      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined);
+      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined, inputMode);
       setChatSessionId(result.sessionId);
       setMessages((current) => [
         ...current,
@@ -166,7 +166,7 @@ export default function Home() {
   useEffect(() => {
     if (!transcript) return;
     setChatOpen(true);
-    void submitPrompt(transcript);
+    void submitPrompt(transcript, "voice");
     consumeTranscript();
   }, [consumeTranscript, submitPrompt, transcript]);
 
