@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -25,7 +25,33 @@ import {
   UserRound,
   Workflow,
 } from "lucide-react";
-import { disconnectAionIntegration, getAionControlKey, mutateAionTask, saveAionIntegration, type AgentChatSession, type AionIntegrations, type AionPersonalProfile, type AionSettings, type AionStatusSummary } from "@/lib/aionApi";
+import {
+  connectMarketplaceToken,
+  deleteAionOAuthClient,
+  disconnectAionIntegration,
+  disconnectMarketplacePlugin,
+  getAionControlKey,
+  getAionOAuthClients,
+  getAionVoiceSettings,
+  getMarketplacePlugins,
+  listElevenLabsVoices,
+  mutateAionTask,
+  pollMarketplaceConnect,
+  previewElevenLabsVoices,
+  saveAionIntegration,
+  saveAionOAuthClient,
+  saveAionVoiceSettings,
+  startMarketplaceConnect,
+  type AgentChatSession,
+  type AionIntegrations,
+  type AionOAuthClients,
+  type AionPersonalProfile,
+  type AionSettings,
+  type AionStatusSummary,
+  type AionVoiceSettings,
+  type ElevenLabsVoice,
+  type MarketplacePlugin,
+} from "@/lib/aionApi";
 import { ApiError } from "@/lib/api";
 
 export type WorkspaceViewId = "projects" | "tasks" | "inbox" | "library" | "automations" | "settings" | "profile";
@@ -169,6 +195,24 @@ export default function WorkspaceView({
   const [supabaseKey, setSupabaseKey] = useState("");
   const [integrationBusy, setIntegrationBusy] = useState("");
   const [integrationNote, setIntegrationNote] = useState<Record<string, string>>({});
+  const [marketplacePlugins, setMarketplacePlugins] = useState<MarketplacePlugin[]>([]);
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [marketplaceQuery, setMarketplaceQuery] = useState("");
+  const [marketplaceToken, setMarketplaceToken] = useState("");
+  const [marketplaceSelected, setMarketplaceSelected] = useState("");
+  const [marketplaceBusy, setMarketplaceBusy] = useState("");
+  const [marketplaceNote, setMarketplaceNote] = useState("");
+  const [oauthClients, setOauthClients] = useState<AionOAuthClients | null>(null);
+  const [oauthFamily, setOauthFamily] = useState("");
+  const [oauthClientId, setOauthClientId] = useState("");
+  const [oauthClientSecret, setOauthClientSecret] = useState("");
+  const [oauthBusy, setOauthBusy] = useState(false);
+  const [oauthNote, setOauthNote] = useState("");
+  const [elevenApiKey, setElevenApiKey] = useState("");
+  const [elevenVoiceId, setElevenVoiceId] = useState("");
+  const [elevenVoices, setElevenVoices] = useState<ElevenLabsVoice[]>([]);
+  const [voiceSettingsState, setVoiceSettingsState] = useState<AionVoiceSettings | null>(null);
+  const [pronunciationDraft, setPronunciationDraft] = useState("");
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
   const internalTasks = useMemo(() => listValue(status?.internal_tasks).map(record), [status]);
   const observedChanges = useMemo(() => listValue(status?.observed_changes).map(record), [status]);
@@ -183,6 +227,32 @@ export default function WorkspaceView({
     if (!q) return sessions;
     return sessions.filter((session) => `${session.title} ${session.preview ?? ""}`.toLocaleLowerCase("tr-TR").includes(q));
   }, [query, sessions]);
+  const filteredMarketplace = useMemo(() => {
+    const q = marketplaceQuery.trim().toLocaleLowerCase("tr-TR");
+    const prioritized = [...marketplacePlugins].sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || a.display_name.localeCompare(b.display_name, "tr"));
+    if (!q) return prioritized;
+    return prioritized.filter((plugin) => `${plugin.display_name} ${plugin.description ?? ""} ${plugin.category ?? ""}`.toLocaleLowerCase("tr-TR").includes(q));
+  }, [marketplacePlugins, marketplaceQuery]);
+
+  useEffect(() => {
+    if (view !== "settings") return;
+    let cancelled = false;
+    setMarketplaceLoading(true);
+    Promise.allSettled([getMarketplacePlugins(), getAionVoiceSettings(), getAionOAuthClients()]).then(([catalog, voice, oauth]) => {
+      if (cancelled) return;
+      if (catalog.status === "fulfilled") setMarketplacePlugins(catalog.value.plugins ?? []);
+      if (voice.status === "fulfilled") {
+        setVoiceSettingsState(voice.value);
+        setPronunciationDraft(Object.entries(voice.value.custom_pronunciations ?? {}).map(([term, spoken]) => `${term}=${spoken}`).join("\n"));
+      }
+      if (oauth.status === "fulfilled") setOauthClients(oauth.value);
+      setMarketplaceLoading(false);
+    });
+    if (integrations?.elevenlabs?.configured) {
+      void listElevenLabsVoices().then((voices) => { if (!cancelled) setElevenVoices(voices); }).catch(() => undefined);
+    }
+    return () => { cancelled = true; };
+  }, [view, integrations?.elevenlabs?.configured]);
 
   const revealControlKey = async () => {
     if (controlKey) {
@@ -252,13 +322,15 @@ export default function WorkspaceView({
     }
   };
 
-  const disconnectIntegration = async (provider: "vercel" | "supabase") => {
+  const disconnectIntegration = async (provider: "vercel" | "supabase" | "elevenlabs") => {
     if (integrationBusy) return;
-    if (!window.confirm(`${provider === "vercel" ? "Vercel" : "Supabase"} bağlantısını AION'dan kaldırmak istiyor musun?`)) return;
+    const label = provider === "vercel" ? "Vercel" : provider === "supabase" ? "Supabase" : "ElevenLabs";
+    if (!window.confirm(`${label} bağlantısını AION'dan kaldırmak istiyor musun?`)) return;
     setIntegrationBusy(provider);
     try {
       await disconnectAionIntegration(provider);
       setIntegrationNote((current) => ({ ...current, [provider]: "Bağlantı kaldırıldı." }));
+      if (provider === "elevenlabs") setElevenVoices([]);
       onRefresh();
     } catch (error) {
       setIntegrationNote((current) => ({
@@ -267,6 +339,201 @@ export default function WorkspaceView({
       }));
     } finally {
       setIntegrationBusy("");
+    }
+  };
+
+  const refreshMarketplace = async () => {
+    setMarketplaceLoading(true);
+    try {
+      const catalog = await getMarketplacePlugins();
+      setMarketplacePlugins(catalog.plugins ?? []);
+    } catch (error) {
+      setMarketplaceNote(apiErrorDetail(error, "Hesap bağlantıları alınamadı."));
+    } finally {
+      setMarketplaceLoading(false);
+    }
+  };
+
+  const startAccountConnect = async (plugin: MarketplacePlugin) => {
+    if (marketplaceBusy) return;
+    const auth = record(plugin.auth);
+    const mode = stringValue(auth.mode, "");
+    if (mode === "pat_paste") {
+      setMarketplaceSelected(plugin.id);
+      setMarketplaceToken("");
+      setMarketplaceNote(`${plugin.display_name} API/token alanı açıldı.`);
+      return;
+    }
+    setMarketplaceBusy(plugin.id);
+    setMarketplaceNote(`${plugin.display_name} hesap girişi başlatılıyor…`);
+    try {
+      const flow = await startMarketplaceConnect(plugin.id);
+      const flowId = stringValue(flow.flow_id, "");
+      const openUrl = stringValue(flow.open_url || flow.verification_uri_complete || flow.verification_uri, "");
+      const userCode = stringValue(flow.user_code, "");
+      if (openUrl) window.open(openUrl, "_blank", "noopener,noreferrer");
+      setMarketplaceNote(userCode ? `${plugin.display_name}: açılan sayfada ${userCode} kodunu kullan.` : `${plugin.display_name}: açılan sağlayıcı sayfasından giriş yap.`);
+      if (!flowId) {
+        await refreshMarketplace();
+        return;
+      }
+      for (let attempt = 0; attempt < 80; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1500));
+        const state = await pollMarketplaceConnect(plugin.id, flowId);
+        const value = stringValue(state.state, "pending");
+        if (value === "connected") {
+          setMarketplaceNote(`${plugin.display_name} hesabı bağlandı ve doğrulandı.`);
+          await refreshMarketplace();
+          return;
+        }
+        if (value === "error") throw new Error(stringValue(state.error, "OAuth bağlantısı tamamlanamadı."));
+      }
+      setMarketplaceNote(`${plugin.display_name} giriş süresi doldu. Tekrar deneyebilirsin.`);
+    } catch (error) {
+      setMarketplaceNote(apiErrorDetail(error, error instanceof Error ? error.message : `${plugin.display_name} bağlanamadı.`));
+      if (plugin.fallback_auth) setMarketplaceSelected(plugin.id);
+    } finally {
+      setMarketplaceBusy("");
+    }
+  };
+
+  const saveMarketplaceToken = async (plugin: MarketplacePlugin) => {
+    if (!marketplaceToken.trim() || marketplaceBusy) return;
+    setMarketplaceBusy(plugin.id);
+    setMarketplaceNote(`${plugin.display_name} tokenı sağlayıcıda doğrulanıyor…`);
+    try {
+      await connectMarketplaceToken(plugin.id, marketplaceToken.trim());
+      setMarketplaceToken("");
+      setMarketplaceSelected("");
+      setMarketplaceNote(`${plugin.display_name} bağlandı ve doğrulandı.`);
+      await refreshMarketplace();
+    } catch (error) {
+      setMarketplaceNote(apiErrorDetail(error, `${plugin.display_name} tokenı doğrulanamadı.`));
+    } finally {
+      setMarketplaceBusy("");
+    }
+  };
+
+  const disconnectMarketplace = async (plugin: MarketplacePlugin) => {
+    if (marketplaceBusy || !window.confirm(`${plugin.display_name} hesabını AION'dan ayırmak istiyor musun?`)) return;
+    setMarketplaceBusy(plugin.id);
+    try {
+      await disconnectMarketplacePlugin(plugin.id);
+      setMarketplaceNote(`${plugin.display_name} bağlantısı kaldırıldı.`);
+      await refreshMarketplace();
+    } catch (error) {
+      setMarketplaceNote(apiErrorDetail(error, `${plugin.display_name} bağlantısı kaldırılamadı.`));
+    } finally {
+      setMarketplaceBusy("");
+    }
+  };
+
+  const previewElevenVoices = async () => {
+    if (!elevenApiKey.trim() || integrationBusy) return;
+    setIntegrationBusy("elevenlabs-preview");
+    setIntegrationNote((current) => ({ ...current, elevenlabs: "Sesler ElevenLabs hesabından alınıyor…" }));
+    try {
+      const voices = await previewElevenLabsVoices(elevenApiKey.trim());
+      setElevenVoices(voices);
+      if (!elevenVoiceId && voices.length) {
+        const preferred = voices.find((voice) => (voice.gender ?? "").toLowerCase() === "female" && (voice.language ?? "").toLowerCase().startsWith("tr"))
+          ?? voices.find((voice) => (voice.gender ?? "").toLowerCase() === "female")
+          ?? voices[0];
+        setElevenVoiceId(preferred.voice_id);
+      }
+      setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. Beğendiğin sesi seçip kaydet.` }));
+    } catch (error) {
+      setIntegrationNote((current) => ({ ...current, elevenlabs: apiErrorDetail(error, "ElevenLabs API key doğrulanamadı.") }));
+    } finally {
+      setIntegrationBusy("");
+    }
+  };
+
+  const saveElevenLabs = async () => {
+    if (!elevenApiKey.trim() || !elevenVoiceId || integrationBusy) return;
+    setIntegrationBusy("elevenlabs");
+    try {
+      await saveAionIntegration("elevenlabs", { api_key: elevenApiKey.trim(), voice_id: elevenVoiceId });
+      setElevenApiKey("");
+      setIntegrationNote((current) => ({ ...current, elevenlabs: "Premium kadın ses backend'e bağlandı ve gerçek API ile doğrulandı." }));
+      onRefresh();
+    } catch (error) {
+      setIntegrationNote((current) => ({ ...current, elevenlabs: apiErrorDetail(error, "ElevenLabs bağlantısı kaydedilemedi.") }));
+    } finally {
+      setIntegrationBusy("");
+    }
+  };
+
+  const saveVoiceProfile = async () => {
+    const base = voiceSettingsState;
+    if (!base) return;
+    const pronunciations: Record<string, string> = {};
+    for (const raw of pronunciationDraft.split("\n")) {
+      const [term, ...rest] = raw.split("=");
+      const spoken = rest.join("=").trim();
+      if (term?.trim() && spoken) pronunciations[term.trim()] = spoken;
+    }
+    setIntegrationBusy("voice-profile");
+    try {
+      const saved = await saveAionVoiceSettings({
+        speed: base.speed,
+        stability: base.stability,
+        similarity_boost: base.similarity_boost,
+        style: base.style,
+        pronunciations,
+      });
+      setVoiceSettingsState(saved);
+      setIntegrationNote((current) => ({ ...current, voice: "Ses karakteri ve özel isim telaffuzları kaydedildi." }));
+    } catch (error) {
+      setIntegrationNote((current) => ({ ...current, voice: apiErrorDetail(error, "Ses ayarları kaydedilemedi.") }));
+    } finally {
+      setIntegrationBusy("");
+    }
+  };
+
+  const openOauthClientEditor = (plugin: MarketplacePlugin) => {
+    const family = plugin.oauth_client_family ?? "";
+    if (!family) {
+      setOauthNote(`${plugin.display_name} için ayrıca OAuth uygulama bilgisi gerekmiyor.`);
+      return;
+    }
+    setOauthFamily(family);
+    setOauthClientId("");
+    setOauthClientSecret("");
+    setOauthNote(`${plugin.display_name} için ${family} OAuth uygulama bilgilerini kaydedebilirsin.`);
+  };
+
+  const saveOauthClient = async () => {
+    if (!oauthFamily || !oauthClientId.trim() || oauthBusy) return;
+    setOauthBusy(true);
+    setOauthNote("OAuth uygulama bilgileri güvenli credential store'a kaydediliyor…");
+    try {
+      await saveAionOAuthClient(oauthFamily, oauthClientId.trim(), oauthClientSecret.trim() || undefined);
+      const refreshed = await getAionOAuthClients();
+      setOauthClients(refreshed);
+      setOauthClientId("");
+      setOauthClientSecret("");
+      setOauthNote(`${oauthFamily} OAuth uygulaması kaydedildi. Şimdi ilgili hesapta Hesapla giriş yap diyebilirsin.`);
+      await refreshMarketplace();
+    } catch (error) {
+      setOauthNote(apiErrorDetail(error, "OAuth uygulama bilgileri kaydedilemedi."));
+    } finally {
+      setOauthBusy(false);
+    }
+  };
+
+  const removeOauthClient = async (family: string) => {
+    if (!family || oauthBusy || !window.confirm(`${family} OAuth uygulama bilgilerini AION'dan kaldırmak istiyor musun?`)) return;
+    setOauthBusy(true);
+    try {
+      await deleteAionOAuthClient(family);
+      setOauthClients(await getAionOAuthClients());
+      setOauthNote(`${family} OAuth uygulama bilgileri kaldırıldı.`);
+      await refreshMarketplace();
+    } catch (error) {
+      setOauthNote(apiErrorDetail(error, "OAuth uygulama bilgileri kaldırılamadı."));
+    } finally {
+      setOauthBusy(false);
     }
   };
 
@@ -523,13 +790,16 @@ export default function WorkspaceView({
   if (view === "settings") {
     const vercel = record(integrations?.vercel ?? status?.vercel);
     const supabase = record(integrations?.supabase ?? status?.supabase);
+    const elevenlabs = record(integrations?.elevenlabs);
     const tradeIntegration = record(integrations?.aion_trade);
     const trade = projects.find((project) => stringValue(project.id, "") === "aion-trade") ?? {};
     const vercelStatus = stringValue(vercel.status, "BLOCKED_CONNECTION");
     const supabaseStatus = stringValue(supabase.status, "BLOCKED_CONNECTION");
+    const elevenStatus = stringValue(elevenlabs.status, "BLOCKED_CONNECTION");
     const tradeTelemetry = stringValue(tradeIntegration.status ?? trade.positions, "BLOCKED_CONNECTION");
     const vercelConfigured = vercel.configured === true;
     const supabaseConfigured = supabase.configured === true;
+    const elevenConfigured = elevenlabs.configured === true;
     return (
       <div className="workspace-view">
         <Header eyebrow="AION çalışma biçimi" title="Ayarlar" copy="Model, güvenlik, ses ve görünüm yapılandırmasının okunabilir özeti." loading={loading} onRefresh={onRefresh} />
@@ -647,6 +917,52 @@ export default function WorkspaceView({
               <button type="button" className="workspace-integration-help" onClick={() => onAsk("AION, Supabase Project URL ve publishable/anon key'i nereden bulacağımı kısa anlat. service_role isteme; değerleri Ayarlar > Bağlantılar alanına yapıştıracağım.")}>Bilgiler nerede?</button>
             </article>
 
+            <article className="workspace-connection-card is-configurable" data-testid="integration-elevenlabs-card">
+              <div className="workspace-connection-top"><span><Activity size={17} /></span><StatusPill value={elevenStatus} /></div>
+              <h3>Premium AION Sesi · ElevenLabs</h3>
+              <p>Robotik tarayıcı sesi yerine AION'un backend'den ürettiği doğal Türkçe sesi kullanır. API key hiçbir zaman tarayıcıya geri gönderilmez.</p>
+              <div className="workspace-integration-form">
+                <label>
+                  <span>ElevenLabs API Key</span>
+                  <input
+                    type="password"
+                    value={elevenApiKey}
+                    onChange={(event) => setElevenApiKey(event.target.value)}
+                    placeholder={elevenConfigured ? "Sesi değiştirmek için API key'i tekrar gir" : "ElevenLabs API key"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    data-testid="elevenlabs-api-key-input"
+                  />
+                </label>
+                <div className="workspace-integration-actions">
+                  <button type="button" disabled={!elevenApiKey.trim() || Boolean(integrationBusy)} onClick={() => { void previewElevenVoices(); }}>
+                    {integrationBusy === "elevenlabs-preview" ? "Sesler alınıyor…" : "Sesleri getir"}
+                  </button>
+                </div>
+                {elevenVoices.length ? (
+                  <label>
+                    <span>Kadın / doğal ses seç</span>
+                    <select value={elevenVoiceId} onChange={(event) => setElevenVoiceId(event.target.value)} data-testid="elevenlabs-voice-select">
+                      <option value="">Ses seç</option>
+                      {elevenVoices.map((voice) => (
+                        <option key={voice.voice_id} value={voice.voice_id}>
+                          {voice.name}{voice.gender ? ` · ${voice.gender}` : ""}{voice.language ? ` · ${voice.language}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                <div className="workspace-integration-actions">
+                  <button type="button" className="is-primary" disabled={!elevenApiKey.trim() || !elevenVoiceId || Boolean(integrationBusy)} onClick={() => { void saveElevenLabs(); }} data-testid="elevenlabs-save-button">
+                    {integrationBusy === "elevenlabs" ? "Doğrulanıyor…" : elevenConfigured ? "Sesi güncelle ve test et" : "Kaydet ve test et"}
+                  </button>
+                  {elevenConfigured ? <button type="button" disabled={Boolean(integrationBusy)} onClick={() => { void disconnectIntegration("elevenlabs"); }}>Bağlantıyı kaldır</button> : null}
+                </div>
+              </div>
+              {elevenConfigured ? <small className="workspace-integration-meta">Aktif ses: {stringValue(elevenlabs.voice_name, stringValue(elevenlabs.voice_id, "Seçili ElevenLabs sesi"))}</small> : null}
+              {integrationNote.elevenlabs ? <p className="workspace-integration-note" role="status">{integrationNote.elevenlabs}</p> : null}
+            </article>
+
             <article className="workspace-connection-card">
               <div className="workspace-connection-top"><span><Gauge size={17} /></span><StatusPill value={tradeTelemetry} /></div>
               <h3>AION Trade Telemetri</h3>
@@ -655,6 +971,115 @@ export default function WorkspaceView({
               <button type="button" onClick={() => onAsk("AION, AION Trade için yalnız read-only pozisyon, strateji ve risk telemetrisi bağlantısını planla. LIVE işlem, withdrawal veya emir yetkisi verme. Önce mevcut gerçek API yüzeyini ve gereken en düşük yetkiyi kontrol et.")}>Telemetri planını incele</button>
             </article>
           </div>
+        </section>
+
+        <section className="workspace-voice-personality" aria-label="AION ses karakteri">
+          <div className="workspace-connections-heading">
+            <div><small>Kişisel ses profili</small><strong>Konuşma karakteri ve telaffuz</strong></div>
+            <StatusPill value={voiceSettingsState?.provider === "elevenlabs" ? "Premium TTS" : "Cihaz / yerel fallback"} />
+          </div>
+          <div className="workspace-voice-profile-grid">
+            <div className="workspace-voice-sliders">
+              <label>
+                <span>Konuşma hızı <b>{voiceSettingsState?.speed?.toFixed(2) ?? "0.96"}</b></span>
+                <input type="range" min="0.7" max="1.2" step="0.01" value={voiceSettingsState?.speed ?? 0.96} onChange={(event) => setVoiceSettingsState((current) => current ? { ...current, speed: Number(event.target.value) } : current)} />
+              </label>
+              <label>
+                <span>Doğallık / stabilite <b>{voiceSettingsState?.stability?.toFixed(2) ?? "0.42"}</b></span>
+                <input type="range" min="0" max="1" step="0.01" value={voiceSettingsState?.stability ?? 0.42} onChange={(event) => setVoiceSettingsState((current) => current ? { ...current, stability: Number(event.target.value) } : current)} />
+              </label>
+              <label>
+                <span>İfade / stil <b>{voiceSettingsState?.style?.toFixed(2) ?? "0.10"}</b></span>
+                <input type="range" min="0" max="1" step="0.01" value={voiceSettingsState?.style ?? 0.10} onChange={(event) => setVoiceSettingsState((current) => current ? { ...current, style: Number(event.target.value) } : current)} />
+              </label>
+            </div>
+            <label className="workspace-pronunciation-editor">
+              <span>Özel isim telaffuzları</span>
+              <textarea
+                value={pronunciationDraft}
+                onChange={(event) => setPronunciationDraft(event.target.value)}
+                placeholder={"AION=Ayon\nWEXON=Vekson\nProje Adı=Nasıl okunmasını istiyorsan"}
+                rows={7}
+                data-testid="voice-pronunciation-input"
+              />
+              <small>Her satır: yazılış=telaffuz. Varsayılan AION, WEXON, GitHub, Supabase gibi isimler zaten düzeltilir.</small>
+            </label>
+          </div>
+          <div className="workspace-integration-actions">
+            <button type="button" className="is-primary" disabled={!voiceSettingsState || Boolean(integrationBusy)} onClick={() => { void saveVoiceProfile(); }} data-testid="voice-profile-save-button">
+              {integrationBusy === "voice-profile" ? "Kaydediliyor…" : "Ses karakterini kaydet"}
+            </button>
+          </div>
+          {integrationNote.voice ? <p className="workspace-integration-note" role="status">{integrationNote.voice}</p> : null}
+        </section>
+
+        <section className="workspace-accounts-panel" aria-label="Hesaplar ve API bağlantıları" data-testid="accounts-api-panel">
+          <div className="workspace-connections-heading">
+            <div><small>Genel entegrasyon merkezi</small><strong>Hesaplar & API</strong></div>
+            <span>{marketplacePlugins.filter((plugin) => plugin.status === "connected").length} bağlı · {marketplacePlugins.length} kullanılabilir servis</span>
+          </div>
+          <p className="workspace-accounts-copy">AION'un erişmesi gereken servisi burada bul. Destekliyorsa sağlayıcının resmi giriş sayfasıyla OAuth bağlan; değilse API/token alanını kullan. Bağlantı test edilmeden AION servisi bağlı saymaz.</p>
+          <div className="workspace-account-search">
+            <input value={marketplaceQuery} onChange={(event) => setMarketplaceQuery(event.target.value)} placeholder="GitHub, Gmail, Drive, Calendar, Notion, Slack, Vercel…" />
+            <button type="button" onClick={() => { void refreshMarketplace(); }} disabled={marketplaceLoading}>{marketplaceLoading ? "Yükleniyor" : "Yenile"}</button>
+          </div>
+          {marketplaceNote ? <p className="workspace-integration-note" role="status">{marketplaceNote}</p> : null}
+          {oauthFamily ? (
+            <div className="workspace-oauth-client-editor" data-testid="oauth-client-editor">
+              <div>
+                <small>OAuth uygulaması · {oauthFamily}</small>
+                <strong>Bir kez ayarla, aynı ailedeki hesaplarda tekrar kullan</strong>
+                <p>Redirect / callback URL: <code>{oauthClients?.callback_url || "https://aion.wexon.dev/api/marketplace/oauth/callback"}</code></p>
+              </div>
+              <div className="workspace-oauth-client-form">
+                <input value={oauthClientId} onChange={(event) => setOauthClientId(event.target.value)} placeholder="OAuth Client ID" autoComplete="off" spellCheck={false} data-testid="oauth-client-id-input" />
+                <input type="password" value={oauthClientSecret} onChange={(event) => setOauthClientSecret(event.target.value)} placeholder="Client Secret (sağlayıcı istiyorsa)" autoComplete="off" spellCheck={false} data-testid="oauth-client-secret-input" />
+                <button type="button" className="is-primary" disabled={!oauthClientId.trim() || oauthBusy} onClick={() => { void saveOauthClient(); }} data-testid="oauth-client-save-button">{oauthBusy ? "Kaydediliyor…" : "OAuth uygulamasını kaydet"}</button>
+                {oauthClients?.families?.[oauthFamily]?.configured ? <button type="button" disabled={oauthBusy} onClick={() => { void removeOauthClient(oauthFamily); }}>OAuth bilgisini kaldır</button> : null}
+                <button type="button" disabled={oauthBusy} onClick={() => setOauthFamily("")}>Kapat</button>
+              </div>
+              {oauthNote ? <p className="workspace-integration-note" role="status">{oauthNote}</p> : null}
+            </div>
+          ) : null}
+          <div className="workspace-account-grid">
+            {filteredMarketplace.slice(0, 24).map((plugin) => {
+              const authMode = stringValue(record(plugin.auth).mode, "");
+              const connected = plugin.status === "connected";
+              const hasTokenFallback = authMode === "pat_paste" || Boolean(plugin.fallback_auth);
+              const oauthCapable = !["pat_paste", "local"].includes(authMode);
+              const oauthFamilyForPlugin = plugin.oauth_client_family ?? "";
+              const oauthFamilyConfigured = oauthFamilyForPlugin ? Boolean(oauthClients?.families?.[oauthFamilyForPlugin]?.configured) : true;
+              const selected = marketplaceSelected === plugin.id;
+              return (
+                <article key={plugin.id} className={`workspace-account-card${connected ? " is-connected" : ""}`} data-testid={`account-${plugin.id}`}>
+                  <div className="workspace-account-card-top">
+                    <div><strong>{plugin.display_name}</strong><small>{plugin.category || "Entegrasyon"}</small></div>
+                    <StatusPill value={connected ? "CONNECTED" : plugin.status || "not_connected"} />
+                  </div>
+                  <p>{plugin.description || "AION bağlantısı"}</p>
+                  <div className="workspace-account-actions">
+                    {connected ? (
+                      <button type="button" onClick={() => { void disconnectMarketplace(plugin); }} disabled={marketplaceBusy === plugin.id}>Bağlantıyı kaldır</button>
+                    ) : (
+                      <>
+                        {oauthCapable ? <button type="button" className="is-primary" onClick={() => { void startAccountConnect(plugin); }} disabled={Boolean(marketplaceBusy) || (!oauthFamilyConfigured && plugin.oauth_client_configured === false)}>{marketplaceBusy === plugin.id ? "Giriş bekleniyor…" : "Hesapla giriş yap"}</button> : null}
+                        {oauthCapable && oauthFamilyForPlugin && (!oauthFamilyConfigured || plugin.oauth_client_configured === false) ? <button type="button" onClick={() => openOauthClientEditor(plugin)}>OAuth uygulaması ayarla</button> : null}
+                        {hasTokenFallback ? <button type="button" onClick={() => { setMarketplaceSelected(selected ? "" : plugin.id); setMarketplaceToken(""); }}>API / Token</button> : null}
+                        {authMode === "local" ? <button type="button" className="is-primary" onClick={() => { void startAccountConnect(plugin); }}>Etkinleştir</button> : null}
+                      </>
+                    )}
+                  </div>
+                  {selected && !connected ? (
+                    <div className="workspace-account-token-form">
+                      <input type="password" value={marketplaceToken} onChange={(event) => setMarketplaceToken(event.target.value)} placeholder={`${plugin.display_name} API anahtarı / token`} autoComplete="off" spellCheck={false} />
+                      <button type="button" className="is-primary" disabled={!marketplaceToken.trim() || Boolean(marketplaceBusy)} onClick={() => { void saveMarketplaceToken(plugin); }}>Doğrula ve bağla</button>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+          {!marketplaceLoading && filteredMarketplace.length === 0 ? <EmptyState icon={<KeyRound size={20} />} title="Servis bulunamadı" copy="Farklı bir servis adı ara. Desteklenmeyen özel API'ler için AION'a entegrasyon eklemesini söyleyebilirsin." /> : null}
         </section>
       </div>
     );

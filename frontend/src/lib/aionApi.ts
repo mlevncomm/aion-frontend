@@ -113,7 +113,57 @@ export interface AionIntegrationInfo {
 export interface AionIntegrations {
   vercel: AionIntegrationInfo;
   supabase: AionIntegrationInfo;
+  elevenlabs: AionIntegrationInfo;
   aion_trade: AionIntegrationInfo;
+}
+
+export interface AionVoiceSettings {
+  provider: "elevenlabs" | "local";
+  speed: number;
+  stability: number;
+  similarity_boost: number;
+  style: number;
+  pronunciations: Record<string, string>;
+  custom_pronunciations: Record<string, string>;
+}
+
+export interface ElevenLabsVoice {
+  voice_id: string;
+  name: string;
+  category?: string;
+  language?: string;
+  gender?: string;
+  accent?: string;
+  description?: string;
+}
+
+export interface MarketplacePlugin {
+  id: string;
+  display_name: string;
+  description?: string;
+  category?: string;
+  featured?: boolean;
+  status?: string;
+  live_callable?: boolean;
+  oauth_client_configured?: boolean;
+  oauth_client_family?: string | null;
+  auth_standard?: Record<string, unknown>;
+  auth?: Record<string, unknown>;
+  fallback_auth?: Record<string, unknown>;
+  post_install_hint_md?: string;
+  unavailable_reason?: string | null;
+}
+
+export interface MarketplaceCatalog {
+  plugins: MarketplacePlugin[];
+  total: number;
+  connected: number;
+  category_order?: string[];
+}
+
+export interface AionOAuthClients {
+  callback_url: string;
+  families: Record<string, { configured: boolean; secret_configured: boolean }>;
 }
 
 export interface AionTaskItem {
@@ -151,14 +201,80 @@ export async function getAionIntegrations(): Promise<AionIntegrations> {
 }
 
 export async function saveAionIntegration(
-  provider: "vercel" | "supabase",
-  values: { token?: string; host?: string; publishable_key?: string },
+  provider: "vercel" | "supabase" | "elevenlabs",
+  values: { token?: string; host?: string; publishable_key?: string; api_key?: string; voice_id?: string },
 ): Promise<Record<string, unknown>> {
   return apiPost<Record<string, unknown>>(`/aion/integrations/${provider}`, values);
 }
 
-export async function disconnectAionIntegration(provider: "vercel" | "supabase"): Promise<Record<string, unknown>> {
+export async function disconnectAionIntegration(provider: "vercel" | "supabase" | "elevenlabs"): Promise<Record<string, unknown>> {
   return apiDelete<Record<string, unknown>>(`/aion/integrations/${provider}`);
+}
+
+export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
+  const result = await apiGet<{ voices: ElevenLabsVoice[] }>("/aion/integrations/elevenlabs/voices");
+  return result.voices ?? [];
+}
+
+export async function previewElevenLabsVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
+  const result = await apiPost<{ voices: ElevenLabsVoice[] }>("/aion/integrations/elevenlabs/voices/preview", { api_key: apiKey });
+  return result.voices ?? [];
+}
+
+export async function getAionVoiceSettings(): Promise<AionVoiceSettings> {
+  return apiGet<AionVoiceSettings>("/aion/voice/settings");
+}
+
+export async function saveAionVoiceSettings(settings: {
+  speed: number;
+  stability: number;
+  similarity_boost: number;
+  style: number;
+  pronunciations: Record<string, string>;
+}): Promise<AionVoiceSettings> {
+  return apiPost<AionVoiceSettings>("/aion/voice/settings", settings);
+}
+
+export async function getMarketplacePlugins(): Promise<MarketplaceCatalog> {
+  return apiGet<MarketplaceCatalog>("/marketplace/plugins");
+}
+
+export async function connectMarketplaceToken(pluginId: string, token: string, instanceUrl?: string): Promise<Record<string, unknown>> {
+  return apiPost<Record<string, unknown>>(`/marketplace/plugins/${encodeURIComponent(pluginId)}/connect/pat`, {
+    token,
+    ...(instanceUrl ? { instance_url: instanceUrl } : {}),
+  });
+}
+
+export async function startMarketplaceConnect(pluginId: string, instanceUrl?: string): Promise<Record<string, unknown>> {
+  return apiPost<Record<string, unknown>>(`/marketplace/plugins/${encodeURIComponent(pluginId)}/connect/start`, instanceUrl ? { instance_url: instanceUrl } : {});
+}
+
+export async function pollMarketplaceConnect(pluginId: string, flowId: string): Promise<Record<string, unknown>> {
+  return apiGet<Record<string, unknown>>(`/marketplace/plugins/${encodeURIComponent(pluginId)}/connect/poll/${encodeURIComponent(flowId)}`);
+}
+
+export async function disconnectMarketplacePlugin(pluginId: string): Promise<Record<string, unknown>> {
+  return apiDelete<Record<string, unknown>>(`/marketplace/plugins/${encodeURIComponent(pluginId)}`);
+}
+
+export async function getAionOAuthClients(): Promise<AionOAuthClients> {
+  return apiGet<AionOAuthClients>("/aion/oauth-clients");
+}
+
+export async function saveAionOAuthClient(
+  family: string,
+  clientId: string,
+  clientSecret?: string,
+): Promise<Record<string, unknown>> {
+  return apiPost<Record<string, unknown>>(`/aion/oauth-clients/${encodeURIComponent(family)}`, {
+    client_id: clientId,
+    ...(clientSecret ? { client_secret: clientSecret } : {}),
+  });
+}
+
+export async function deleteAionOAuthClient(family: string): Promise<Record<string, unknown>> {
+  return apiDelete<Record<string, unknown>>(`/aion/oauth-clients/${encodeURIComponent(family)}`);
 }
 
 export async function listAionTasks(): Promise<AionTaskItem[]> {

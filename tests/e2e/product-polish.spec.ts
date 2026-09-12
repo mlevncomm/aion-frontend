@@ -53,6 +53,7 @@ async function mockProductData(page: Page) {
       body: JSON.stringify({
         vercel: { status: 'BLOCKED_CONNECTION', configured: false },
         supabase: { status: 'BLOCKED_CONNECTION', configured: false },
+        elevenlabs: { status: 'BLOCKED_CONNECTION', configured: false },
         aion_trade: { status: 'BLOCKED_CONNECTION', configured: false },
       }),
     });
@@ -68,6 +69,53 @@ async function mockProductData(page: Page) {
       return;
     }
     await route.fallback();
+  });
+  await page.route('**/api/aion/oauth-clients', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        callback_url: 'https://aion.wexon.dev/api/marketplace/oauth/callback',
+        families: {
+          google: { configured: false, secret_configured: false },
+          github: { configured: true, secret_configured: false },
+        },
+      }),
+    });
+  });
+  await page.route('**/api/aion/oauth-clients/*', async (route) => {
+    const family = route.request().url().split('/').at(-1) ?? 'unknown';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ family, configured: route.request().method() !== 'DELETE', secret_configured: false }),
+    });
+  });
+  await page.route('**/api/aion/voice/settings', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        provider: 'local', speed: 0.96, stability: 0.42, similarity_boost: 0.82, style: 0.1,
+        pronunciations: { AION: 'Ayon', WEXON: 'Vekson' }, custom_pronunciations: { WEXON: 'Vekson' },
+      }),
+    });
+  });
+  await page.route('**/api/marketplace/plugins', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        total: 4,
+        connected: 1,
+        plugins: [
+          { id: 'github', display_name: 'GitHub', description: 'Repos and pull requests', category: 'Developer', featured: true, status: 'connected', auth: { mode: 'oauth_device_flow' } },
+          { id: 'gmail', display_name: 'Gmail', description: 'Email', category: 'Messaging', featured: true, status: 'not_connected', auth: { mode: 'oauth_pkce_loopback' } },
+          { id: 'notion', display_name: 'Notion', description: 'Pages and databases', category: 'Knowledge', status: 'not_connected', auth: { mode: 'hosted_mcp_oauth_dcr' } },
+          { id: 'vercel', display_name: 'Vercel', description: 'Deployments', category: 'Developer', status: 'not_connected', auth: { mode: 'hosted_mcp_oauth_dcr' }, fallback_auth: { mode: 'pat_paste' } },
+        ],
+      }),
+    });
   });
   await page.route('**/api/aion/profile', async (route) => {
     await route.fulfill({
@@ -185,6 +233,16 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await expect(page.locator('.workspace-connections-panel')).toContainText('Vercel Account API');
   await expect(page.locator('.workspace-connections-panel')).toContainText('Supabase');
   await expect(page.locator('.workspace-connections-panel')).toContainText('AION Trade Telemetri');
+  await expect(page.getByTestId('accounts-api-panel')).toContainText('Hesaplar & API');
+  await expect(page.getByTestId('account-github')).toContainText('CONNECTED');
+  await expect(page.getByTestId('account-gmail')).toContainText('Gmail');
+  await expect(page.getByTestId('voice-pronunciation-input')).toHaveValue('WEXON=Vekson');
+
+  const voiceSettingsRequest = page.waitForRequest((request) => request.url().includes('/api/aion/voice/settings') && request.method() === 'POST');
+  await page.getByTestId('voice-pronunciation-input').fill('WEXON=Vekson özel\nAION=Ayon');
+  await page.getByTestId('voice-profile-save-button').click();
+  const voiceSave = await voiceSettingsRequest;
+  expect((voiceSave.postDataJSON() as { pronunciations?: Record<string, string> }).pronunciations?.WEXON).toBe('Vekson özel');
 
   const vercelRequest = page.waitForRequest((request) => request.url().includes('/api/aion/integrations/vercel') && request.method() === 'POST');
   await page.getByTestId('vercel-token-input').fill('synthetic-vercel-token-123456');

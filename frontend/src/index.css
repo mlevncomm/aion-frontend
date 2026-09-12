@@ -8325,3 +8325,317 @@ html[data-aion-theme="reference"] .sidebar-button.is-active {
     min-height: 44px;
   }
 }
+
+
+/* AION accounts, OAuth/API center and voice personality */
+.workspace-voice-personality,
+.workspace-accounts-panel {
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(151, 134, 210, .055), transparent 30%),
+    rgba(255,255,255,.012);
+}
+
+.workspace-voice-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  margin-top: 13px;
+}
+
+.workspace-voice-sliders {
+  display: grid;
+  gap: 11px;
+}
+
+.workspace-voice-sliders label,
+.workspace-pronunciation-editor {
+  display: grid;
+  gap: 7px;
+}
+
+.workspace-voice-sliders label > span,
+.workspace-pronunciation-editor > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(194, 194, 205, .72);
+  font-size: 10px;
+  font-weight: 580;
+}
+
+.workspace-voice-sliders label b {
+  color: rgba(224, 220, 241, .72);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+}
+
+.workspace-voice-sliders input[type="range"] {
+  width: 100%;
+  accent-color: #9d91c8;
+}
+
+.workspace-pronunciation-editor textarea,
+.workspace-account-search input,
+.workspace-account-token-form input,
+.workspace-integration-form select {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 11px;
+  color: rgba(234,233,242,.9);
+  background: rgba(7,8,12,.66);
+  outline: none;
+}
+
+.workspace-pronunciation-editor textarea {
+  min-height: 150px;
+  resize: vertical;
+  padding: 11px 12px;
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.workspace-pronunciation-editor small {
+  color: rgba(145,148,160,.5);
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+.workspace-integration-form select {
+  min-height: 42px;
+  padding: 0 10px;
+}
+
+.workspace-accounts-copy {
+  max-width: 900px;
+  margin: -2px 0 13px;
+  color: rgba(167,169,181,.6);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.workspace-account-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.workspace-account-search input {
+  min-height: 42px;
+  padding: 0 12px;
+  font-size: 10.5px;
+}
+
+.workspace-account-search button,
+.workspace-account-actions button,
+.workspace-account-token-form button {
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid rgba(174,166,220,.13);
+  border-radius: 10px;
+  color: rgba(222,219,239,.8);
+  background: rgba(126,116,188,.05);
+  font-size: 9px;
+  font-weight: 620;
+}
+
+.workspace-account-search button:hover,
+.workspace-account-actions button:hover:not(:disabled),
+.workspace-account-token-form button:hover:not(:disabled) {
+  border-color: rgba(182,174,229,.25);
+  background: rgba(126,116,188,.09);
+}
+
+.workspace-account-actions button.is-primary,
+.workspace-account-token-form button.is-primary {
+  border-color: rgba(174,164,226,.22);
+  background: linear-gradient(135deg, rgba(139,126,207,.16), rgba(112,100,175,.08));
+}
+
+.workspace-account-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.workspace-account-card {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 15px;
+  background: rgba(8,9,13,.58);
+}
+
+.workspace-account-card.is-connected {
+  border-color: rgba(104,181,143,.15);
+  background:
+    linear-gradient(145deg, rgba(69,133,98,.035), transparent 60%),
+    rgba(8,9,13,.58);
+}
+
+.workspace-account-card-top {
+  display: flex;
+  min-width: 0;
+  align-items: start;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.workspace-account-card-top > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.workspace-account-card-top strong {
+  overflow: hidden;
+  color: rgba(238,237,245,.91);
+  font-size: 11px;
+  font-weight: 640;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-account-card-top small {
+  color: rgba(146,148,159,.48);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 7.5px;
+}
+
+.workspace-account-card > p {
+  min-height: 42px;
+  margin: 0;
+  color: rgba(164,166,177,.58);
+  font-size: 9.5px;
+  line-height: 1.48;
+}
+
+.workspace-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: auto;
+}
+
+.workspace-account-token-form {
+  display: grid;
+  gap: 7px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,.045);
+}
+
+.workspace-account-token-form input {
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: 9.5px;
+}
+
+@media (max-width: 1100px) {
+  .workspace-account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-voice-profile-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767px) {
+  .workspace-voice-personality,
+  .workspace-accounts-panel { padding: 14px; }
+  .workspace-account-grid { grid-template-columns: 1fr; }
+  .workspace-account-search { grid-template-columns: 1fr; }
+  .workspace-account-search button,
+  .workspace-account-actions button,
+  .workspace-account-token-form button { min-height: 44px; }
+  .workspace-account-card > p { min-height: 0; }
+}
+
+.workspace-oauth-client-editor {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 13px;
+  border: 1px solid rgba(171, 162, 222, .13);
+  border-radius: 14px;
+  background: rgba(119, 108, 181, .035);
+}
+
+.workspace-oauth-client-editor > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.workspace-oauth-client-editor small {
+  color: rgba(174, 167, 211, .62);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.workspace-oauth-client-editor strong {
+  color: rgba(238, 236, 247, .9);
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.workspace-oauth-client-editor p {
+  margin: 0;
+  color: rgba(166, 168, 180, .58);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.workspace-oauth-client-editor code {
+  color: rgba(205, 199, 231, .8);
+  overflow-wrap: anywhere;
+}
+
+.workspace-oauth-client-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto auto;
+  gap: 7px;
+}
+
+.workspace-oauth-client-form input {
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  color: rgba(235,233,244,.9);
+  background: rgba(7,8,12,.68);
+  outline: none;
+  font-size: 9.5px;
+}
+
+.workspace-oauth-client-form button {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(174,166,220,.13);
+  border-radius: 10px;
+  color: rgba(222,219,239,.8);
+  background: rgba(126,116,188,.05);
+  font-size: 9px;
+  font-weight: 620;
+}
+
+.workspace-oauth-client-form button.is-primary {
+  border-color: rgba(174,164,226,.22);
+  background: linear-gradient(135deg, rgba(139,126,207,.16), rgba(112,100,175,.08));
+}
+
+@media (max-width: 1100px) {
+  .workspace-oauth-client-form { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 767px) {
+  .workspace-oauth-client-form { grid-template-columns: 1fr; }
+  .workspace-oauth-client-form input,
+  .workspace-oauth-client-form button { min-height: 44px; }
+}

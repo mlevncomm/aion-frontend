@@ -1,4 +1,4 @@
-import { speakWithAion } from "@/lib/aionApi";
+import { getAionVoiceSettings, speakWithAion } from "@/lib/aionApi";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type VoiceStatus = "idle" | "listening" | "processing" | "speaking" | "muted" | "unsupported" | "error";
@@ -494,9 +494,39 @@ export function useVoiceAssistant() {
       }
     };
 
-    // Prefer the device's Turkish system voice when a strong Turkish voice is
-    // available (Edge/Windows commonly exposes a Natural/Neural female voice).
-    // This is keyless and usually more fluid than the single local Piper voice.
+    const playServerSpeech = async (): Promise<boolean> => {
+      try {
+        const audio = await speakWithAion(speechText);
+        playbackRef.current = audio;
+        await new Promise<void>((resolve, reject) => {
+          audio.addEventListener("play", () => {
+            setStatus("speaking");
+            void startPlaybackMeter(audio);
+          }, { once: true });
+          audio.addEventListener("ended", () => resolve(), { once: true });
+          audio.addEventListener("error", () => reject(new Error("AION ses dosyası oynatılamadı.")), { once: true });
+          void audio.play().catch(reject);
+        });
+        playbackRef.current = null;
+        resumeAfterSpeech();
+        return true;
+      } catch {
+        playbackRef.current = null;
+        return false;
+      }
+    };
+
+    // A connected premium AION voice is generated server-side so the provider
+    // key never reaches the browser and pronunciation rules stay consistent.
+    let premiumServerVoice = false;
+    try {
+      premiumServerVoice = (await getAionVoiceSettings()).provider === "elevenlabs";
+    } catch {
+      premiumServerVoice = false;
+    }
+    if (premiumServerVoice && await playServerSpeech()) return;
+
+    // Without a premium provider, prefer the device's best Turkish system voice.
     if ("speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function") {
       try {
         const voices = await waitForSpeechVoices();
@@ -511,8 +541,6 @@ export function useVoiceAssistant() {
               const utterance = new SpeechSynthesisUtterance(chunk);
               utterance.lang = "tr-TR";
               utterance.voice = turkishVoice;
-              // Keep the cadence close to normal conversation. Questions get a
-              // tiny lift; long declarative chunks slow down just enough to breathe.
               const questionLift = /\?$/.test(chunk) ? 0.015 : 0;
               const longSentenceEase = chunk.length > 120 ? -0.015 : 0;
               utterance.rate = (natural ? 1.0 : 0.96) + questionLift + longSentenceEase;
@@ -532,28 +560,11 @@ export function useVoiceAssistant() {
           return;
         }
       } catch {
-        // The deterministic VPS voice below remains the no-browser-voice fallback.
+        // Fall through to the local AION TTS path.
       }
     }
 
-    try {
-      const audio = await speakWithAion(speechText);
-      playbackRef.current = audio;
-      await new Promise<void>((resolve, reject) => {
-        audio.addEventListener("play", () => {
-          setStatus("speaking");
-          void startPlaybackMeter(audio);
-        }, { once: true });
-        audio.addEventListener("ended", () => resolve(), { once: true });
-        audio.addEventListener("error", () => reject(new Error("AION ses dosyası oynatılamadı.")), { once: true });
-        void audio.play().catch(reject);
-      });
-      playbackRef.current = null;
-      resumeAfterSpeech();
-      return;
-    } catch {
-      playbackRef.current = null;
-    }
+    if (await playServerSpeech()) return;
 
     setError("Sesli yanıt oynatılamadı. Yazılı yanıt kullanılabilir.");
     setStatus("error");
