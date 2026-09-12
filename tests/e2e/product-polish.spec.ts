@@ -46,6 +46,29 @@ async function mockProductData(page: Page) {
       body: JSON.stringify({ provider: 'OpenRouter', model: 'test-model', approvals: 'ask', daily_brief: 'active', voice: 'Türkçe', trade: 'PAPER' }),
     });
   });
+  await page.route('**/api/aion/integrations', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        vercel: { status: 'BLOCKED_CONNECTION', configured: false },
+        supabase: { status: 'BLOCKED_CONNECTION', configured: false },
+        aion_trade: { status: 'BLOCKED_CONNECTION', configured: false },
+      }),
+    });
+  });
+  await page.route('**/api/aion/integrations/*', async (route) => {
+    const provider = route.request().url().split('/').at(-1) ?? 'unknown';
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ provider, saved: true, status: 'CONNECTED' }) });
+      return;
+    }
+    if (route.request().method() === 'DELETE') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ provider, configured: false, status: 'BLOCKED_CONNECTION' }) });
+      return;
+    }
+    await route.fallback();
+  });
   await page.route('**/api/aion/profile', async (route) => {
     await route.fulfill({
       status: 200,
@@ -162,6 +185,25 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await expect(page.locator('.workspace-connections-panel')).toContainText('Vercel Account API');
   await expect(page.locator('.workspace-connections-panel')).toContainText('Supabase');
   await expect(page.locator('.workspace-connections-panel')).toContainText('AION Trade Telemetri');
+
+  const vercelRequest = page.waitForRequest((request) => request.url().includes('/api/aion/integrations/vercel') && request.method() === 'POST');
+  await page.getByTestId('vercel-token-input').fill('synthetic-vercel-token-123456');
+  await page.getByTestId('vercel-save-button').click();
+  const vercelSave = await vercelRequest;
+  expect((vercelSave.postDataJSON() as { token?: string }).token).toBe('synthetic-vercel-token-123456');
+  await expect(page.getByTestId('vercel-token-input')).toHaveValue('');
+  await expect(page.getByTestId('integration-vercel-card')).toContainText('güvenli credential store');
+
+  const supabaseRequest = page.waitForRequest((request) => request.url().includes('/api/aion/integrations/supabase') && request.method() === 'POST');
+  await page.getByTestId('supabase-host-input').fill('https://abc123.supabase.co');
+  await page.getByTestId('supabase-key-input').fill('sb_publishable_synthetic_fixture');
+  await page.getByTestId('supabase-save-button').click();
+  const supabaseSave = await supabaseRequest;
+  const supabasePayload = supabaseSave.postDataJSON() as { host?: string; publishable_key?: string };
+  expect(supabasePayload.host).toContain('supabase.co');
+  expect(supabasePayload.publishable_key).toBe('sb_publishable_synthetic_fixture');
+  await expect(page.getByTestId('supabase-key-input')).toHaveValue('');
+
   await page.locator('.workspace-setting-card.is-button').click();
   await expect(page.getByTestId('theme-picker')).toBeVisible();
   await expect(page.getByTestId('theme-option-reference-label')).toHaveText('AION Pearl');

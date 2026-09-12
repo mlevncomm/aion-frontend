@@ -25,7 +25,8 @@ import {
   UserRound,
   Workflow,
 } from "lucide-react";
-import { getAionControlKey, mutateAionTask, type AgentChatSession, type AionPersonalProfile, type AionSettings, type AionStatusSummary } from "@/lib/aionApi";
+import { disconnectAionIntegration, getAionControlKey, mutateAionTask, saveAionIntegration, type AgentChatSession, type AionIntegrations, type AionPersonalProfile, type AionSettings, type AionStatusSummary } from "@/lib/aionApi";
+import { ApiError } from "@/lib/api";
 
 export type WorkspaceViewId = "projects" | "tasks" | "inbox" | "library" | "automations" | "settings" | "profile";
 
@@ -33,6 +34,7 @@ interface WorkspaceViewProps {
   view: WorkspaceViewId;
   status: AionStatusSummary | null;
   settings: AionSettings | null;
+  integrations: AionIntegrations | null;
   profile: AionPersonalProfile | null;
   sessions: AgentChatSession[];
   loading: boolean;
@@ -57,6 +59,15 @@ function stringValue(value: unknown, fallback = "—"): string {
 
 function listValue(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+function apiErrorDetail(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const body = record(error.body);
+    const detail = body.detail;
+    if (typeof detail === "string" && detail.trim()) return detail.trim();
+  }
+  return fallback;
 }
 
 function formatObserved(value?: number): string {
@@ -135,6 +146,7 @@ export default function WorkspaceView({
   view,
   status,
   settings,
+  integrations,
   profile,
   sessions,
   loading,
@@ -152,6 +164,11 @@ export default function WorkspaceView({
   const [controlKeyNote, setControlKeyNote] = useState("");
   const [taskActionNote, setTaskActionNote] = useState("");
   const [taskActionLoading, setTaskActionLoading] = useState("");
+  const [vercelToken, setVercelToken] = useState("");
+  const [supabaseHost, setSupabaseHost] = useState("");
+  const [supabaseKey, setSupabaseKey] = useState("");
+  const [integrationBusy, setIntegrationBusy] = useState("");
+  const [integrationNote, setIntegrationNote] = useState<Record<string, string>>({});
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
   const internalTasks = useMemo(() => listValue(status?.internal_tasks).map(record), [status]);
   const observedChanges = useMemo(() => listValue(status?.observed_changes).map(record), [status]);
@@ -208,6 +225,48 @@ export default function WorkspaceView({
       setTaskActionNote("Görev durumu güncellenemedi.");
     } finally {
       setTaskActionLoading("");
+    }
+  };
+
+  const saveIntegration = async (provider: "vercel" | "supabase") => {
+    if (integrationBusy) return;
+    setIntegrationBusy(provider);
+    setIntegrationNote((current) => ({ ...current, [provider]: "Bağlantı gerçek API ile test ediliyor…" }));
+    try {
+      if (provider === "vercel") {
+        await saveAionIntegration("vercel", { token: vercelToken });
+        setVercelToken("");
+      } else {
+        await saveAionIntegration("supabase", { host: supabaseHost, publishable_key: supabaseKey });
+        setSupabaseKey("");
+      }
+      setIntegrationNote((current) => ({ ...current, [provider]: "Bağlantı doğrulandı ve güvenli credential store'a kaydedildi." }));
+      onRefresh();
+    } catch (error) {
+      setIntegrationNote((current) => ({
+        ...current,
+        [provider]: apiErrorDetail(error, "Bağlantı doğrulanamadı. Girdiğin bilgileri kontrol et."),
+      }));
+    } finally {
+      setIntegrationBusy("");
+    }
+  };
+
+  const disconnectIntegration = async (provider: "vercel" | "supabase") => {
+    if (integrationBusy) return;
+    if (!window.confirm(`${provider === "vercel" ? "Vercel" : "Supabase"} bağlantısını AION'dan kaldırmak istiyor musun?`)) return;
+    setIntegrationBusy(provider);
+    try {
+      await disconnectAionIntegration(provider);
+      setIntegrationNote((current) => ({ ...current, [provider]: "Bağlantı kaldırıldı." }));
+      onRefresh();
+    } catch (error) {
+      setIntegrationNote((current) => ({
+        ...current,
+        [provider]: apiErrorDetail(error, "Bağlantı kaldırılamadı."),
+      }));
+    } finally {
+      setIntegrationBusy("");
     }
   };
 
@@ -462,12 +521,15 @@ export default function WorkspaceView({
   }
 
   if (view === "settings") {
-    const vercel = record(status?.vercel);
-    const supabase = record(status?.supabase);
+    const vercel = record(integrations?.vercel ?? status?.vercel);
+    const supabase = record(integrations?.supabase ?? status?.supabase);
+    const tradeIntegration = record(integrations?.aion_trade);
     const trade = projects.find((project) => stringValue(project.id, "") === "aion-trade") ?? {};
     const vercelStatus = stringValue(vercel.status, "BLOCKED_CONNECTION");
     const supabaseStatus = stringValue(supabase.status, "BLOCKED_CONNECTION");
-    const tradeTelemetry = stringValue(trade.positions, "BLOCKED_CONNECTION");
+    const tradeTelemetry = stringValue(tradeIntegration.status ?? trade.positions, "BLOCKED_CONNECTION");
+    const vercelConfigured = vercel.configured === true;
+    const supabaseConfigured = supabase.configured === true;
     return (
       <div className="workspace-view">
         <Header eyebrow="AION çalışma biçimi" title="Ayarlar" copy="Model, güvenlik, ses ve görünüm yapılandırmasının okunabilir özeti." loading={loading} onRefresh={onRefresh} />
@@ -499,25 +561,97 @@ export default function WorkspaceView({
             <span>Credential değerleri UI'da gösterilmez</span>
           </div>
           <div className="workspace-connection-grid">
-            <article className="workspace-connection-card">
+            <article className="workspace-connection-card is-configurable" data-testid="integration-vercel-card">
               <div className="workspace-connection-top"><span><Server size={17} /></span><StatusPill value={vercelStatus} /></div>
               <h3>Vercel Account API</h3>
-              <p>Public HTTP kontrolleri çalışıyor. Hesap, proje ve deployment telemetrisi için read-only Vercel tokenı gerekiyor.</p>
-              {vercelStatus !== "CONNECTED" ? <code>AION_VERCEL_TOKEN</code> : null}
-              <button type="button" onClick={() => onAsk("AION, Vercel account API bağlantım eksik. Güvenli read-only bağlantı için tam olarak hangi tokenı oluşturmam gerektiğini ve /opt/aion-next/.env içinde hangi değişkeni dolduracağımı adım adım söyle. Token değerini sohbete yazmamı isteme.")}>Kurulum adımlarını göster</button>
+              <p>Proje ve deployment telemetrisi için tokenı buraya yapıştır. AION kaydetmeden önce Vercel API ile gerçek bağlantı testi yapar.</p>
+              <div className="workspace-integration-form">
+                <label>
+                  <span>Vercel Token</span>
+                  <input
+                    type="password"
+                    value={vercelToken}
+                    onChange={(event) => setVercelToken(event.target.value)}
+                    placeholder={vercelConfigured ? "Yeni token girersen mevcut bağlantı güncellenir" : "Vercel tokenını buraya yapıştır"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    data-testid="vercel-token-input"
+                  />
+                </label>
+                <div className="workspace-integration-actions">
+                  <button
+                    type="button"
+                    className="is-primary"
+                    disabled={!vercelToken.trim() || Boolean(integrationBusy)}
+                    onClick={() => { void saveIntegration("vercel"); }}
+                    data-testid="vercel-save-button"
+                  >
+                    {integrationBusy === "vercel" ? "Test ediliyor…" : vercelConfigured ? "Tokenı güncelle ve test et" : "Kaydet ve test et"}
+                  </button>
+                  {vercelConfigured ? (
+                    <button type="button" disabled={Boolean(integrationBusy)} onClick={() => { void disconnectIntegration("vercel"); }}>Bağlantıyı kaldır</button>
+                  ) : null}
+                </div>
+              </div>
+              {vercelStatus === "CONNECTED" ? <small className="workspace-integration-meta">{listValue(vercel.projects).length} proje · {listValue(vercel.deployments).length} deployment gözleniyor</small> : null}
+              {integrationNote.vercel ? <p className="workspace-integration-note" role="status">{integrationNote.vercel}</p> : null}
+              <button type="button" className="workspace-integration-help" onClick={() => onAsk("AION, Vercel tokenını nereden oluşturacağımı kısa ve güvenli biçimde anlat. Token değerini sohbete yazmamı isteme; Ayarlar > Bağlantılar alanına yapıştıracağım.")}>Token nereden alınır?</button>
             </article>
-            <article className="workspace-connection-card">
+
+            <article className="workspace-connection-card is-configurable" data-testid="integration-supabase-card">
               <div className="workspace-connection-top"><span><Database size={17} /></span><StatusPill value={supabaseStatus} /></div>
               <h3>Supabase</h3>
-              <p>AION yalnız publishable/anon seviyesinde metadata okuyacak. Service-role veya SQL yetkisi bu bağlantıda kabul edilmez.</p>
-              {supabaseStatus !== "CONNECTED" ? <code>AION_SUPABASE_HOST · AION_SUPABASE_PUBLISHABLE_KEY</code> : null}
-              <button type="button" onClick={() => onAsk("AION, Supabase read-only bağlantım eksik. Bana host ve publishable/anon key'i güvenli şekilde nereden alacağımı ve /opt/aion-next/.env değişkenlerini nasıl dolduracağımı anlat. Service-role isteme.")}>Kurulum adımlarını göster</button>
+              <p>Project URL/host ile publishable (anon) key kullanılır. <strong>service_role kabul edilmez.</strong> AION bu bağlantıda yalnız exposed metadata okur.</p>
+              <div className="workspace-integration-form">
+                <label>
+                  <span>Project URL / Host</span>
+                  <input
+                    type="text"
+                    value={supabaseHost}
+                    onChange={(event) => setSupabaseHost(event.target.value)}
+                    placeholder={stringValue(supabase.host, "https://proje-ref.supabase.co")}
+                    autoComplete="off"
+                    spellCheck={false}
+                    data-testid="supabase-host-input"
+                  />
+                </label>
+                <label>
+                  <span>Publishable / anon key</span>
+                  <input
+                    type="password"
+                    value={supabaseKey}
+                    onChange={(event) => setSupabaseKey(event.target.value)}
+                    placeholder={supabaseConfigured ? "Yeni key girersen mevcut bağlantı güncellenir" : "sb_publishable_… veya anon JWT"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    data-testid="supabase-key-input"
+                  />
+                </label>
+                <div className="workspace-integration-actions">
+                  <button
+                    type="button"
+                    className="is-primary"
+                    disabled={!supabaseHost.trim() || !supabaseKey.trim() || Boolean(integrationBusy)}
+                    onClick={() => { void saveIntegration("supabase"); }}
+                    data-testid="supabase-save-button"
+                  >
+                    {integrationBusy === "supabase" ? "Test ediliyor…" : supabaseConfigured ? "Bağlantıyı güncelle ve test et" : "Kaydet ve test et"}
+                  </button>
+                  {supabaseConfigured ? (
+                    <button type="button" disabled={Boolean(integrationBusy)} onClick={() => { void disconnectIntegration("supabase"); }}>Bağlantıyı kaldır</button>
+                  ) : null}
+                </div>
+              </div>
+              {supabaseStatus === "CONNECTED" ? <small className="workspace-integration-meta">{listValue(supabase.tables).length} exposed tablo metadata'sı gözleniyor</small> : null}
+              {integrationNote.supabase ? <p className="workspace-integration-note" role="status">{integrationNote.supabase}</p> : null}
+              <button type="button" className="workspace-integration-help" onClick={() => onAsk("AION, Supabase Project URL ve publishable/anon key'i nereden bulacağımı kısa anlat. service_role isteme; değerleri Ayarlar > Bağlantılar alanına yapıştıracağım.")}>Bilgiler nerede?</button>
             </article>
+
             <article className="workspace-connection-card">
               <div className="workspace-connection-top"><span><Gauge size={17} /></span><StatusPill value={tradeTelemetry} /></div>
               <h3>AION Trade Telemetri</h3>
               <p>Public web/API health izleniyor; pozisyon, strateji ve risk telemetrisi henüz AION'a read-only bağlı değil. LIVE işlem yetkisi açılmaz.</p>
-              <code>PAPER-first · SPOT-only · no withdrawal</code>
+              <code>PAPER-first · SPOT-only · no withdrawal · no Martingale</code>
               <button type="button" onClick={() => onAsk("AION, AION Trade için yalnız read-only pozisyon, strateji ve risk telemetrisi bağlantısını planla. LIVE işlem, withdrawal veya emir yetkisi verme. Önce mevcut gerçek API yüzeyini ve gereken en düşük yetkiyi kontrol et.")}>Telemetri planını incele</button>
             </article>
           </div>

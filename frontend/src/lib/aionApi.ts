@@ -95,6 +95,27 @@ export interface AionPersonalProfile {
   };
 }
 
+export interface AionIntegrationInfo {
+  status?: string;
+  configured?: boolean;
+  observed_at?: number;
+  error?: string;
+  help?: string;
+  host?: string;
+  projects?: unknown[];
+  deployments?: unknown[];
+  tables?: string[];
+  secret_fields?: string[];
+  public_fields?: string[];
+  [key: string]: unknown;
+}
+
+export interface AionIntegrations {
+  vercel: AionIntegrationInfo;
+  supabase: AionIntegrationInfo;
+  aion_trade: AionIntegrationInfo;
+}
+
 export interface AionTaskItem {
   id: string;
   project: string;
@@ -123,6 +144,21 @@ export async function getAionSettings(): Promise<AionSettings> {
 
 export async function getAionProfile(): Promise<AionPersonalProfile> {
   return apiGet<AionPersonalProfile>("/aion/profile");
+}
+
+export async function getAionIntegrations(): Promise<AionIntegrations> {
+  return apiGet<AionIntegrations>("/aion/integrations");
+}
+
+export async function saveAionIntegration(
+  provider: "vercel" | "supabase",
+  values: { token?: string; host?: string; publishable_key?: string },
+): Promise<Record<string, unknown>> {
+  return apiPost<Record<string, unknown>>(`/aion/integrations/${provider}`, values);
+}
+
+export async function disconnectAionIntegration(provider: "vercel" | "supabase"): Promise<Record<string, unknown>> {
+  return apiDelete<Record<string, unknown>>(`/aion/integrations/${provider}`);
 }
 
 export async function listAionTasks(): Promise<AionTaskItem[]> {

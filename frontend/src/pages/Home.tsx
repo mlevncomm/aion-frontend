@@ -11,6 +11,7 @@ import { endFrontendSession } from "@/lib/frontendAuth";
 import {
   deleteAionChatSession,
   ensureAionChatSession,
+  getAionIntegrations,
   getAionProfile,
   getAionSettings,
   getAionStatus,
@@ -20,6 +21,7 @@ import {
   selectAionChatSession,
   sendAionMessage,
   type AgentChatSession,
+  type AionIntegrations,
   type AionPersonalProfile,
   type AionSettings,
   type AionStatusSummary,
@@ -87,6 +89,7 @@ export default function Home() {
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<AionStatusSummary | null>(null);
   const [aionSettings, setAionSettings] = useState<AionSettings | null>(null);
+  const [aionIntegrations, setAionIntegrations] = useState<AionIntegrations | null>(null);
   const [personalProfile, setPersonalProfile] = useState<AionPersonalProfile | null>(null);
   const [sessions, setSessions] = useState<AgentChatSession[]>([]);
   const voice = useVoiceAssistant();
@@ -115,19 +118,21 @@ export default function Home() {
 
   const refreshWorkspace = useCallback(async () => {
     setWorkspaceLoading(true);
-    const [statusResult, settingsResult, profileResult, sessionsResult] = await Promise.allSettled([
+    const [statusResult, settingsResult, integrationsResult, profileResult, sessionsResult] = await Promise.allSettled([
       getAionStatus(),
       getAionSettings(),
+      getAionIntegrations(),
       getAionProfile(),
       listAionChatSessions(),
     ]);
 
     if (statusResult.status === "fulfilled") setSystemStatus(statusResult.value);
     if (settingsResult.status === "fulfilled") setAionSettings(settingsResult.value);
+    if (integrationsResult.status === "fulfilled") setAionIntegrations(integrationsResult.value);
     if (profileResult.status === "fulfilled") setPersonalProfile(profileResult.value);
     if (sessionsResult.status === "fulfilled") setSessions(sessionsResult.value);
 
-    const failed = [statusResult, settingsResult, profileResult, sessionsResult].filter((result) => result.status === "rejected").length;
+    const failed = [statusResult, settingsResult, integrationsResult, profileResult, sessionsResult].filter((result) => result.status === "rejected").length;
     setStatusNote(failed === 0 ? "AION kaynakları güncel" : `${failed} kaynak görünümü alınamadı`);
     setWorkspaceLoading(false);
   }, []);
@@ -486,6 +491,7 @@ export default function Home() {
               view={activeItem as WorkspaceViewId}
               status={systemStatus}
               settings={aionSettings}
+              integrations={aionIntegrations}
               profile={personalProfile}
               sessions={sessions}
               loading={workspaceLoading}
