@@ -8057,3 +8057,148 @@ html[data-aion-theme="reference"] .sidebar-button.is-active {
     text-align: left;
   }
 }
+
+
+/* Real integration status */
+.workspace-connections-panel {
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(139, 128, 201, 0.05), transparent 30%),
+    rgba(255, 255, 255, 0.012);
+}
+
+.workspace-connections-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.workspace-connections-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.workspace-connections-heading small,
+.workspace-connections-heading > span {
+  color: rgba(145, 147, 159, 0.48);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+}
+
+.workspace-connections-heading strong {
+  color: rgba(239, 238, 246, 0.92);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.workspace-connection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.workspace-connection-card {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 16px;
+  background: rgba(9, 10, 14, 0.55);
+}
+
+.workspace-connection-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.workspace-connection-top > span:first-child {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  color: rgba(207, 203, 233, 0.8);
+  background: rgba(130, 120, 192, 0.055);
+}
+
+.workspace-connection-card h3,
+.workspace-connection-card p {
+  margin: 0;
+}
+
+.workspace-connection-card h3 {
+  color: rgba(235, 234, 242, 0.9);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.workspace-connection-card p {
+  color: rgba(166, 168, 180, 0.58);
+  font-size: 9.8px;
+  line-height: 1.5;
+}
+
+.workspace-connection-card code {
+  display: block;
+  min-width: 0;
+  padding: 8px 9px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 9px;
+  color: rgba(179, 174, 211, 0.64);
+  background: rgba(255, 255, 255, 0.015);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 7.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.workspace-connection-card > button {
+  min-height: 38px;
+  margin-top: auto;
+  padding: 0 10px;
+  border: 1px solid rgba(175, 168, 220, 0.12);
+  border-radius: 10px;
+  color: rgba(221, 218, 238, 0.78);
+  background: rgba(128, 118, 191, 0.045);
+  font-size: 9px;
+  font-weight: 620;
+}
+
+.workspace-connection-card > button:hover,
+.workspace-connection-card > button:focus-visible {
+  border-color: rgba(180, 172, 227, 0.23);
+  background: rgba(128, 118, 191, 0.08);
+}
+
+@media (max-width: 1100px) {
+  .workspace-connection-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .workspace-connections-panel {
+    padding: 14px;
+  }
+
+  .workspace-connections-heading {
+    display: grid;
+    align-items: start;
+  }
+
+  .workspace-connection-card > button {
+    min-height: 44px;
+  }
+}

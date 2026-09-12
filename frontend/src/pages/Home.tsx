@@ -94,6 +94,8 @@ export default function Home() {
 
   const projectCount = Array.isArray(systemStatus?.projects) ? systemStatus.projects.length : 0;
   const alertCount = Array.isArray(systemStatus?.alerts) ? systemStatus.alerts.length : 0;
+  const observedChangeCount = Array.isArray(systemStatus?.observed_changes) ? systemStatus.observed_changes.length : 0;
+  const attentionCount = alertCount + observedChangeCount;
   const metrics = recordValue(systemStatus?.metrics);
   const today = recordValue(systemStatus?.today);
   const topPriorities = stringList(today.priorities).slice(0, 3);
@@ -343,7 +345,7 @@ export default function Home() {
           mobileOpen={mobileMenuOpen}
           projectCount={projectCount}
           taskCount={openInternalTasks}
-          alertCount={alertCount}
+          alertCount={attentionCount}
           chatOpen={chatOpen}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
@@ -442,8 +444,8 @@ export default function Home() {
                 <button type="button" onClick={() => handleSidebarSelect("projects")}>
                   <strong>{workspaceLoading ? "…" : projectCount}</strong><span>aktif proje alanı</span><small>Projelerim</small>
                 </button>
-                <button type="button" onClick={() => handleSidebarSelect("inbox")} className={alertCount > 0 ? "has-alert" : undefined}>
-                  <strong>{workspaceLoading ? "…" : alertCount}</strong><span>dikkat isteyen konu</span><small>Gelen Kutusu</small>
+                <button type="button" onClick={() => handleSidebarSelect("inbox")} className={attentionCount > 0 ? "has-alert" : undefined}>
+                  <strong>{workspaceLoading ? "…" : attentionCount}</strong><span>sinyal / uyarı</span><small>{observedChangeCount} yeni gelişme</small>
                 </button>
                 <button type="button" onClick={() => handleQuickAction("tasks")}>
                   <strong>{workspaceLoading ? "…" : openInternalTasks}</strong><span>iç görev</span><small>{repositoryWorkItems} kaynak işi</small>

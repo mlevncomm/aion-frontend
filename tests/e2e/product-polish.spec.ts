@@ -159,6 +159,9 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await page.getByTestId('sidebar-settings-button').click();
   await expect(page.getByTestId('sidebar-settings-button')).toHaveClass(/is-active/);
   await expect(page.locator('.workspace-view h1')).toHaveText('Ayarlar');
+  await expect(page.locator('.workspace-connections-panel')).toContainText('Vercel Account API');
+  await expect(page.locator('.workspace-connections-panel')).toContainText('Supabase');
+  await expect(page.locator('.workspace-connections-panel')).toContainText('AION Trade Telemetri');
   await page.locator('.workspace-setting-card.is-button').click();
   await expect(page.getByTestId('theme-picker')).toBeVisible();
   await expect(page.getByTestId('theme-option-reference-label')).toHaveText('AION Pearl');

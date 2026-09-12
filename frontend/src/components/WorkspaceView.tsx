@@ -462,6 +462,12 @@ export default function WorkspaceView({
   }
 
   if (view === "settings") {
+    const vercel = record(status?.vercel);
+    const supabase = record(status?.supabase);
+    const trade = projects.find((project) => stringValue(project.id, "") === "aion-trade") ?? {};
+    const vercelStatus = stringValue(vercel.status, "BLOCKED_CONNECTION");
+    const supabaseStatus = stringValue(supabase.status, "BLOCKED_CONNECTION");
+    const tradeTelemetry = stringValue(trade.positions, "BLOCKED_CONNECTION");
     return (
       <div className="workspace-view">
         <Header eyebrow="AION çalışma biçimi" title="Ayarlar" copy="Model, güvenlik, ses ve görünüm yapılandırmasının okunabilir özeti." loading={loading} onRefresh={onRefresh} />
@@ -486,6 +492,36 @@ export default function WorkspaceView({
           </article>
           <button type="button" className="workspace-setting-card is-button" onClick={onOpenTheme}><span><Palette size={17} /></span><div><small>Görünüm</small><strong>Tema ve atmosfer</strong><p>Renk temasını bu tarayıcı için değiştir.</p></div><ArrowUpRight size={15} /></button>
         </div>
+
+        <section className="workspace-connections-panel" aria-label="AION bağlantıları">
+          <div className="workspace-connections-heading">
+            <div><small>Gerçek veri kaynakları</small><strong>Bağlantılar</strong></div>
+            <span>Credential değerleri UI'da gösterilmez</span>
+          </div>
+          <div className="workspace-connection-grid">
+            <article className="workspace-connection-card">
+              <div className="workspace-connection-top"><span><Server size={17} /></span><StatusPill value={vercelStatus} /></div>
+              <h3>Vercel Account API</h3>
+              <p>Public HTTP kontrolleri çalışıyor. Hesap, proje ve deployment telemetrisi için read-only Vercel tokenı gerekiyor.</p>
+              {vercelStatus !== "CONNECTED" ? <code>AION_VERCEL_TOKEN</code> : null}
+              <button type="button" onClick={() => onAsk("AION, Vercel account API bağlantım eksik. Güvenli read-only bağlantı için tam olarak hangi tokenı oluşturmam gerektiğini ve /opt/aion-next/.env içinde hangi değişkeni dolduracağımı adım adım söyle. Token değerini sohbete yazmamı isteme.")}>Kurulum adımlarını göster</button>
+            </article>
+            <article className="workspace-connection-card">
+              <div className="workspace-connection-top"><span><Database size={17} /></span><StatusPill value={supabaseStatus} /></div>
+              <h3>Supabase</h3>
+              <p>AION yalnız publishable/anon seviyesinde metadata okuyacak. Service-role veya SQL yetkisi bu bağlantıda kabul edilmez.</p>
+              {supabaseStatus !== "CONNECTED" ? <code>AION_SUPABASE_HOST · AION_SUPABASE_PUBLISHABLE_KEY</code> : null}
+              <button type="button" onClick={() => onAsk("AION, Supabase read-only bağlantım eksik. Bana host ve publishable/anon key'i güvenli şekilde nereden alacağımı ve /opt/aion-next/.env değişkenlerini nasıl dolduracağımı anlat. Service-role isteme.")}>Kurulum adımlarını göster</button>
+            </article>
+            <article className="workspace-connection-card">
+              <div className="workspace-connection-top"><span><Gauge size={17} /></span><StatusPill value={tradeTelemetry} /></div>
+              <h3>AION Trade Telemetri</h3>
+              <p>Public web/API health izleniyor; pozisyon, strateji ve risk telemetrisi henüz AION'a read-only bağlı değil. LIVE işlem yetkisi açılmaz.</p>
+              <code>PAPER-first · SPOT-only · no withdrawal</code>
+              <button type="button" onClick={() => onAsk("AION, AION Trade için yalnız read-only pozisyon, strateji ve risk telemetrisi bağlantısını planla. LIVE işlem, withdrawal veya emir yetkisi verme. Önce mevcut gerçek API yüzeyini ve gereken en düşük yetkiyi kontrol et.")}>Telemetri planını incele</button>
+            </article>
+          </div>
+        </section>
       </div>
     );
   }
