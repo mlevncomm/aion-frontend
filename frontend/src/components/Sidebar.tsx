@@ -17,6 +17,7 @@ interface SidebarProps {
   activeItem: string;
   mobileOpen: boolean;
   projectCount: number;
+  taskCount: number;
   alertCount: number;
   chatOpen: boolean;
   onClose: () => void;
@@ -37,6 +38,7 @@ export default function Sidebar({
   activeItem,
   mobileOpen,
   projectCount,
+  taskCount,
   alertCount,
   chatOpen,
   onClose,
@@ -48,7 +50,7 @@ export default function Sidebar({
   const workspaceItems: NavigationItem[] = [
     { id: "home", label: "Ana Sayfa", icon: House },
     { id: "projects", label: "Projeler", icon: BriefcaseBusiness, badge: projectCount },
-    { id: "tasks", label: "Görevler", icon: ListTodo },
+    { id: "tasks", label: "Görevler", icon: ListTodo, badge: taskCount },
     { id: "inbox", label: "Gelen Kutusu", icon: Inbox, badge: alertCount },
     { id: "library", label: "Geçmiş", icon: History },
     { id: "automations", label: "Otomasyonlar", icon: Workflow },

@@ -377,7 +377,9 @@ export default function WorkspaceView({
   }
 
   if (view === "automations") {
-    const brief = settings?.daily_brief ? stringValue(settings.daily_brief) : "Durum alınamadı";
+    const scheduledBrief = record(status?.scheduled_brief);
+    const scheduledBriefTime = typeof scheduledBrief.time === "number" ? formatObserved(scheduledBrief.time) : "Henüz kayıt yok";
+    const brief = Object.keys(scheduledBrief).length > 0 ? `Aktif · son kayıt ${scheduledBriefTime}` : (settings?.daily_brief ? stringValue(settings.daily_brief) : "Henüz çalışmadı");
     const workflows = profile?.workflows ?? [];
     const icons = [Sparkles, Activity, AlertTriangle, Workflow, ShieldCheck];
     return (

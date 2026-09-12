@@ -342,6 +342,7 @@ export default function Home() {
           activeItem={activeItem}
           mobileOpen={mobileMenuOpen}
           projectCount={projectCount}
+          taskCount={openInternalTasks}
           alertCount={alertCount}
           chatOpen={chatOpen}
           onClose={() => setMobileMenuOpen(false)}
