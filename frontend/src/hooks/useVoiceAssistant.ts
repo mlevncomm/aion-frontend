@@ -1,3 +1,4 @@
+import { speakWithAion } from "@/lib/aionApi";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type VoiceStatus = "idle" | "listening" | "processing" | "speaking" | "muted" | "unsupported" | "error";
@@ -67,6 +68,7 @@ export function useVoiceAssistant() {
   const meterFrameRef = useRef<number | null>(null);
   const meterStartingRef = useRef(false);
   const speakMeterRef = useRef<number | null>(null);
+  const playbackRef = useRef<HTMLAudioElement | null>(null);
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [continuousEnabled, setContinuousEnabled] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -266,29 +268,15 @@ export function useVoiceAssistant() {
     setStatus("muted");
   }, [activateContinuous, startAudioMeter, stopAudioMeter, stopRecognition]);
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback(async (text: string) => {
     pausedForResponseRef.current = true;
     stopRecognition();
     stopAudioMeter();
-    if (!("speechSynthesis" in window)) {
-      setStatus("idle");
-      pausedForResponseRef.current = false;
-      if (continuousEnabledRef.current && !mutedRef.current) launchRecognitionRef.current();
-      return;
-    }
+    playbackRef.current?.pause();
+    playbackRef.current = null;
+    window.speechSynthesis?.cancel();
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "tr-TR";
-    utterance.rate = 0.96;
-    utterance.pitch = 0.94;
-    const turkishVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("tr"));
-    if (turkishVoice) utterance.voice = turkishVoice;
-    utterance.onstart = () => {
-      setStatus("speaking");
-      startSpeakingMeter();
-    };
-    utterance.onend = () => {
+    const resumeAfterSpeech = () => {
       stopSpeakingMeter();
       pausedForResponseRef.current = false;
       if (continuousEnabledRef.current && !mutedRef.current) {
@@ -298,12 +286,49 @@ export function useVoiceAssistant() {
         setStatus(mutedRef.current ? "muted" : "idle");
       }
     };
-    utterance.onerror = () => {
-      stopSpeakingMeter();
-      pausedForResponseRef.current = false;
+
+    try {
+      const audio = await speakWithAion(text);
+      playbackRef.current = audio;
+      await new Promise<void>((resolve, reject) => {
+        audio.addEventListener("play", () => {
+          setStatus("speaking");
+          startSpeakingMeter();
+        }, { once: true });
+        audio.addEventListener("ended", () => resolve(), { once: true });
+        audio.addEventListener("error", () => reject(new Error("AION ses dosyası oynatılamadı.")), { once: true });
+        void audio.play().catch(reject);
+      });
+      playbackRef.current = null;
+      resumeAfterSpeech();
+      return;
+    } catch {
+      playbackRef.current = null;
+    }
+
+    if (!("speechSynthesis" in window)) {
+      setError("Sesli yanıt oynatılamadı. Yazılı yanıt kullanılabilir.");
       setStatus("error");
-    };
-    window.speechSynthesis.speak(utterance);
+      pausedForResponseRef.current = false;
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "tr-TR";
+      utterance.rate = 0.96;
+      utterance.pitch = 0.94;
+      const turkishVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("tr"));
+      if (turkishVoice) utterance.voice = turkishVoice;
+      utterance.onstart = () => {
+        setStatus("speaking");
+        startSpeakingMeter();
+      };
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+      window.speechSynthesis.speak(utterance);
+    });
+    resumeAfterSpeech();
   }, [startAudioMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markProcessing = useCallback(() => {
@@ -311,12 +336,25 @@ export function useVoiceAssistant() {
     stopRecognition();
     setStatus("processing");
   }, [stopRecognition]);
+
+  const markIdle = useCallback(() => {
+    pausedForResponseRef.current = false;
+    stopSpeakingMeter();
+    setStatus(mutedRef.current ? "muted" : "idle");
+    if (continuousEnabledRef.current && !mutedRef.current) {
+      void startAudioMeter();
+      launchRecognitionRef.current();
+    }
+  }, [startAudioMeter, stopSpeakingMeter]);
+
   const consumeTranscript = useCallback(() => setTranscript(""), []);
 
   useEffect(() => () => {
     continuousEnabledRef.current = false;
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     recognitionRef.current?.abort();
+    playbackRef.current?.pause();
+    playbackRef.current = null;
     window.speechSynthesis?.cancel();
     stopSpeakingMeter();
     stopAudioMeter();
@@ -329,6 +367,7 @@ export function useVoiceAssistant() {
     muted,
     error,
     interimTranscript,
+    markIdle,
     markProcessing,
     recognitionSupported,
     speak,

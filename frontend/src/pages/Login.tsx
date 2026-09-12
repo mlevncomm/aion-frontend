@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Eye, EyeOff, LockKeyhole, MonitorSmartphone, ShieldCheck, UserRound } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import OrbAvatar from "@/components/OrbAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import {
   beginFrontendSession,
   clearLoginThrottle,
   getLoginThrottle,
-  isFrontendAuthenticated,
   loginPolicy,
   registerFailedLogin,
   validateAdminCredentials,
@@ -46,10 +45,6 @@ export default function Login() {
     const intervalId = window.setInterval(updateCountdown, 500);
     return () => window.clearInterval(intervalId);
   }, [lockUntil]);
-
-  if (isFrontendAuthenticated()) {
-    return <Navigate to="/" replace />;
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AudioLines, Menu, MessageCircle, Mic, MicOff, Workflow } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AutomationsPanel from "@/components/AutomationsPanel";
@@ -8,12 +8,13 @@ import QuickActions from "@/components/QuickActions";
 import Sidebar from "@/components/Sidebar";
 import ThemePicker from "@/components/ThemePicker";
 import { endFrontendSession } from "@/lib/frontendAuth";
+import { ensureAionChatSession, getAionStatus, resetAionChatSession, sendAionMessage } from "@/lib/aionApi";
 import { useVoiceAssistant, type VoiceStatus } from "@/hooks/useVoiceAssistant";
 
 const quickPrompts: Record<string, string> = {
-  surprise: "Bugün için beni şaşırtacak yaratıcı bir fikir ver",
-  create: "Şu fikirden bir görsel oluştur: ",
-  summarise: "Bunu benim için özetle: ",
+  projects: "AION, tüm projelerimin mevcut durumunu gerçek kaynaklardan kontrol et. Sorunları ve sıradaki önceliği kısa Türkçe anlat.",
+  brief: "AION, bugün neler olduğunu gerçek kaynaklardan özetle. Değişiklikler, uyarılar, bekleyen işler ve bir sonraki önceliği kısa Türkçe ver.",
+  vps: "AION, VPS ve kritik servislerin mevcut durumunu gerçek kaynaklardan kontrol et. Sorun varsa açıkça belirt.",
 };
 
 const sectionNames: Record<string, string> = {
@@ -39,20 +40,6 @@ const voiceStatusText: Record<VoiceStatus, string> = {
   error: "Mikrofonu yeniden dene",
 };
 
-function createLocalResponse(prompt: string): string {
-  const normalized = prompt.toLocaleLowerCase("tr-TR");
-  if (normalized.includes("merhaba") || normalized.includes("selam")) {
-    return "Merhaba Mehmet. Seni dinliyorum; bugün birlikte neye odaklanalım?";
-  }
-  if (normalized.includes("plan")) {
-    return "Elbette Mehmet. Önce hedefi netleştirip ardından küçük ve uygulanabilir adımlara bölebiliriz.";
-  }
-  if (normalized.includes("özet")) {
-    return "Metni sohbete eklediğinde ana fikirleri kısa ve anlaşılır biçimde özetleyebilirim.";
-  }
-  return "Mesajını aldım Mehmet. Bu yerel demoda sesli yanıt veriyorum; gerçek yapay zekâ bağlantısı eklendiğinde ayrıntılı şekilde yardımcı olacağım.";
-}
-
 export default function Home() {
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("home");
@@ -64,11 +51,23 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [automationsOpen, setAutomationsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const responseTimer = useRef<number | null>(null);
+  const [chatSessionId, setChatSessionId] = useState("");
   const voice = useVoiceAssistant();
+  const { consumeTranscript, markIdle, markProcessing, speak, transcript } = voice;
 
-  useEffect(() => () => {
-    if (responseTimer.current !== null) window.clearTimeout(responseTimer.current);
+  useEffect(() => {
+    let active = true;
+    void Promise.all([ensureAionChatSession(), getAionStatus()])
+      .then(([sessionId]) => {
+        if (!active) return;
+        setChatSessionId(sessionId);
+        setStatusNote("AION çevrimiçi · gerçek sistem verileri bağlı");
+      })
+      .catch(() => {
+        if (!active) return;
+        setStatusNote("AION backend bağlantısı kurulamadı");
+      });
+    return () => { active = false; };
   }, []);
 
   const handleSidebarSelect = (item: string) => {
@@ -78,38 +77,53 @@ export default function Home() {
     if (item !== "home") setStatusNote(`${sectionNames[item] ?? item} seçildi`);
   };
 
-  const submitPrompt = useCallback((prompt: string) => {
+  const submitPrompt = useCallback(async (prompt: string) => {
     const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt) {
-      setStatusNote("Başlamak için bir mesaj yaz");
+    if (!trimmedPrompt || isSending) {
+      if (!trimmedPrompt) setStatusNote("Başlamak için bir mesaj yaz");
       return;
     }
+
     const userMessage: ChatMessage = { id: `user-${Date.now()}`, role: "user", text: trimmedPrompt };
-    const response = createLocalResponse(trimmedPrompt);
     setMessages((current) => [...current, userMessage]);
     setMessage("");
     setIsSending(true);
-    voice.markProcessing();
-    if (responseTimer.current !== null) window.clearTimeout(responseTimer.current);
-    responseTimer.current = window.setTimeout(() => {
-      setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", text: response }]);
+    markProcessing();
+    setStatusNote("AION gerçek kaynakları kontrol ediyor");
+
+    try {
+      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined);
+      setChatSessionId(result.sessionId);
+      setMessages((current) => [
+        ...current,
+        { id: `assistant-${Date.now()}`, role: "assistant", text: result.text },
+      ]);
+      setStatusNote("Yanıt gerçek AION backend'inden geldi");
+      await speak(result.text);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Bilinmeyen bağlantı hatası";
+      setMessages((current) => [
+        ...current,
+        { id: `assistant-error-${Date.now()}`, role: "assistant", text: `Bağlantı hatası: ${detail}` },
+      ]);
+      setStatusNote("AION yanıtı alınamadı");
+      markIdle();
+    } finally {
       setIsSending(false);
-      voice.speak(response);
-    }, 650);
-    setStatusNote("AION yanıtını hazırlıyor");
-  }, [voice.markProcessing, voice.speak]);
+    }
+  }, [chatSessionId, isSending, markIdle, markProcessing, speak]);
 
   const handleSubmit = () => {
     if (message.trim()) setChatOpen(true);
-    submitPrompt(message);
+    void submitPrompt(message);
   };
 
   useEffect(() => {
-    if (!voice.transcript) return;
+    if (!transcript) return;
     setChatOpen(true);
-    submitPrompt(voice.transcript);
-    voice.consumeTranscript();
-  }, [submitPrompt, voice.consumeTranscript, voice.transcript]);
+    void submitPrompt(transcript);
+    consumeTranscript();
+  }, [consumeTranscript, submitPrompt, transcript]);
 
   const openChat = () => {
     setMobileMenuOpen(false);
@@ -117,6 +131,24 @@ export default function Home() {
     setAutomationsOpen(false);
     setChatOpen(true);
   };
+
+  const handleNewChat = useCallback(async () => {
+    if (isSending) {
+      setStatusNote("Mevcut yanıt tamamlanınca yeni sohbet açabilirsin");
+      return;
+    }
+    try {
+      const sessionId = await resetAionChatSession();
+      setChatSessionId(sessionId);
+      setMessages(initialMessages);
+      setMessage("");
+      markIdle();
+      setStatusNote("Yeni AION sohbeti hazır");
+      setChatOpen(true);
+    } catch {
+      setStatusNote("Yeni sohbet başlatılamadı");
+    }
+  }, [isSending, markIdle]);
 
   const handleQuickAction = (id: string) => {
     setMessage(quickPrompts[id] ?? "");
@@ -129,8 +161,7 @@ export default function Home() {
     setSettingsOpen(false);
     setAutomationsOpen(false);
     setChatOpen(false);
-    endFrontendSession();
-    navigate("/giris", { replace: true });
+    void endFrontendSession().finally(() => navigate("/giris", { replace: true }));
   };
 
   const handleSettings = () => {
@@ -323,6 +354,7 @@ export default function Home() {
           onClose={() => setChatOpen(false)}
           onImport={(fileName) => setStatusNote(`${fileName} istemine eklendi`)}
           onMic={handleMute}
+          onNewChat={() => { void handleNewChat(); }}
           onSubmit={handleSubmit}
           onTools={() => setStatusNote("Araçlar hazır")}
           open={chatOpen}

@@ -1,4 +1,4 @@
-import { FileText, Image, MessageCircle, type LucideIcon } from "lucide-react";
+import { Activity, BriefcaseBusiness, SunMedium, type LucideIcon } from "lucide-react";
 import { liveGlowHandlers } from "@/lib/liveGlow";
 
 interface QuickAction {
@@ -14,22 +14,22 @@ interface QuickActionsProps {
 
 const actions: QuickAction[] = [
   {
-    id: "surprise",
-    title: "Beni şaşırt!",
-    description: "Yaratıcı bir fikir veya hikâyeyle beni şaşırt.",
-    icon: MessageCircle,
+    id: "projects",
+    title: "Projelerim",
+    description: "AION, WEXON, Trade ve diğer projelerin gerçek durumunu kontrol et.",
+    icon: BriefcaseBusiness,
   },
   {
-    id: "create",
-    title: "Görsel oluştur",
-    description: "Fikrinden veya isteminden etkileyici bir görsel üret.",
-    icon: Image,
+    id: "brief",
+    title: "Günlük brief",
+    description: "Bugün değişenleri, uyarıları ve sıradaki önceliği kısa özetle.",
+    icon: SunMedium,
   },
   {
-    id: "summarise",
-    title: "Özetle",
-    description: "Bir belgeyi veya metni saniyeler içinde özetle.",
-    icon: FileText,
+    id: "vps",
+    title: "Sistem durumu",
+    description: "VPS, servisler ve kritik uygulama sağlık kontrollerini çalıştır.",
+    icon: Activity,
   },
 ];
 

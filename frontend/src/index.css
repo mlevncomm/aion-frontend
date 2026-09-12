@@ -3650,3 +3650,8 @@ html[data-aion-theme="reference"] .login-feature-row span {
     transition: none;
   }
 }
+.conversation-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

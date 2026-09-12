@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { AudioLines, Bot, X } from "lucide-react";
+import { AudioLines, Bot, Plus, X } from "lucide-react";
 import ChatComposer from "@/components/ChatComposer";
 import type { VoiceStatus } from "@/hooks/useVoiceAssistant";
 
@@ -17,6 +17,7 @@ interface ConversationPanelProps {
   onClose: () => void;
   onImport: (fileName: string) => void;
   onMic: () => void;
+  onNewChat: () => void;
   onSubmit: () => void;
   onTools: () => void;
   open: boolean;
@@ -42,6 +43,7 @@ export default function ConversationPanel({
   onClose,
   onImport,
   onMic,
+  onNewChat,
   onSubmit,
   onTools,
   open,
@@ -85,15 +87,27 @@ export default function ConversationPanel({
               <p data-testid="conversation-voice-status">{voiceLabels[voiceStatus]}</p>
             </div>
           </div>
-          <button
-            type="button"
-            className="conversation-close"
-            onClick={onClose}
-            aria-label="Sohbeti kapat"
-            data-testid="conversation-close-button"
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
+          <div className="conversation-header-actions">
+            <button
+              type="button"
+              className="conversation-close"
+              onClick={onNewChat}
+              aria-label="Yeni sohbet başlat"
+              title="Yeni sohbet"
+              data-testid="conversation-new-chat-button"
+            >
+              <Plus size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="conversation-close"
+              onClick={onClose}
+              aria-label="Sohbeti kapat"
+              data-testid="conversation-close-button"
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
         </header>
 
         <div className="conversation-messages" data-testid="conversation-message-list">

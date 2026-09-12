@@ -1,7 +1,8 @@
+import { createBackendSession } from "@/lib/aionApi";
+
 const SESSION_KEY = "aion-admin-session";
 const ATTEMPTS_KEY = "aion-login-attempts";
 const LOCK_UNTIL_KEY = "aion-login-lock-until";
-const ADMIN_CREDENTIAL_HASH = "6fe1ba45ad10c1c034f26c14baafa07af480c437689a37e4aa676561a10091d0";
 const MAX_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 30_000;
 
@@ -10,17 +11,9 @@ export interface LoginThrottle {
   lockUntil: number;
 }
 
-async function hashCredential(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 export async function validateAdminCredentials(username: string, password: string): Promise<boolean> {
-  const candidateHash = await hashCredential(`${username.trim()}:${password}`);
-  return candidateHash === ADMIN_CREDENTIAL_HASH;
+  if (username.trim().toLocaleLowerCase("tr-TR") !== "mehmet") return false;
+  return createBackendSession(password);
 }
 
 export function isFrontendAuthenticated(): boolean {
@@ -31,8 +24,13 @@ export function beginFrontendSession(): void {
   sessionStorage.setItem(SESSION_KEY, "active");
 }
 
-export function endFrontendSession(): void {
+export async function endFrontendSession(): Promise<void> {
   sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem("aion-live-chat-session");
+  await fetch("/api/aion/logout", {
+    method: "POST",
+    credentials: "same-origin",
+  }).catch(() => undefined);
 }
 
 export function getLoginThrottle(): LoginThrottle {
