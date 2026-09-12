@@ -1,5 +1,5 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { ArrowUp, FileUp, Mic, SlidersHorizontal } from "lucide-react";
+import { type FormEvent } from "react";
+import { ArrowUp, Mic } from "lucide-react";
 import { liveGlowHandlers } from "@/lib/liveGlow";
 
 interface ChatComposerProps {
@@ -16,23 +16,12 @@ export default function ChatComposer({
   value,
   onChange,
   onSubmit,
-  onImport,
-  onTools,
   onMic,
   voiceActive = false,
 }: ChatComposerProps) {
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit();
-  };
-
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) onImport(selectedFile.name);
-    event.target.value = "";
   };
 
   return (
@@ -54,45 +43,7 @@ export default function ChatComposer({
           data-testid="chat-message-input"
         />
         <div className="composer-toolbar">
-          <div className="composer-tools">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="sr-only"
-              onChange={handleFileChange}
-              data-testid="chat-file-input"
-            />
-            <button
-              type="button"
-              className="composer-tool-button"
-              onClick={() => fileInputRef.current?.click()}
-              data-testid="chat-import-file-button"
-            >
-              <FileUp size={14} strokeWidth={1.8} aria-hidden="true" />
-              <span>Dosya ekle</span>
-            </button>
-            <div className="tools-popover-wrap">
-              <button
-                type="button"
-                className={`composer-tool-button${toolsOpen ? " is-selected" : ""}`}
-                onClick={() => {
-                  setToolsOpen((open) => !open);
-                  onTools();
-                }}
-                aria-expanded={toolsOpen}
-                data-testid="chat-tools-button"
-              >
-                <SlidersHorizontal size={14} strokeWidth={1.8} aria-hidden="true" />
-                <span>Araçlar</span>
-              </button>
-              {toolsOpen ? (
-                <div className="tools-popover" data-testid="chat-tools-popover">
-                  <span className="tools-popover-title" data-testid="chat-tools-popover-title">Araçlar</span>
-                  <span data-testid="chat-tools-popover-copy">Sonraki istemin için kullanabileceğin araçları keşfet.</span>
-                </div>
-              ) : null}
-            </div>
-          </div>
+          <span className="composer-hint">Enter gönderir · Shift + Enter yeni satır</span>
           <div className="composer-actions">
             <button
               type="button"
@@ -108,6 +59,7 @@ export default function ChatComposer({
               type="submit"
               className="send-button"
               aria-label="Mesajı gönder"
+              disabled={!value.trim()}
               data-testid="chat-send-button"
             >
               <ArrowUp size={19} strokeWidth={2.3} aria-hidden="true" />

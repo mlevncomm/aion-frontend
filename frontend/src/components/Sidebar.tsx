@@ -1,10 +1,11 @@
 import {
-  BookOpen,
+  BriefcaseBusiness,
+  History,
   House,
+  Inbox,
   LogOut,
-  Mail,
   Settings,
-  Sparkles,
+  Workflow,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -14,9 +15,7 @@ interface SidebarProps {
   mobileOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
-  onSettings: () => void;
   onSelect: (item: string) => void;
-  settingsOpen: boolean;
 }
 
 interface NavigationItem {
@@ -27,12 +26,13 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { id: "home", label: "Ana Sayfa", icon: House },
-  { id: "discover", label: "Keşfet", icon: Sparkles },
-  { id: "inbox", label: "Gelen Kutusu", icon: Mail },
-  { id: "library", label: "Arşiv", icon: BookOpen },
+  { id: "projects", label: "Projeler", icon: BriefcaseBusiness },
+  { id: "inbox", label: "Gelen Kutusu", icon: Inbox },
+  { id: "library", label: "Geçmiş", icon: History },
+  { id: "automations", label: "Otomasyonlar", icon: Workflow },
 ];
 
-export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onSettings, onSelect, settingsOpen }: SidebarProps) {
+export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onSelect }: SidebarProps) {
   return (
     <aside
       className={`assistant-sidebar${mobileOpen ? " is-mobile-open" : ""}`}
@@ -52,6 +52,7 @@ export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onS
             <X size={20} aria-hidden="true" />
           </button>
         </div>
+        <p className="sidebar-product-label">Personal AI OS</p>
         <div className="sidebar-rule" aria-hidden="true" />
         <nav className="sidebar-navigation">
           {navigationItems.map(({ id, label, icon: Icon }) => {
@@ -77,10 +78,10 @@ export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onS
       <div className="sidebar-bottom">
         <button
           type="button"
-          className={`sidebar-button${settingsOpen ? " is-active" : ""}`}
-          onClick={onSettings}
+          className={`sidebar-button${activeItem === "settings" ? " is-active" : ""}`}
+          onClick={() => onSelect("settings")}
           aria-label="Ayarlar"
-          aria-expanded={settingsOpen}
+          aria-current={activeItem === "settings" ? "page" : undefined}
           data-testid="sidebar-settings-button"
         >
           <Settings strokeWidth={1.8} aria-hidden="true" />
@@ -98,13 +99,14 @@ export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onS
         </button>
         <button
           type="button"
-          className="profile-button"
+          className={`profile-button${activeItem === "profile" ? " is-active" : ""}`}
           onClick={() => onSelect("profile")}
           aria-label="Mehmet profilini aç"
           data-testid="sidebar-profile-button"
         >
           <span className="profile-monogram" data-testid="sidebar-profile-avatar" aria-hidden="true">M</span>
           <span className="profile-name" data-testid="sidebar-profile-name">Mehmet</span>
+          <span className="profile-status-dot" aria-hidden="true" />
         </button>
       </div>
     </aside>

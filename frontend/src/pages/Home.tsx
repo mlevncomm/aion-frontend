@@ -1,14 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
-import { AudioLines, Menu, MessageCircle, Mic, MicOff, Workflow } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AudioLines, Menu, MessageCircle, Mic, MicOff, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import AutomationsPanel from "@/components/AutomationsPanel";
 import ConversationPanel, { type ChatMessage } from "@/components/ConversationPanel";
 import OrbAvatar from "@/components/OrbAvatar";
 import QuickActions from "@/components/QuickActions";
 import Sidebar from "@/components/Sidebar";
 import ThemePicker from "@/components/ThemePicker";
+import WorkspaceView, { type WorkspaceViewId } from "@/components/WorkspaceView";
 import { endFrontendSession } from "@/lib/frontendAuth";
-import { ensureAionChatSession, getAionStatus, resetAionChatSession, sendAionMessage } from "@/lib/aionApi";
+import {
+  deleteAionChatSession,
+  ensureAionChatSession,
+  getAionSettings,
+  getAionStatus,
+  listAionChatSessions,
+  loadAionChatSession,
+  resetAionChatSession,
+  selectAionChatSession,
+  sendAionMessage,
+  type AgentChatSession,
+  type AionSettings,
+  type AionStatusSummary,
+} from "@/lib/aionApi";
 import { useVoiceAssistant, type VoiceStatus } from "@/hooks/useVoiceAssistant";
 
 const quickPrompts: Record<string, string> = {
@@ -18,11 +31,12 @@ const quickPrompts: Record<string, string> = {
 };
 
 const sectionNames: Record<string, string> = {
-  discover: "Keşfet",
+  home: "Ana Sayfa",
+  projects: "Projeler",
   inbox: "Gelen Kutusu",
-  library: "Arşiv",
+  library: "Geçmiş",
+  automations: "Otomasyonlar",
   settings: "Ayarlar",
-  logout: "Çıkış",
   profile: "Profil",
 };
 
@@ -47,34 +61,62 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [statusNote, setStatusNote] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [automationsOpen, setAutomationsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [chatSessionId, setChatSessionId] = useState("");
+  const [workspaceLoading, setWorkspaceLoading] = useState(true);
+  const [systemStatus, setSystemStatus] = useState<AionStatusSummary | null>(null);
+  const [aionSettings, setAionSettings] = useState<AionSettings | null>(null);
+  const [sessions, setSessions] = useState<AgentChatSession[]>([]);
   const voice = useVoiceAssistant();
   const { consumeTranscript, markIdle, markProcessing, speak, transcript } = voice;
 
+  const projectCount = Array.isArray(systemStatus?.projects) ? systemStatus.projects.length : 0;
+  const alertCount = Array.isArray(systemStatus?.alerts) ? systemStatus.alerts.length : 0;
+
+  const observedLabel = useMemo(() => {
+    if (!systemStatus?.observed_at) return "Kaynak bekleniyor";
+    const raw = systemStatus.observed_at;
+    const epochMs = raw < 10_000_000_000 ? raw * 1000 : raw;
+    return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(new Date(epochMs));
+  }, [systemStatus?.observed_at]);
+
+  const refreshWorkspace = useCallback(async () => {
+    setWorkspaceLoading(true);
+    const [statusResult, settingsResult, sessionsResult] = await Promise.allSettled([
+      getAionStatus(),
+      getAionSettings(),
+      listAionChatSessions(),
+    ]);
+
+    if (statusResult.status === "fulfilled") setSystemStatus(statusResult.value);
+    if (settingsResult.status === "fulfilled") setAionSettings(settingsResult.value);
+    if (sessionsResult.status === "fulfilled") setSessions(sessionsResult.value);
+
+    const failed = [statusResult, settingsResult, sessionsResult].filter((result) => result.status === "rejected").length;
+    setStatusNote(failed === 0 ? "AION kaynakları güncel" : `${failed} kaynak görünümü alınamadı`);
+    setWorkspaceLoading(false);
+  }, []);
+
   useEffect(() => {
     let active = true;
-    void Promise.all([ensureAionChatSession(), getAionStatus()])
-      .then(([sessionId]) => {
-        if (!active) return;
-        setChatSessionId(sessionId);
-        setStatusNote("AION çevrimiçi · gerçek sistem verileri bağlı");
+    void ensureAionChatSession()
+      .then((sessionId) => {
+        if (active) setChatSessionId(sessionId);
       })
       .catch(() => {
-        if (!active) return;
-        setStatusNote("AION backend bağlantısı kurulamadı");
+        if (active) setStatusNote("AION sohbet oturumu başlatılamadı");
       });
+    void refreshWorkspace();
     return () => { active = false; };
-  }, []);
+  }, [refreshWorkspace]);
 
   const handleSidebarSelect = (item: string) => {
     setActiveItem(item);
     setMobileMenuOpen(false);
-    setSettingsOpen(false);
-    if (item !== "home") setStatusNote(`${sectionNames[item] ?? item} seçildi`);
+    setThemePickerOpen(false);
+    setStatusNote(item === "home" ? "" : `${sectionNames[item] ?? item} açıldı`);
   };
 
   const submitPrompt = useCallback(async (prompt: string) => {
@@ -99,6 +141,7 @@ export default function Home() {
         { id: `assistant-${Date.now()}`, role: "assistant", text: result.text },
       ]);
       setStatusNote("Yanıt gerçek AION backend'inden geldi");
+      void listAionChatSessions().then(setSessions).catch(() => undefined);
       await speak(result.text);
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Bilinmeyen bağlantı hatası";
@@ -127,8 +170,7 @@ export default function Home() {
 
   const openChat = () => {
     setMobileMenuOpen(false);
-    setSettingsOpen(false);
-    setAutomationsOpen(false);
+    setThemePickerOpen(false);
     setChatOpen(true);
   };
 
@@ -145,33 +187,60 @@ export default function Home() {
       markIdle();
       setStatusNote("Yeni AION sohbeti hazır");
       setChatOpen(true);
+      void listAionChatSessions().then(setSessions).catch(() => undefined);
     } catch {
       setStatusNote("Yeni sohbet başlatılamadı");
     }
   }, [isSending, markIdle]);
 
+  const handleOpenSession = useCallback(async (sessionId: string) => {
+    try {
+      const conversation = await loadAionChatSession(sessionId);
+      selectAionChatSession(sessionId);
+      setChatSessionId(sessionId);
+      setMessages(conversation.messages.length > 0 ? conversation.messages : initialMessages);
+      setMessage("");
+      setChatOpen(true);
+      setStatusNote("Sohbet geçmişinden açıldı");
+    } catch {
+      setStatusNote("Sohbet açılamadı");
+    }
+  }, []);
+
+  const handleDeleteSession = useCallback(async (sessionId: string) => {
+    if (!window.confirm("Bu sohbet kalıcı olarak silinsin mi?")) return;
+    try {
+      await deleteAionChatSession(sessionId);
+      if (sessionId === chatSessionId) {
+        const nextSession = await resetAionChatSession();
+        setChatSessionId(nextSession);
+        setMessages(initialMessages);
+      }
+      setSessions(await listAionChatSessions());
+      setStatusNote("Sohbet silindi");
+    } catch {
+      setStatusNote("Sohbet silinemedi");
+    }
+  }, [chatSessionId]);
+
   const handleQuickAction = (id: string) => {
     setMessage(quickPrompts[id] ?? "");
     openChat();
-    setStatusNote("İstem mesajına eklendi");
+    setStatusNote("İstem sohbet alanına eklendi");
+  };
+
+  const handleAskFromWorkspace = (prompt: string) => {
+    setMessage(prompt);
+    openChat();
+    setStatusNote("AION'a sorulacak istem hazır");
   };
 
   const handleLogout = () => {
     setMobileMenuOpen(false);
-    setSettingsOpen(false);
-    setAutomationsOpen(false);
+    setThemePickerOpen(false);
     setChatOpen(false);
     void endFrontendSession().finally(() => navigate("/giris", { replace: true }));
   };
-
-  const handleSettings = () => {
-    setMobileMenuOpen(false);
-    setAutomationsOpen(false);
-    setChatOpen(false);
-    setSettingsOpen((open) => !open);
-  };
-
-  const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   const handleVoicePrimary = () => {
     if (!voice.recognitionSupported) {
@@ -225,21 +294,22 @@ export default function Home() {
             data-testid="mobile-sidebar-backdrop"
           />
         ) : null}
+
         <Sidebar
           activeItem={activeItem}
           mobileOpen={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
-          onSettings={handleSettings}
           onSelect={handleSidebarSelect}
-          settingsOpen={settingsOpen}
         />
+
         <ThemePicker
-          open={settingsOpen}
-          onClose={closeSettings}
+          open={themePickerOpen}
+          onClose={() => setThemePickerOpen(false)}
           onThemeChange={(themeLabel) => setStatusNote(`${themeLabel} teması etkinleştirildi`)}
         />
-        <section className="assistant-content" aria-label="AION asistan ana sayfası">
+
+        <section className={`assistant-content${activeItem === "home" ? " is-home" : " is-workspace"}`} aria-label="AION çalışma alanı">
           <div className="content-wash" aria-hidden="true" />
           <header className="mobile-topbar" data-testid="mobile-topbar">
             <button
@@ -252,98 +322,113 @@ export default function Home() {
             >
               <Menu size={21} aria-hidden="true" />
             </button>
-            <span className="mobile-brand" data-testid="mobile-brand">AION</span>
+            <span className="mobile-brand" data-testid="mobile-brand">{sectionNames[activeItem] ?? "AION"}</span>
             <button
               type="button"
               className="mobile-menu-button"
-              onClick={() => setAutomationsOpen(true)}
-              aria-label="Otomasyonları aç"
-              aria-expanded={automationsOpen}
-              data-testid="mobile-automations-button"
+              onClick={() => { void handleNewChat(); }}
+              aria-label="Yeni sohbet"
+              data-testid="mobile-new-chat-button"
             >
-              <Workflow size={20} aria-hidden="true" />
+              <Plus size={20} aria-hidden="true" />
             </button>
           </header>
-          <div className="hero-content">
-            <OrbAvatar activity={orbActivity} onClick={handleVoicePrimary} />
-            <div className="greeting" data-testid="greeting-block">
-              <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Mehmet</p>
-              <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>
-              <p className="greeting-subtitle" data-testid="greeting-subtitle">
-                Konuşmaya başlamak için orba dokun; yazmak istersen sohbeti aç.
+
+          {activeItem === "home" ? (
+            <div className="hero-content">
+              <OrbAvatar activity={orbActivity} onClick={handleVoicePrimary} />
+              <div className="greeting" data-testid="greeting-block">
+                <p className="greeting-lead" data-testid="greeting-lead">Merhaba, Mehmet</p>
+                <h1 data-testid="greeting-heading">Bugün sana nasıl yardımcı olabilirim?</h1>
+                <p className="greeting-subtitle" data-testid="greeting-subtitle">
+                  Konuş, yaz veya canlı sistem durumlarından birini seç.
+                </p>
+              </div>
+
+              <div className={`voice-console is-${voice.status}${voice.muted ? " is-muted" : ""}`} data-testid="voice-console">
+                <button
+                  type="button"
+                  className="voice-console-primary"
+                  onClick={handleVoicePrimary}
+                  aria-label={voice.muted ? "Yazılı sohbeti aç" : "AION sürekli dinlemeyi başlat"}
+                  aria-pressed={voice.continuousEnabled && !voice.muted}
+                  data-testid="voice-assistant-button"
+                >
+                  <span className="voice-console-presence" aria-hidden="true">
+                    {voice.status === "speaking" ? <AudioLines size={18} /> : voice.muted ? <MicOff size={18} /> : <Mic size={18} />}
+                  </span>
+                  <span className="voice-console-copy">
+                    <strong data-testid="voice-assistant-label">
+                      {voice.muted ? "Mikrofon susturuldu" : voice.continuousEnabled ? "AION aktif" : "AION hazır"}
+                    </strong>
+                    <small data-testid="voice-assistant-status">{voiceStatusText[voice.status]}</small>
+                  </span>
+                </button>
+                <span className="voice-console-divider" aria-hidden="true" />
+                <button
+                  type="button"
+                  className="voice-console-control"
+                  onClick={handleMute}
+                  aria-label={voice.muted ? "Mikrofonu aç" : "Mikrofonu sustur"}
+                  aria-pressed={voice.muted}
+                  data-testid="voice-mute-button"
+                >
+                  {voice.muted ? <MicOff size={17} aria-hidden="true" /> : <Mic size={17} aria-hidden="true" />}
+                </button>
+                <button
+                  type="button"
+                  className="voice-console-control"
+                  onClick={openChat}
+                  aria-label="Yazılı sohbeti aç"
+                  data-testid="voice-chat-button"
+                >
+                  <MessageCircle size={17} aria-hidden="true" />
+                </button>
+              </div>
+
+              <QuickActions onAction={handleQuickAction} />
+
+              <div className="home-system-strip" aria-label="Canlı AION özeti">
+                <button type="button" onClick={() => handleSidebarSelect("projects")}>
+                  <strong>{workspaceLoading ? "…" : projectCount}</strong><span>proje</span>
+                </button>
+                <button type="button" onClick={() => handleSidebarSelect("inbox")} className={alertCount > 0 ? "has-alert" : undefined}>
+                  <strong>{workspaceLoading ? "…" : alertCount}</strong><span>uyarı</span>
+                </button>
+                <button type="button" onClick={() => { void refreshWorkspace(); }}>
+                  <strong>{systemStatus ? (systemStatus.stale ? "Eski" : "Canlı") : "Bilinmiyor"}</strong><span>{observedLabel}</span>
+                </button>
+              </div>
+
+              <p className="status-note" aria-live="polite" data-testid="interaction-status">
+                {statusNote}
               </p>
             </div>
-
-            <div className={`voice-console is-${voice.status}${voice.muted ? " is-muted" : ""}`} data-testid="voice-console">
-              <button
-                type="button"
-                className="voice-console-primary"
-                onClick={handleVoicePrimary}
-                aria-label={voice.muted ? "Yazılı sohbeti aç" : "AION sürekli dinlemeyi başlat"}
-                aria-pressed={voice.continuousEnabled && !voice.muted}
-                data-testid="voice-assistant-button"
-              >
-                <span className="voice-console-presence" aria-hidden="true">
-                  {voice.status === "speaking" ? <AudioLines size={18} /> : voice.muted ? <MicOff size={18} /> : <Mic size={18} />}
-                </span>
-                <span className="voice-console-copy">
-                  <strong data-testid="voice-assistant-label">
-                    {voice.muted ? "Mikrofon susturuldu" : voice.continuousEnabled ? "AION aktif" : "AION hazır"}
-                  </strong>
-                  <small data-testid="voice-assistant-status">{voiceStatusText[voice.status]}</small>
-                </span>
-              </button>
-              <span className="voice-console-divider" aria-hidden="true" />
-              <button
-                type="button"
-                className="voice-console-control"
-                onClick={handleMute}
-                aria-label={voice.muted ? "Mikrofonu aç" : "Mikrofonu sustur"}
-                aria-pressed={voice.muted}
-                data-testid="voice-mute-button"
-              >
-                {voice.muted ? <MicOff size={17} aria-hidden="true" /> : <Mic size={17} aria-hidden="true" />}
-              </button>
-              <button
-                type="button"
-                className="voice-console-control"
-                onClick={openChat}
-                aria-label="Yazılı sohbeti aç"
-                data-testid="voice-chat-button"
-              >
-                <MessageCircle size={17} aria-hidden="true" />
-              </button>
-            </div>
-
-            <QuickActions onAction={handleQuickAction} />
-            <p className="status-note" aria-live="polite" data-testid="interaction-status">
-              {statusNote}
-            </p>
-          </div>
+          ) : (
+            <WorkspaceView
+              key={activeItem}
+              view={activeItem as WorkspaceViewId}
+              status={systemStatus}
+              settings={aionSettings}
+              sessions={sessions}
+              loading={workspaceLoading}
+              onRefresh={() => { void refreshWorkspace(); }}
+              onAsk={handleAskFromWorkspace}
+              onOpenSession={(sessionId) => { void handleOpenSession(sessionId); }}
+              onDeleteSession={(sessionId) => { void handleDeleteSession(sessionId); }}
+              onOpenTheme={() => setThemePickerOpen(true)}
+            />
+          )}
         </section>
 
-        <AutomationsPanel
-          open={automationsOpen}
-          onClose={() => setAutomationsOpen(false)}
-          onStatus={setStatusNote}
-        />
-        {automationsOpen ? (
-          <button
-            type="button"
-            className="automations-backdrop"
-            onClick={() => setAutomationsOpen(false)}
-            aria-label="Otomasyon panelini kapat"
-            data-testid="automations-backdrop"
-          />
-        ) : null}
         <button
           type="button"
-          className="automations-fab"
-          onClick={() => setAutomationsOpen(true)}
-          aria-label="Otomasyonları aç"
-          data-testid="automations-fab"
+          className="global-chat-fab"
+          onClick={openChat}
+          aria-label="AION sohbetini aç"
+          data-testid="global-chat-fab"
         >
-          <Workflow size={22} aria-hidden="true" />
+          <MessageCircle size={20} aria-hidden="true" />
         </button>
 
         <ConversationPanel
@@ -352,11 +437,11 @@ export default function Home() {
           messages={messages}
           onChange={setMessage}
           onClose={() => setChatOpen(false)}
-          onImport={(fileName) => setStatusNote(`${fileName} istemine eklendi`)}
+          onImport={(fileName) => setStatusNote(`${fileName} seçildi; dosya yükleme backend bağlantısı hazır olduğunda gönderilecek`)}
           onMic={handleMute}
           onNewChat={() => { void handleNewChat(); }}
           onSubmit={handleSubmit}
-          onTools={() => setStatusNote("Araçlar hazır")}
+          onTools={() => setStatusNote("Araç kullanımı AION backend izin politikasıyla yönetiliyor")}
           open={chatOpen}
           voiceError={voice.error}
           voiceStatus={voice.status}

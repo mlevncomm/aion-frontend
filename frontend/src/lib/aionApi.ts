@@ -1,15 +1,22 @@
-import { apiGet, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPost } from "@/lib/api";
 
 const CHAT_SESSION_KEY = "aion-live-chat-session";
 export const DEFAULT_AION_MODEL = "nex-agi/nex-n2.5-mini:free";
 
-interface AgentChatSession {
+export interface AgentChatSession {
   session_id: string;
   title: string;
   provider: string;
   model: string;
+  effort?: string;
+  cwd?: string;
+  permission_mode?: string;
   running: boolean;
   preview?: string;
+  created_ms?: number;
+  updated_ms?: number;
+  message_count?: number;
+  surface?: string;
 }
 
 interface AgentChatEvent {
@@ -34,11 +41,79 @@ export interface AionStatusSummary {
   stale?: boolean;
   projects?: unknown[];
   alerts?: unknown[];
+  vps?: unknown;
+  vercel?: unknown;
+  supabase?: unknown;
   [key: string]: unknown;
+}
+
+export interface AionSettings {
+  language?: string;
+  provider?: string;
+  model?: string;
+  model_policy?: string;
+  approvals?: string;
+  notifications?: string;
+  daily_brief?: string;
+  voice?: string;
+  trade?: string;
+  [key: string]: unknown;
+}
+
+export interface AionConversationMessage {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
 }
 
 export async function getAionStatus(): Promise<AionStatusSummary> {
   return apiGet<AionStatusSummary>("/aion/status");
+}
+
+export async function getAionSettings(): Promise<AionSettings> {
+  return apiGet<AionSettings>("/aion/settings");
+}
+
+export async function listAionChatSessions(limit = 40): Promise<AgentChatSession[]> {
+  const safeLimit = Math.max(1, Math.min(limit, 100));
+  const result = await apiGet<{ sessions: AgentChatSession[] }>(
+    `/agent-chat/sessions?surface=agent&limit=${safeLimit}`,
+  );
+  return result.sessions ?? [];
+}
+
+export async function loadAionChatSession(sessionId: string): Promise<{
+  session: AgentChatSession;
+  messages: AionConversationMessage[];
+}> {
+  const snapshot = await apiGet<AgentChatSnapshot>(`/agent-chat/sessions/${encodeURIComponent(sessionId)}`);
+  const messages: AionConversationMessage[] = [];
+  for (const event of snapshot.events) {
+    if (event.kind === "user_message") {
+      const text = event.payload.text;
+      if (typeof text === "string" && text.trim()) {
+        messages.push({ id: `user-${event.seq}`, role: "user", text: text.trim() });
+      }
+    }
+    if (event.kind === "assistant_text") {
+      const text = event.payload.text;
+      if (typeof text === "string" && text.trim()) {
+        messages.push({ id: `assistant-${event.seq}`, role: "assistant", text: text.trim() });
+      }
+    }
+  }
+  return { session: snapshot.session, messages };
+}
+
+export function selectAionChatSession(sessionId: string): void {
+  sessionStorage.setItem(CHAT_SESSION_KEY, sessionId);
+}
+
+export async function deleteAionChatSession(sessionId: string): Promise<void> {
+  await apiDelete(`/agent-chat/sessions/${encodeURIComponent(sessionId)}`);
+  if (sessionStorage.getItem(CHAT_SESSION_KEY) === sessionId) {
+    sessionStorage.removeItem(CHAT_SESSION_KEY);
+  }
 }
 
 export async function createAionChatSession(): Promise<string> {
@@ -49,7 +124,7 @@ export async function createAionChatSession(): Promise<string> {
     title: "AION",
     surface: "agent",
   });
-  sessionStorage.setItem(CHAT_SESSION_KEY, session.session_id);
+  selectAionChatSession(session.session_id);
   return session.session_id;
 }
 
