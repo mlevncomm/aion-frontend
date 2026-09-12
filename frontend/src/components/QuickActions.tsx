@@ -1,54 +1,46 @@
-import { Activity, BriefcaseBusiness, SunMedium, type LucideIcon } from "lucide-react";
-import { liveGlowHandlers } from "@/lib/liveGlow";
-
-interface QuickAction {
-  id: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-}
+import {
+  BriefcaseBusiness,
+  ChartNoAxesCombined,
+  Code2,
+  Newspaper,
+  Server,
+  type LucideIcon,
+} from "lucide-react";
 
 interface QuickActionsProps {
   onAction: (id: string) => void;
 }
 
+interface QuickAction {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: LucideIcon;
+}
+
 const actions: QuickAction[] = [
-  {
-    id: "projects",
-    title: "Projelerim",
-    description: "AION, WEXON, Trade ve diğer projelerin gerçek durumunu kontrol et.",
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "brief",
-    title: "Günlük brief",
-    description: "Bugün değişenleri, uyarıları ve sıradaki önceliği kısa özetle.",
-    icon: SunMedium,
-  },
-  {
-    id: "vps",
-    title: "Sistem durumu",
-    description: "VPS, servisler ve kritik uygulama sağlık kontrollerini çalıştır.",
-    icon: Activity,
-  },
+  { id: "projects", title: "Projelerim", subtitle: "Genel durumu kontrol et", icon: BriefcaseBusiness },
+  { id: "brief", title: "Bugünkü Brief", subtitle: "Öncelikleri çıkar", icon: Newspaper },
+  { id: "vps", title: "VPS", subtitle: "Servisleri kontrol et", icon: Server },
+  { id: "wexon", title: "WEXON", subtitle: "Platform durumunu incele", icon: Code2 },
+  { id: "trade", title: "AION Trade", subtitle: "PAPER ve risk durumunu gör", icon: ChartNoAxesCombined },
 ];
 
 export default function QuickActions({ onAction }: QuickActionsProps) {
   return (
-    <div className="quick-actions" data-testid="quick-actions">
-      {actions.map(({ id, title, description, icon: Icon }) => (
+    <div className="quick-actions" aria-label="Mehmet için hızlı AION komutları" data-testid="quick-actions">
+      {actions.map(({ id, title, subtitle, icon: Icon }) => (
         <button
-          type="button"
           key={id}
-          className="quick-action-card live-glow-surface"
+          type="button"
+          className="quick-action-button"
           onClick={() => onAction(id)}
-          {...liveGlowHandlers}
-          data-testid={`quick-action-${id}-button`}
+          data-testid={`quick-action-${id}`}
         >
-          <Icon className="quick-action-icon" size={17} strokeWidth={1.8} aria-hidden="true" />
+          <span className="quick-action-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
           <span className="quick-action-copy">
-            <span className="quick-action-title" data-testid={`quick-action-${id}-title`}>{title}</span>
-            <span className="quick-action-description" data-testid={`quick-action-${id}-description`}>{description}</span>
+            <strong>{title}</strong>
+            <small>{subtitle}</small>
           </span>
         </button>
       ))}

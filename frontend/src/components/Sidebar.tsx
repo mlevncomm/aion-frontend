@@ -52,7 +52,7 @@ export default function Sidebar({ activeItem, mobileOpen, onClose, onLogout, onS
             <X size={20} aria-hidden="true" />
           </button>
         </div>
-        <p className="sidebar-product-label">Personal AI OS</p>
+        <p className="sidebar-product-label"><span className="sidebar-live-dot" aria-hidden="true" /> Mehmet · Personal AI OS</p>
         <div className="sidebar-rule" aria-hidden="true" />
         <nav className="sidebar-navigation">
           {navigationItems.map(({ id, label, icon: Icon }) => {

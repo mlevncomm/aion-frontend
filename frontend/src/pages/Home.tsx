@@ -28,6 +28,8 @@ const quickPrompts: Record<string, string> = {
   projects: "AION, tüm projelerimin mevcut durumunu gerçek kaynaklardan kontrol et. Sorunları ve sıradaki önceliği kısa Türkçe anlat.",
   brief: "AION, bugün neler olduğunu gerçek kaynaklardan özetle. Değişiklikler, uyarılar, bekleyen işler ve bir sonraki önceliği kısa Türkçe ver.",
   vps: "AION, VPS ve kritik servislerin mevcut durumunu gerçek kaynaklardan kontrol et. Sorun varsa açıkça belirt.",
+  wexon: "AION, WEXON Growth OS ve WEXON Platform durumunu gerçek kaynaklardan kontrol et. Erişilebilirlik, son değişiklikler, açık işler ve bugün çözmem gereken problemi kısa Türkçe anlat.",
+  trade: "AION, AION Trade durumunu yalnız PAPER / READ_ONLY sınırlarında gerçek kaynaklardan kontrol et. Web, API health, risk ve erişebildiğin telemetriyi özetle; bilinmeyen hiçbir şeyi varsayma.",
 };
 
 const sectionNames: Record<string, string> = {
