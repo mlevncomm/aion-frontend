@@ -26,7 +26,8 @@ async function mockProductData(page: Page) {
         observed_at: Date.now(),
         stale: false,
         alerts: ['Test uyarısı', 'İkinci test uyarısı'],
-        metrics: { tracked_projects: 3, attention_items: 2, open_internal_tasks: 1, active_services: 4, total_services: 4, blocked_integrations: 2, repository_work_items: 3 },
+        observed_changes: [{ kind: 'public_probe', resource: 'wexon/platform_web', summary: 'wexon/platform_web: public uygulama durumu değişti.', from: ['NOT_FOUND', 404], to: ['REACHABLE', 200], observed_at: Date.now() }],
+        metrics: { tracked_projects: 3, attention_items: 2, open_internal_tasks: 1, active_services: 4, total_services: 4, blocked_integrations: 2, repository_work_items: 3, recent_system_changes: 1 },
         today: { priorities: ['AION: PDF sözleşmesini doğrula', 'WEXON: platform durumunu incele', 'AION Trade: API health kontrolü'] },
         internal_tasks: [{ id: 'task-1', project: 'aion', title: 'PDF sözleşmesini doğrula', priority: 'high', status: 'pending' }],
         tasks: [{ kind: 'internal_task', id: 'task-1' }, { kind: 'issue', repository: 'mlevncomm/aion' }],
@@ -143,6 +144,9 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
     await button.click();
     await expect(button).toHaveClass(/is-active/);
     await expect(page.locator('.workspace-view h1')).toHaveText(title);
+    if (id === 'inbox') {
+      await expect(page.locator('.workspace-alert-card.is-change')).toContainText('public uygulama durumu değişti');
+    }
     await expectNoHorizontalOverflow(page);
   }
 

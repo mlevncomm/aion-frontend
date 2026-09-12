@@ -154,6 +154,7 @@ export default function WorkspaceView({
   const [taskActionLoading, setTaskActionLoading] = useState("");
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
   const internalTasks = useMemo(() => listValue(status?.internal_tasks).map(record), [status]);
+  const observedChanges = useMemo(() => listValue(status?.observed_changes).map(record), [status]);
   const alerts = useMemo(() => listValue(status?.alerts).map((item) => stringValue(item, "Bilinmeyen uyarı")), [status]);
   const filteredProjects = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr-TR");
@@ -327,22 +328,45 @@ export default function WorkspaceView({
   if (view === "inbox") {
     return (
       <div className="workspace-view">
-        <Header eyebrow="Dikkat gerektirenler" title="Gelen Kutusu" copy="AION'un gerçek kaynaklardan ürettiği uyarılar ve belirsizlikler." loading={loading} onRefresh={onRefresh} />
+        <Header eyebrow="AION sinyal merkezi" title="Gelen Kutusu" copy="Yeni gelişmeler, gerçek kaynak uyarıları ve AION'un dikkat etmeni istediği değişiklikler." loading={loading} onRefresh={onRefresh} />
         <div className="workspace-kpi-row">
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><Activity size={17} /></span><div><strong>{observedChanges.length}</strong><span>son gelişme</span></div></div>
           <div className="workspace-kpi"><span className="workspace-kpi-icon is-warn"><AlertTriangle size={17} /></span><div><strong>{alerts.length}</strong><span>aktif uyarı</span></div></div>
           <div className="workspace-kpi"><span className="workspace-kpi-icon"><Clock3 size={17} /></span><div><strong>{status ? (status.stale ? "Eski" : "Güncel") : "Bilinmiyor"}</strong><span>kaynak görünümü</span></div></div>
-          <div className="workspace-kpi"><span className="workspace-kpi-icon"><Server size={17} /></span><div><strong>{projects.length}</strong><span>izlenen proje</span></div></div>
         </div>
-        <div className="workspace-alert-list">
-          {alerts.map((alert, index) => (
-            <article key={`${alert}-${index}`} className="workspace-alert-card">
-              <span className="workspace-alert-icon"><AlertTriangle size={17} /></span>
-              <div><strong>Kontrol gerekiyor</strong><p>{alert}</p></div>
-              <button type="button" onClick={() => onAsk(`AION, şu uyarıyı gerçek kaynaklardan incele ve ne yapmam gerektiğini söyle: ${alert}`)}>İncele</button>
-            </article>
-          ))}
-        </div>
-        {!loading && alerts.length === 0 ? <EmptyState icon={<CheckCircle2 size={21} />} title="Yeni uyarı yok" copy="AION şu an için dikkat gerektiren bir kaynak uyarısı raporlamıyor." /> : null}
+
+        {observedChanges.length > 0 ? (
+          <section className="workspace-signal-section">
+            <div className="workspace-signal-heading"><span>Son gözlem farkları</span><small>Observer tarafından önceki snapshot ile karşılaştırıldı</small></div>
+            <div className="workspace-alert-list">
+              {observedChanges.slice(0, 12).map((change, index) => {
+                const summary = stringValue(change.summary, "Sistem değişikliği gözlendi.");
+                const resource = stringValue(change.resource, "AION");
+                return (
+                  <article key={`${resource}-${index}`} className="workspace-alert-card is-change">
+                    <span className="workspace-alert-icon"><Activity size={17} /></span>
+                    <div><strong>{resource}</strong><p>{summary}</p></div>
+                    <button type="button" onClick={() => onAsk(`AION, şu yeni gelişmeyi gerçek kaynaklardan incele. Neden önemli, mevcut durum ne ve sıradaki güvenli adım ne: ${summary}`)}>İncele</button>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="workspace-signal-section">
+          <div className="workspace-signal-heading"><span>Aktif uyarılar</span><small>{projects.length} alan izleniyor</small></div>
+          <div className="workspace-alert-list">
+            {alerts.map((alert, index) => (
+              <article key={`${alert}-${index}`} className="workspace-alert-card">
+                <span className="workspace-alert-icon"><AlertTriangle size={17} /></span>
+                <div><strong>Kontrol gerekiyor</strong><p>{alert}</p></div>
+                <button type="button" onClick={() => onAsk(`AION, şu uyarıyı gerçek kaynaklardan incele ve ne yapmam gerektiğini söyle: ${alert}`)}>İncele</button>
+              </article>
+            ))}
+          </div>
+        </section>
+        {!loading && alerts.length === 0 && observedChanges.length === 0 ? <EmptyState icon={<CheckCircle2 size={21} />} title="Yeni sinyal yok" copy="AION şu an için yeni bir değişiklik veya dikkat gerektiren kaynak uyarısı raporlamıyor." /> : null}
       </div>
     );
   }

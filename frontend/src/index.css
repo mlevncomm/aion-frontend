@@ -8004,3 +8004,56 @@ html[data-aion-theme="reference"] .sidebar-button.is-active {
     white-space: normal;
   }
 }
+
+
+/* Active observer signals */
+.workspace-signal-section {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.workspace-signal-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+}
+
+.workspace-signal-heading > span {
+  color: rgba(232, 231, 240, 0.86);
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.workspace-signal-heading > small {
+  color: rgba(145, 147, 159, 0.48);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 7.5px;
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+
+.workspace-alert-card.is-change {
+  border-color: rgba(163, 154, 216, 0.1);
+  background:
+    linear-gradient(145deg, rgba(125, 116, 183, 0.045), rgba(255, 255, 255, 0.008)),
+    rgba(10, 11, 16, 0.62);
+}
+
+.workspace-alert-card.is-change .workspace-alert-icon {
+  color: rgba(202, 198, 229, 0.8);
+  background: rgba(128, 118, 190, 0.065);
+}
+
+@media (max-width: 767px) {
+  .workspace-signal-heading {
+    display: grid;
+    gap: 2px;
+  }
+
+  .workspace-signal-heading > small {
+    text-align: left;
+  }
+}
