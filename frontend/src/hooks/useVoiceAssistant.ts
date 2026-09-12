@@ -69,6 +69,8 @@ export function useVoiceAssistant() {
   const meterStartingRef = useRef(false);
   const speakMeterRef = useRef<number | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
+  const playbackAudioContextRef = useRef<AudioContext | null>(null);
+  const playbackSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [continuousEnabled, setContinuousEnabled] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -143,13 +145,21 @@ export function useVoiceAssistant() {
   const stopSpeakingMeter = useCallback(() => {
     if (speakMeterRef.current !== null) window.cancelAnimationFrame(speakMeterRef.current);
     speakMeterRef.current = null;
+    try {
+      playbackSourceRef.current?.disconnect();
+    } catch {
+      // The node may already be disconnected when playback ends.
+    }
+    playbackSourceRef.current = null;
+    if (playbackAudioContextRef.current) void playbackAudioContextRef.current.close();
+    playbackAudioContextRef.current = null;
     document.documentElement.style.setProperty("--voice-scale", "1");
     document.documentElement.style.setProperty("--voice-level", "0");
     document.documentElement.style.setProperty("--voice-bar-scale", "0.22");
   }, []);
 
-  // speechSynthesis canli genlik vermez; konusma temposunu taklit eden
-  // sentetik bir zarf ureterek orbu AI konustukca hareketlendiririz.
+  // Browser speechSynthesis canlı genlik sağlamaz; yalnız fallback yolunda
+  // konuşma temposunu taklit eden sentetik bir zarf kullanırız.
   const startSpeakingMeter = useCallback(() => {
     if (speakMeterRef.current !== null) return;
     const start = performance.now();
@@ -164,6 +174,48 @@ export function useVoiceAssistant() {
     };
     tick();
   }, [applyLevel]);
+
+  // AION'un VPS'ten gelen WAV/TTS sesini Web Audio API ile gerçekten ölçeriz.
+  // Böylece orb, sentetik bir zamanlayıcıya değil, oynayan sesin gerçek enerjisine tepki verir.
+  const startPlaybackMeter = useCallback(async (audio: HTMLAudioElement) => {
+    stopSpeakingMeter();
+    const voiceWindow = window as VoiceWindow;
+    const AudioContextConstructor = window.AudioContext ?? voiceWindow.webkitAudioContext;
+    if (!AudioContextConstructor) {
+      startSpeakingMeter();
+      return;
+    }
+
+    try {
+      const context = new AudioContextConstructor();
+      const source = context.createMediaElementSource(audio);
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.72;
+      source.connect(analyser);
+      analyser.connect(context.destination);
+      playbackAudioContextRef.current = context;
+      playbackSourceRef.current = source;
+      if (context.state === "suspended") await context.resume();
+
+      const samples = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(samples);
+        let energy = 0;
+        for (const sample of samples) {
+          const normalized = (sample - 128) / 128;
+          energy += normalized * normalized;
+        }
+        const level = Math.min(1, Math.sqrt(energy / samples.length) * 5.2);
+        applyLevel(level);
+        speakMeterRef.current = window.requestAnimationFrame(tick);
+      };
+      tick();
+    } catch {
+      stopSpeakingMeter();
+      startSpeakingMeter();
+    }
+  }, [applyLevel, startSpeakingMeter, stopSpeakingMeter]);
 
   const stopRecognition = useCallback(() => {
     recognitionRef.current?.stop();
@@ -293,7 +345,7 @@ export function useVoiceAssistant() {
       await new Promise<void>((resolve, reject) => {
         audio.addEventListener("play", () => {
           setStatus("speaking");
-          startSpeakingMeter();
+          void startPlaybackMeter(audio);
         }, { once: true });
         audio.addEventListener("ended", () => resolve(), { once: true });
         audio.addEventListener("error", () => reject(new Error("AION ses dosyası oynatılamadı.")), { once: true });
@@ -329,7 +381,7 @@ export function useVoiceAssistant() {
       window.speechSynthesis.speak(utterance);
     });
     resumeAfterSpeech();
-  }, [startAudioMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
+  }, [startAudioMeter, startPlaybackMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markProcessing = useCallback(() => {
     pausedForResponseRef.current = true;
