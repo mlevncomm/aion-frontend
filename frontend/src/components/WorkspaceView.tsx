@@ -1064,7 +1064,7 @@ export default function WorkspaceView({
     const workflows = profile?.workflows ?? [];
     const icons = [Sparkles, Activity, AlertTriangle, Workflow, ShieldCheck];
     return (
-      <div className="workspace-view">
+      <div className="workspace-view" id="automations-overview">
         <Header
           eyebrow="Mehmet için çalışan akışlar"
           title="Otomasyonlar"

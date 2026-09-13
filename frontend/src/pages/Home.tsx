@@ -370,7 +370,7 @@ export default function Home() {
     <div className="assistant-stage">
       <div className="ambient-light ambient-light-one" aria-hidden="true" />
       <div className="ambient-light ambient-light-two" aria-hidden="true" />
-      <main className={"assistant-shell"} data-testid="assistant-home-screen">
+      <main className={"assistant-shell"} id="assistant-home-screen" data-testid="assistant-home-screen">
         {mobileMenuOpen ? (
           <button
             type="button"

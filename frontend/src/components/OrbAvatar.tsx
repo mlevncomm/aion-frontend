@@ -123,6 +123,7 @@ export default function OrbAvatar({ activity = "idle", onClick }: OrbAvatarProps
       <span className="pearl-orb-aura pearl-orb-aura-near" aria-hidden="true" />
       <span className="pearl-orb-ring pearl-orb-ring-outer" aria-hidden="true" />
       <span className="pearl-orb-ring pearl-orb-ring-inner" aria-hidden="true" />
+      <span className="pearl-orb-motes" aria-hidden="true" />
       <span className="pearl-orb-pulse" aria-hidden="true" />
       <span className="pearl-orb-stage" aria-hidden="true">
         <span className="pearl-orb-sphere">

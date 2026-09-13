@@ -7530,3 +7530,123 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-voice-architecture b {
   color: rgba(238, 206, 178, 0.92);
 }
+
+/* ============================================================
+   JARVIS Kurulum Dosyası — the fixed orb behaviour, in AION's
+   own palette. The document fixes what each mode must express,
+   not which colour expresses it: idle never sits still, thinking
+   visibly gathers energy, and listening/speaking already follow
+   real microphone and playback levels through --orb-energy.
+   ============================================================ */
+
+/* Idle motion the document asks for beyond pulse and ring spin:
+   a few motes drifting around the sphere. Two counter-rotating
+   layers read as depth without a canvas or a particle engine. */
+.pearl-orb-motes {
+  position: absolute;
+  z-index: 2;
+  inset: -14%;
+  display: block;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pearl-orb-motes::before,
+.pearl-orb-motes::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  content: "";
+}
+
+.pearl-orb-motes::before {
+  background:
+    radial-gradient(1.6px 1.6px at 22% 31%, rgba(214, 206, 255, 0.62), transparent 60%),
+    radial-gradient(1.3px 1.3px at 76% 24%, rgba(168, 206, 255, 0.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 63% 79%, rgba(222, 214, 255, 0.45), transparent 60%),
+    radial-gradient(1.2px 1.2px at 30% 72%, rgba(180, 214, 255, 0.4), transparent 60%);
+  opacity: calc(0.5 + var(--orb-energy) * 0.5);
+  animation: pearl-orb-drift 26s linear infinite;
+}
+
+.pearl-orb-motes::after {
+  background:
+    radial-gradient(1.2px 1.2px at 47% 13%, rgba(226, 220, 255, 0.4), transparent 60%),
+    radial-gradient(1.1px 1.1px at 14% 55%, rgba(176, 200, 255, 0.34), transparent 60%),
+    radial-gradient(1.4px 1.4px at 86% 61%, rgba(210, 200, 255, 0.36), transparent 60%);
+  opacity: calc(0.42 + var(--orb-energy) * 0.5);
+  animation: pearl-orb-drift-reverse 34s linear infinite;
+}
+
+@keyframes pearl-orb-drift {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.035); }
+  to { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes pearl-orb-drift-reverse {
+  from { transform: rotate(360deg) scale(1.02); }
+  50% { transform: rotate(180deg) scale(0.985); }
+  to { transform: rotate(0deg) scale(1.02); }
+}
+
+/* Thinking. The microphone is closed while AION reasons, so
+   --orb-energy is zero and the level-driven pulse would sit dark
+   exactly when the owner is waiting. A charge cycle fills that
+   silence: light gathers, holds, then releases into the answer. */
+.pearl-orb.is-sending .pearl-orb-pulse,
+.pearl-orb.is-typing .pearl-orb-pulse {
+  animation: pearl-orb-charge 2.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.pearl-orb.is-sending .pearl-orb-motes::before { animation-duration: 9s; }
+.pearl-orb.is-sending .pearl-orb-motes::after { animation-duration: 12s; }
+.pearl-orb.is-sending .pearl-orb-aura-far { animation-duration: 2.4s; }
+
+@keyframes pearl-orb-charge {
+  0% {
+    opacity: 0.14;
+    transform: scale(1);
+    border-color: rgba(196, 191, 255, 0.1);
+    box-shadow: 0 0 10px rgba(112, 133, 255, 0.05);
+  }
+  62% {
+    opacity: 0.72;
+    transform: scale(1.055);
+    border-color: rgba(206, 199, 255, 0.52);
+    box-shadow: 0 0 30px rgba(124, 146, 255, 0.26);
+  }
+  100% {
+    opacity: 0.16;
+    transform: scale(1.008);
+    border-color: rgba(196, 191, 255, 0.12);
+    box-shadow: 0 0 12px rgba(112, 133, 255, 0.06);
+  }
+}
+
+/* The document asks for a faint futuristic grid behind the command
+   centre. Kept far below the orb's contrast so the room still reads
+   as AION's, never as a blue dashboard. */
+.assistant-stage::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(var(--aion-bright-rgb) / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--aion-bright-rgb) / 0.055) 1px, transparent 1px);
+  background-size: 58px 58px;
+  /* The orb covers the middle, so the grid is faded OUT of the centre and
+     left to read in the open space around it — otherwise the layer is
+     invisible exactly where it was drawn. */
+  mask-image: radial-gradient(ellipse 62% 55% at 50% 38%, transparent 38%, rgba(0, 0, 0, 0.85) 100%);
+  content: "";
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pearl-orb-motes::before,
+  .pearl-orb-motes::after,
+  .pearl-orb.is-sending .pearl-orb-pulse,
+  .pearl-orb.is-typing .pearl-orb-pulse { animation: none; }
+}
