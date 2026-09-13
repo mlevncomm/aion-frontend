@@ -38,6 +38,8 @@ const quickPrompts: Record<string, string> = {
   integrations: "AION, eksik veya kısmi entegrasyonları kontrol et. Hangisinin neyi engellediğini ve benim yapmam gereken bağlantı adımını kısa Türkçe anlat.",
 };
 
+const SIDEBAR_COLLAPSED_KEY = "aion-sidebar-collapsed";
+
 const sectionNames: Record<string, string> = {
   home: "Ana Sayfa",
   projects: "Projeler",
@@ -82,6 +84,10 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [statusNote, setStatusNote] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -137,6 +143,10 @@ export default function Home() {
     setStatusNote(failed === 0 ? "AION kaynakları güncel" : `${failed} kaynak görünümü alınamadı`);
     setWorkspaceLoading(false);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed ? "true" : "false");
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     let active = true;
@@ -348,7 +358,7 @@ export default function Home() {
     <div className="assistant-stage">
       <div className="ambient-light ambient-light-one" aria-hidden="true" />
       <div className="ambient-light ambient-light-two" aria-hidden="true" />
-      <main className="assistant-shell" data-testid="assistant-home-screen">
+      <main className={`assistant-shell${sidebarCollapsed ? " is-sidebar-collapsed" : ""}`} data-testid="assistant-home-screen">
         {mobileMenuOpen ? (
           <button
             type="button"
@@ -361,6 +371,7 @@ export default function Home() {
 
         <Sidebar
           activeItem={activeItem}
+          collapsed={sidebarCollapsed}
           mobileOpen={mobileMenuOpen}
           projectCount={projectCount}
           taskCount={openInternalTasks}
@@ -368,6 +379,7 @@ export default function Home() {
           chatOpen={chatOpen}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={handleLogout}
+          onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
           onSelect={handleSidebarSelect}
           onOpenChat={openChat}
           onNewChat={() => { void handleNewChat(); }}

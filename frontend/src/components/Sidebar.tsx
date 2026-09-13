@@ -1,5 +1,7 @@
 import {
   BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
   History,
   House,
   Inbox,
@@ -16,6 +18,7 @@ import {
 
 interface SidebarProps {
   activeItem: string;
+  collapsed: boolean;
   mobileOpen: boolean;
   projectCount: number;
   taskCount: number;
@@ -23,6 +26,7 @@ interface SidebarProps {
   chatOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
+  onToggleCollapsed: () => void;
   onSelect: (item: string) => void;
   onOpenChat: () => void;
   onNewChat: () => void;
@@ -37,6 +41,7 @@ interface NavigationItem {
 
 export default function Sidebar({
   activeItem,
+  collapsed,
   mobileOpen,
   projectCount,
   taskCount,
@@ -44,6 +49,7 @@ export default function Sidebar({
   chatOpen,
   onClose,
   onLogout,
+  onToggleCollapsed,
   onSelect,
   onOpenChat,
   onNewChat,
@@ -67,6 +73,7 @@ export default function Sidebar({
         className={`sidebar-button${isActive ? " is-active" : ""}`}
         onClick={() => onSelect(id)}
         aria-label={label}
+        title={collapsed ? label : undefined}
         aria-current={isActive ? "page" : undefined}
         data-testid={`sidebar-${id}-button`}
       >
@@ -85,16 +92,28 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`assistant-sidebar${mobileOpen ? " is-mobile-open" : ""}`}
+      className={`assistant-sidebar${collapsed ? " is-collapsed" : ""}${mobileOpen ? " is-mobile-open" : ""}`}
       aria-label="Ana navigasyon"
+      data-collapsed={collapsed ? "true" : "false"}
       data-testid="assistant-sidebar"
     >
       <div className="sidebar-top">
         <div className="sidebar-brand-row">
-          <div>
+          <div className="sidebar-brand-copy">
             <div className="brand-mark" data-testid="brand-mark">AION</div>
             <p className="sidebar-product-label"><span className="sidebar-live-dot" aria-hidden="true" /> Mehmet · Personal AI OS</p>
           </div>
+          <button
+            type="button"
+            className="desktop-sidebar-toggle"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+            aria-pressed={collapsed}
+            title={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+            data-testid="desktop-sidebar-toggle"
+          >
+            {collapsed ? <ChevronRight size={17} aria-hidden="true" /> : <ChevronLeft size={17} aria-hidden="true" />}
+          </button>
           <button
             type="button"
             className="mobile-sidebar-close"
