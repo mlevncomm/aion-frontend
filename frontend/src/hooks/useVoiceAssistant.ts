@@ -60,6 +60,17 @@ const errorMessages: Record<string, string> = {
 const VOICE_TURN_SILENCE_MS = 850;
 const RECOGNITION_RESTART_MS = 180;
 
+// Barge-in. This is NOT full-duplex raw audio: the browser still transcribes
+// one turn at a time. What it does give is the part of duplex that matters to
+// a speaker — being able to cut AION off mid-sentence without touching the UI.
+// The microphone capture already runs with echoCancellation, so AION's own
+// output is largely removed before these frames are measured; the grace window
+// and the consecutive-frame requirement absorb what echo cancellation misses,
+// so a speaker in a quiet room does not interrupt itself.
+const BARGE_IN_LEVEL = 0.22;
+const BARGE_IN_FRAMES = 9;
+const BARGE_IN_GRACE_MS = 700;
+
 function prepareSpeechText(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, "")
@@ -171,6 +182,10 @@ export function useVoiceAssistant() {
   const meterStartingRef = useRef(false);
   const speakMeterRef = useRef<number | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
+  const bargeInArmedRef = useRef(false);
+  const bargeInHitsRef = useRef(0);
+  const bargeInSinceRef = useRef(0);
+  const bargeInHandlerRef = useRef<() => void>(() => undefined);
   const playbackAudioContextRef = useRef<AudioContext | null>(null);
   const playbackSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -240,7 +255,22 @@ export function useVoiceAssistant() {
           energy += normalized * normalized;
         }
         const level = Math.min(1, Math.sqrt(energy / samples.length) * 4.6);
-        applyLevel(level);
+        if (bargeInArmedRef.current) {
+          // While AION speaks the orb follows playback, so the microphone
+          // level is used only to decide whether the owner has taken the turn.
+          if (Date.now() - bargeInSinceRef.current >= BARGE_IN_GRACE_MS && level >= BARGE_IN_LEVEL) {
+            bargeInHitsRef.current += 1;
+            if (bargeInHitsRef.current >= BARGE_IN_FRAMES) {
+              bargeInHitsRef.current = 0;
+              bargeInArmedRef.current = false;
+              bargeInHandlerRef.current();
+            }
+          } else if (level < BARGE_IN_LEVEL * 0.6) {
+            bargeInHitsRef.current = 0;
+          }
+        } else {
+          applyLevel(level);
+        }
         meterFrameRef.current = window.requestAnimationFrame(updateMeter);
       };
       updateMeter();
@@ -474,13 +504,32 @@ export function useVoiceAssistant() {
   const speak = useCallback(async (text: string) => {
     pausedForResponseRef.current = true;
     stopRecognition();
-    stopAudioMeter();
     playbackRef.current?.pause();
     playbackRef.current = null;
     window.speechSynthesis?.cancel();
 
+    // In a continuous voice session the microphone stays open through AION's
+    // reply so the owner can interrupt. Outside one there is nothing listening,
+    // so the capture is released as before.
+    const listening = continuousEnabledRef.current && !mutedRef.current;
+    if (listening) {
+      void startAudioMeter();
+      bargeInHitsRef.current = 0;
+      bargeInSinceRef.current = Date.now();
+      bargeInArmedRef.current = true;
+    } else {
+      bargeInArmedRef.current = false;
+      stopAudioMeter();
+    }
+
     const speechText = prepareSpeechText(text) || text.trim();
+    let interrupted = false;
+    let resumed = false;
     const resumeAfterSpeech = () => {
+      if (resumed) return;
+      resumed = true;
+      bargeInArmedRef.current = false;
+      bargeInHitsRef.current = 0;
       stopSpeakingMeter();
       pausedForResponseRef.current = false;
       if (continuousEnabledRef.current && !mutedRef.current) {
@@ -494,9 +543,23 @@ export function useVoiceAssistant() {
       }
     };
 
+    // Cutting AION off must behave exactly like its sentence ending, so the
+    // same resume path runs and the owner keeps the turn.
+    bargeInHandlerRef.current = () => {
+      interrupted = true;
+      playbackRef.current?.pause();
+      playbackRef.current = null;
+      window.speechSynthesis?.cancel();
+      resumeAfterSpeech();
+    };
+
     const playServerSpeech = async (): Promise<boolean> => {
       try {
         const audio = await speakWithAion(speechText);
+        // Synthesis is a network round trip; the owner may already have taken
+        // the turn back by the time it lands, and starting playback then would
+        // talk over them.
+        if (interrupted) return true;
         playbackRef.current = audio;
         await new Promise<void>((resolve, reject) => {
           audio.addEventListener("play", () => {
@@ -504,6 +567,9 @@ export function useVoiceAssistant() {
             void startPlaybackMeter(audio);
           }, { once: true });
           audio.addEventListener("ended", () => resolve(), { once: true });
+          // A barge-in pauses the element; without this the promise would
+          // never settle and speak() would hang for the rest of the session.
+          audio.addEventListener("pause", () => resolve(), { once: true });
           audio.addEventListener("error", () => reject(new Error("AION ses dosyası oynatılamadı.")), { once: true });
           void audio.play().catch(reject);
         });
@@ -525,6 +591,7 @@ export function useVoiceAssistant() {
       premiumServerVoice = false;
     }
     if (premiumServerVoice && await playServerSpeech()) return;
+    if (interrupted) return;
 
     // Without a premium provider, prefer the device's best Turkish system voice.
     if ("speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function") {
@@ -536,6 +603,7 @@ export function useVoiceAssistant() {
           const natural = /natural|neural|online/i.test(turkishVoice.name);
           const feminine = /emel|female|woman|feminine|kadın/i.test(turkishVoice.name);
           for (let index = 0; index < chunks.length; index += 1) {
+            if (interrupted) return;
             const chunk = chunks[index];
             await new Promise<void>((resolve) => {
               const utterance = new SpeechSynthesisUtterance(chunk);
@@ -554,6 +622,7 @@ export function useVoiceAssistant() {
               utterance.onerror = () => resolve();
               window.speechSynthesis.speak(utterance);
             });
+            if (interrupted) return;
             if (index < chunks.length - 1) await sleep(speechPauseMs(chunk));
           }
           resumeAfterSpeech();
@@ -565,6 +634,7 @@ export function useVoiceAssistant() {
     }
 
     if (await playServerSpeech()) return;
+    if (interrupted) return;
 
     setError("Sesli yanıt oynatılamadı. Yazılı yanıt kullanılabilir.");
     setStatus("error");

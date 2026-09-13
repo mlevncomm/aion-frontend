@@ -127,11 +127,19 @@ export interface AionVoiceSettings {
   custom_pronunciations: Record<string, string>;
 }
 
+export interface AionReadinessRepair {
+  label: string;
+  surface: string;
+  anchor: string;
+}
+
 export interface AionReadinessCriterion {
   id: string;
   label: string;
   state: "READY" | "ACTION_REQUIRED" | "OWNER_CONNECTION_REQUIRED" | "VERIFY_ON_DEVICE";
   detail: string;
+  /** Present only while the criterion is not READY: the surface that fixes it. */
+  action?: AionReadinessRepair;
 }
 
 export interface AionReadiness {
@@ -162,6 +170,8 @@ export interface MarketplacePlugin {
   category?: string;
   featured?: boolean;
   status?: string;
+  /** Name of the AION tool this account unlocks, when it binds a native one. */
+  native_tool?: string | null;
   live_callable?: boolean;
   oauth_client_configured?: boolean;
   oauth_client_family?: string | null;
@@ -194,6 +204,17 @@ export interface AionDevice {
   last_seen?: number | null;
   status: "ONLINE" | "OFFLINE";
   revoked?: boolean;
+}
+
+export interface AionDeviceCommand {
+  id: string;
+  device_id: string;
+  command: string;
+  args: Record<string, unknown>;
+  status: "queued" | "running" | "done" | "error";
+  created_at?: number | null;
+  finished_at?: number | null;
+  result?: string | null;
 }
 
 export interface AionDevicePairing {
@@ -323,6 +344,11 @@ export async function getAionDevices(): Promise<AionDevice[]> {
   return result.items ?? [];
 }
 
+export async function getAionDeviceCommands(): Promise<AionDeviceCommand[]> {
+  const result = await apiGet<{ items: AionDeviceCommand[] }>("/aion/devices/commands");
+  return result.items ?? [];
+}
+
 export async function createAionDevicePairing(): Promise<AionDevicePairing> {
   return apiPost<AionDevicePairing>("/aion/devices/pairing", {});
 }
@@ -341,11 +367,6 @@ export async function queueAionDeviceCommand(
   args: Record<string, string>,
 ): Promise<Record<string, unknown>> {
   return apiPost<Record<string, unknown>>(`/aion/devices/${encodeURIComponent(deviceId)}/commands/${command}`, { args });
-}
-
-export async function listAionTasks(): Promise<AionTaskItem[]> {
-  const result = await apiGet<{ items: AionTaskItem[] }>("/aion/tasks");
-  return result.items ?? [];
 }
 
 export async function mutateAionTask(payload: {

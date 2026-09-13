@@ -109,6 +109,16 @@ async function mockProductData(page: Page) {
     const body = route.request().postDataJSON() as { permissions?: Record<string, boolean> };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'device-1', name: 'Mehmet-PC', platform: 'windows', capabilities: ['open_url', 'open_app', 'notify'], permissions: { open_url: true, open_app: Boolean(body.permissions?.open_app), notify: true }, status: 'ONLINE' }) });
   });
+  await page.route('**/api/aion/devices/commands**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ items: [
+        { id: 'cmd-1', device_id: 'device-1', command: 'notify', args: { text: 'AION test bildirimi' }, status: 'done', created_at: Date.now() / 1000, finished_at: Date.now() / 1000, result: 'ok' },
+        { id: 'cmd-2', device_id: 'device-1', command: 'open_url', args: { url: 'https://aion.wexon.dev' }, status: 'error', created_at: Date.now() / 1000, finished_at: Date.now() / 1000, result: 'Tarayıcı açılamadı' },
+      ] }),
+    });
+  });
   await page.route('**/api/aion/devices/*/commands/notify', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'command-1', status: 'queued' }) });
   });
@@ -127,8 +137,9 @@ async function mockProductData(page: Page) {
         criteria: [
           { id: 'business_context', label: 'İş ve kişisel bağlam', state: 'READY', detail: 'AION Mehmet bağlamını kullanıyor.' },
           { id: 'real_data', label: 'Gerçek veri kaynakları', state: 'READY', detail: 'Repository kaynakları doğrulandı.' },
-          { id: 'actions', label: 'Gerçek aksiyon ve çok adımlı işler', state: 'OWNER_CONNECTION_REQUIRED', detail: 'Harici hesap için bağlantı gerekiyor.' },
-          { id: 'voice_input', label: 'Türkçe mikrofon girişi', state: 'VERIFY_ON_DEVICE', detail: 'Mikrofon cihazda doğrulanmalı.' },
+          { id: 'actions', label: 'Gerçek aksiyon ve çok adımlı işler', state: 'OWNER_CONNECTION_REQUIRED', detail: 'Harici hesap için bağlantı gerekiyor.', action: { label: 'Hesap bağla', surface: 'settings', anchor: 'setup-accounts' } },
+          { id: 'voice_input', label: 'Türkçe mikrofon girişi', state: 'VERIFY_ON_DEVICE', detail: 'Mikrofon cihazda doğrulanmalı.', action: { label: 'Ses ayarlarını aç', surface: 'settings', anchor: 'setup-voice' } },
+          { id: 'paired_devices', label: 'AION Companion cihaz erişimi', state: 'OWNER_CONNECTION_REQUIRED', detail: 'Cihaz eşleştirilmedi.', action: { label: 'Cihaz eşleştir', surface: 'devices', anchor: 'setup-devices' } },
           { id: 'daily_brief', label: "Günlük yönetici brief'i", state: 'READY', detail: 'Brief hazır.' },
         ],
       }),
@@ -220,6 +231,33 @@ async function mockProductData(page: Page) {
   await page.route('**/api/aion/tts', async (route) => {
     await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ detail: 'test tts disabled' }) });
   });
+}
+
+async function openSection(page: Page, id: string) {
+  // Works on both projects: below the drawer breakpoint the rail is behind the
+  // mobile menu, above it the rail is already on screen.
+  //
+  // The rail must exist before anything is decided about it: a one-shot
+  // visibility check against a still-mounting app silently skips the drawer
+  // and then taps a button that is parked off-screen.
+  const rail = page.getByTestId('assistant-sidebar');
+  await expect(rail).toBeAttached();
+  const width = page.viewportSize()?.width ?? 1440;
+  if (width < 768) {
+    const menu = page.getByTestId('mobile-menu-button');
+    await expect(menu).toBeVisible();
+    await menu.click();
+    await expect(rail).toHaveClass(/is-mobile-open/);
+    // The drawer slides in from off-screen. The open class lands immediately,
+    // the transform a few frames later, so clicking on the class alone can
+    // target a button that is still outside the viewport.
+    await expect.poll(async () => (await rail.boundingBox())?.x ?? -1).toBeGreaterThanOrEqual(0);
+  }
+  const button = page.getByTestId(`sidebar-${id}-button`);
+  // The drawer's navigation scrolls; the lower rows sit below the fold on a
+  // short phone, so centre the target before tapping it.
+  await button.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await button.click();
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -400,5 +438,48 @@ test('mobile drawer, sections and full-screen chat stay usable', async ({ page }
   expect(chatBox!.height).toBeLessThanOrEqual(844 + 1);
   await expect(page.getByTestId('chat-message-input')).toBeVisible();
   await expect(page.getByTestId('chat-send-button')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('settings explains every credential surface step by step', async ({ page }) => {
+  await authenticate(page);
+  await mockProductData(page);
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await openSection(page, 'settings');
+
+  // Guidance exists for each credential surface and stays collapsed until
+  // asked for, so settings is not a wall of instructions.
+  for (const id of ['vercel', 'supabase', 'elevenlabs', 'aion_trade']) {
+    await expect(page.getByTestId(`setup-steps-${id}`)).toBeVisible();
+  }
+  await expect(page.locator('[data-testid="setup-steps-vercel"] .workspace-setup-list')).toHaveCount(0);
+  await page.getByTestId('setup-steps-toggle-vercel').click();
+  await expect(page.locator('[data-testid="setup-steps-vercel"] .workspace-setup-list li').first()).toBeVisible();
+
+  // The voice pipeline is described as it is, never as raw-audio duplex.
+  const architecture = page.getByTestId('voice-architecture');
+  await expect(architecture).toBeVisible();
+  await expect(architecture).toContainText('full-duplex değildir');
+  await expectNoHorizontalOverflow(page);
+});
+
+test('a blocked readiness item routes to the panel that fixes it', async ({ page }) => {
+  await authenticate(page);
+  await mockProductData(page);
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await openSection(page, 'settings');
+
+  // A READY criterion has nothing to do, so it must not offer an action.
+  await expect(page.getByTestId('readiness-daily_brief')).toBeVisible();
+  await expect(page.getByTestId('readiness-action-daily_brief')).toHaveCount(0);
+
+  await page.getByTestId('readiness-action-paired_devices').click();
+  await expect(page.getByTestId('device-pairing-panel')).toBeVisible();
+
+  // Companion honesty: the owner can see what AION actually sent to a device.
+  const history = page.getByTestId('device-command-history');
+  await expect(history).toBeVisible();
+  await expect(history).toContainText('open_url');
+  await expect(history).toContainText('Tarayıcı açılamadı');
   await expectNoHorizontalOverflow(page);
 });

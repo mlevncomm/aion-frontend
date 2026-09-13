@@ -178,6 +178,26 @@ export default function Home() {
     setStatusNote(item === "home" ? "" : `${sectionNames[item] ?? item} açıldı`);
   };
 
+  // A readiness card names the panel that fixes it. The workspace remounts on
+  // view change (key={activeItem}), so the anchor does not exist yet in this
+  // tick; a few animation frames of retry is enough and avoids a timer that
+  // would scroll after the owner has already moved on.
+  const handleRepairNavigate = (surface: string, anchor: string) => {
+    handleSidebarSelect(surface);
+    let attempts = 0;
+    const focusAnchor = () => {
+      const target = document.getElementById(anchor);
+      if (!target) {
+        if (attempts++ < 20) window.requestAnimationFrame(focusAnchor);
+        return;
+      }
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.classList.add("is-repair-target");
+      window.setTimeout(() => target.classList.remove("is-repair-target"), 2400);
+    };
+    window.requestAnimationFrame(focusAnchor);
+  };
+
   const submitPrompt = useCallback(async (prompt: string, inputMode: "text" | "voice" = "text") => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || isSending) {
@@ -520,6 +540,7 @@ export default function Home() {
               onOpenSession={(sessionId) => { void handleOpenSession(sessionId); }}
               onDeleteSession={(sessionId) => { void handleDeleteSession(sessionId); }}
               onOpenTheme={() => setThemePickerOpen(true)}
+              onNavigate={handleRepairNavigate}
             />
           )}
         </section>

@@ -38,9 +38,15 @@ async function authenticateFrontend(page: Page) {
 async function selectSection(page: Page, id: string, mobile: boolean) {
   if (mobile) {
     await page.getByTestId('mobile-menu-button').click();
-    await expect(page.getByTestId('assistant-sidebar')).toHaveClass(/is-mobile-open/);
+    const rail = page.getByTestId('assistant-sidebar');
+    await expect(rail).toHaveClass(/is-mobile-open/);
+    // Wait for the slide-in transform, not just the class: under load the
+    // button is otherwise clicked while still outside the viewport.
+    await expect.poll(async () => (await rail.boundingBox())?.x ?? -1).toBeGreaterThanOrEqual(0);
   }
-  await page.getByTestId(`sidebar-${id}-button`).click();
+  const button = page.getByTestId(`sidebar-${id}-button`);
+  await button.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await button.click();
 }
 
 for (const viewport of phoneViewports) {

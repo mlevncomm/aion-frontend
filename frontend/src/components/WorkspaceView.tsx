@@ -7,6 +7,7 @@ import {
   Bot,
   BriefcaseBusiness,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Copy,
   Database,
@@ -17,6 +18,7 @@ import {
   KeyRound,
   Laptop,
   Link2,
+  ListChecks,
   MessageCircle,
   Palette,
   RefreshCw,
@@ -34,6 +36,7 @@ import {
   disconnectAionIntegration,
   disconnectMarketplacePlugin,
   getAionControlKey,
+  getAionDeviceCommands,
   getAionDevices,
   getAionOAuthClients,
   getAionReadiness,
@@ -52,6 +55,7 @@ import {
   updateAionDevicePermissions,
   type AgentChatSession,
   type AionDevice,
+  type AionDeviceCommand,
   type AionDevicePairing,
   type AionIntegrations,
   type AionOAuthClients,
@@ -64,6 +68,92 @@ import {
   type MarketplacePlugin,
 } from "@/lib/aionApi";
 import { ApiError } from "@/lib/api";
+
+// Owner-facing setup instructions live next to the form that consumes them.
+// They describe the real provider screens and the least privilege that works,
+// so the owner never has to guess a scope or paste an over-powered secret.
+const SETUP_STEPS: Record<string, { title: string; steps: string[]; note?: string }> = {
+  vercel: {
+    title: "Vercel tokenını adım adım al",
+    steps: [
+      "vercel.com/account/tokens sayfasını aç.",
+      "Create Token de; kapsam olarak yalnız kendi hesabını seç ve bir son kullanma tarihi ver.",
+      "Tokenı kopyala. Vercel bu değeri bir daha göstermez.",
+      "Tokenı yukarıdaki alana yapıştır ve Kaydet ve test et de.",
+      "AION kaydetmeden önce Vercel API'sine gerçek bir istek atar; istek başarısızsa bağlantı kaydedilmez.",
+    ],
+  },
+  supabase: {
+    title: "Supabase bilgilerini adım adım al",
+    steps: [
+      "supabase.com/dashboard adresinden projeni aç.",
+      "Project Settings > API bölümüne gir.",
+      "Project URL değerini Host alanına yapıştır.",
+      "anon / publishable key değerini kopyalayıp key alanına yapıştır.",
+      "Kaydet ve test et de; AION önce Supabase REST uçlarına gerçek bir istek atar.",
+    ],
+    note: "service_role anahtarını asla girme. AION bu anahtarı kabul etmez; girilirse bağlantı reddedilir.",
+  },
+  elevenlabs: {
+    title: "ElevenLabs sesini adım adım bağla",
+    steps: [
+      "elevenlabs.io hesabında Profile > API Keys bölümünü aç.",
+      "Yeni bir key oluştur. Text to Speech izni yeterlidir; Voice Library izni gerekmez.",
+      "Keyi yukarı yapıştır ve Sesleri getir de.",
+      "Türkçe için doğal bulduğun sesi listeden seç.",
+      "Kaydet ve test et de; AION gerçek bir TTS örneği üretir.",
+    ],
+    note: "Gerçek bir ses örneği üretilemezse premium ses READY sayılmaz ve yerel Piper fallback açık kalır.",
+  },
+  devices: {
+    title: "Cihaz eşleştirmesini adım adım yap",
+    steps: [
+      "Bu sayfada Eşleştirme kodu üret düğmesine bas.",
+      "Kod tek kullanımlıktır ve kısa sürede geçersizleşir.",
+      "AION Companion uygulamasını bilgisayarında aç ve kodu gir.",
+      "Eşleşme tamamlandıktan sonra yetkileri tek tek aç; hepsi kapalı başlar.",
+      "Cihaz ONLINE görünmeden AION bilgisayarını kontrol edilebilir saymaz.",
+    ],
+  },
+  aion_trade: {
+    title: "AION Trade telemetrisi için gerekenler",
+    steps: [
+      "Read-only pozisyon, strateji ve risk uçlarını veren bir API sözleşmesi tanımlanmalı.",
+      "Anahtar yalnız SPOT okuma yetkisi taşımalı; emir ve withdrawal yetkisi verilmemeli.",
+      "Sözleşme hazır olduğunda bu kart bağlantı formuna dönüşür.",
+    ],
+    note: "Bu madde şu anda BLOCKED. AION bu telemetriyi bağlı gibi göstermez ve LIVE işlem yetkisi açmaz.",
+  },
+};
+
+function SetupSteps({ id }: { id: keyof typeof SETUP_STEPS }) {
+  const [open, setOpen] = useState(false);
+  const guide = SETUP_STEPS[id];
+  if (!guide) return null;
+  return (
+    <div className={`workspace-setup-steps${open ? " is-open" : ""}`} data-testid={`setup-steps-${id}`}>
+      <button
+        type="button"
+        className="workspace-setup-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        data-testid={`setup-steps-toggle-${id}`}
+      >
+        <ListChecks size={14} aria-hidden="true" />
+        <span>{guide.title}</span>
+        <ChevronDown size={14} aria-hidden="true" className="workspace-setup-chevron" />
+      </button>
+      {open ? (
+        <div className="workspace-setup-body">
+          <ol className="workspace-setup-list">
+            {guide.steps.map((step) => <li key={step}>{step}</li>)}
+          </ol>
+          {guide.note ? <p className="workspace-setup-warning">{guide.note}</p> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export type WorkspaceViewId = "projects" | "tasks" | "devices" | "inbox" | "library" | "automations" | "settings" | "profile";
 
@@ -80,6 +170,7 @@ interface WorkspaceViewProps {
   onOpenSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
   onOpenTheme: () => void;
+  onNavigate?: (surface: string, anchor: string) => void;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -192,6 +283,7 @@ export default function WorkspaceView({
   onOpenSession,
   onDeleteSession,
   onOpenTheme,
+  onNavigate,
 }: WorkspaceViewProps) {
   const [query, setQuery] = useState("");
   const [controlKey, setControlKey] = useState("");
@@ -226,6 +318,7 @@ export default function WorkspaceView({
   const [voiceSettingsState, setVoiceSettingsState] = useState<AionVoiceSettings | null>(null);
   const [pronunciationDraft, setPronunciationDraft] = useState("");
   const [devices, setDevices] = useState<AionDevice[]>([]);
+  const [deviceCommands, setDeviceCommands] = useState<AionDeviceCommand[]>([]);
   const [devicePairing, setDevicePairing] = useState<AionDevicePairing | null>(null);
   const [deviceBusy, setDeviceBusy] = useState("");
   const [deviceNote, setDeviceNote] = useState("");
@@ -275,12 +368,22 @@ export default function WorkspaceView({
     if (view !== "devices") return;
     let cancelled = false;
     setDeviceBusy("loading");
+    // Presence and history are loaded together: a device that is online but has
+    // never run a command is a different situation from one whose commands are
+    // failing, and only the pair distinguishes them.
+    const loadHistory = () => {
+      void getAionDeviceCommands()
+        .then((items) => { if (!cancelled) setDeviceCommands(items); })
+        .catch(() => undefined);
+    };
     void getAionDevices()
       .then((items) => { if (!cancelled) setDevices(items); })
       .catch(() => { if (!cancelled) setDeviceNote("Cihaz listesi alınamadı."); })
       .finally(() => { if (!cancelled) setDeviceBusy(""); });
+    loadHistory();
     const timer = window.setInterval(() => {
       void getAionDevices().then((items) => { if (!cancelled) setDevices(items); }).catch(() => undefined);
+      loadHistory();
     }, 10_000);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [view]);
@@ -288,9 +391,17 @@ export default function WorkspaceView({
   const refreshDevices = async () => {
     setDeviceBusy("loading");
     try {
-      setDevices(await getAionDevices());
-    } catch {
-      setDeviceNote("Cihaz listesi alınamadı.");
+      // History is loaded with the devices so a paired-but-silent companion is
+      // distinguishable from one that simply has nothing queued.
+      const [list, history] = await Promise.all([
+        getAionDevices(),
+        getAionDeviceCommands().catch(() => [] as AionDeviceCommand[]),
+      ]);
+      setDevices(list);
+      setDeviceCommands(history);
+      setDeviceNote("");
+    } catch (error) {
+      setDeviceNote(apiErrorDetail(error, "Cihaz listesi alınamadı."));
     } finally {
       setDeviceBusy("");
     }
@@ -655,7 +766,7 @@ export default function WorkspaceView({
 
   if (view === "projects") {
     return (
-      <div className="workspace-view">
+      <div className="workspace-view" id="projects-overview">
         <Header eyebrow="Canlı çalışma alanı" title="Projeler" copy="AION'un gerçek kaynaklardan gördüğü proje, repo ve uygulama durumları." loading={loading} onRefresh={onRefresh} />
         <div className="workspace-toolbar">
           <div className="workspace-search"><BriefcaseBusiness size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Proje ara" /></div>
@@ -784,7 +895,7 @@ export default function WorkspaceView({
           <div className="workspace-kpi"><span className="workspace-kpi-icon"><ShieldCheck size={17} /></span><div><strong>İzinli</strong><span>varsayılan kapalı</span></div></div>
         </div>
 
-        <section className="workspace-device-pairing" data-testid="device-pairing-panel">
+        <section className="workspace-device-pairing" id="setup-devices" data-testid="device-pairing-panel">
           <div className="workspace-connections-heading">
             <div><small>AION Companion</small><strong>Windows bilgisayar bağla</strong></div>
             <StatusPill value={devicePairing ? "10 dk eşleştirme" : "Hazır"} />
@@ -804,6 +915,7 @@ export default function WorkspaceView({
             </div>
           ) : null}
           {deviceNote ? <p className="workspace-integration-note" role="status">{deviceNote}</p> : null}
+          <SetupSteps id="devices" />
         </section>
 
         <div className="workspace-device-list">
@@ -814,6 +926,13 @@ export default function WorkspaceView({
                 <div><small>{device.platform}</small><h2>{device.name}</h2></div>
                 <StatusPill value={device.status} />
               </div>
+              <p className="workspace-device-seen">
+                {device.status === "ONLINE"
+                  ? "Companion şu anda çevrimiçi ve komut alabiliyor."
+                  : device.last_seen
+                    ? `Son görülme: ${formatObserved(device.last_seen)}. Çevrimdışı bir cihaz komut çalıştıramaz.`
+                    : "Bu cihaz henüz hiç bağlanmadı; eşleşme tamamlanmış olsa bile komut çalıştıramaz."}
+              </p>
               <div className="workspace-device-permissions">
                 {device.capabilities.map((capability) => (
                   <label key={capability}>
@@ -834,6 +953,30 @@ export default function WorkspaceView({
             </article>
           ))}
         </div>
+        <section className="workspace-signal-section" data-testid="device-command-history">
+          <div className="workspace-signal-heading"><span>Komut geçmişi</span><small>AION'un cihazlara gerçekten gönderdiği komutlar</small></div>
+          {deviceCommands.length > 0 ? (
+            <div className="workspace-command-list">
+              {deviceCommands.slice(0, 12).map((command) => (
+                <article key={command.id} className={`workspace-command-row is-${command.status}`}>
+                  <div className="workspace-command-head">
+                    <code>{command.command}</code>
+                    <StatusPill value={command.status} />
+                  </div>
+                  <p>{Object.entries(command.args).map(([key, value]) => `${key}: ${String(value)}`).join(" · ") || "Parametresiz komut"}</p>
+                  <small>
+                    {command.created_at ? formatObserved(command.created_at) : "Zaman bilinmiyor"}
+                    {command.status === "error" && command.result ? ` · Hata: ${command.result}` : ""}
+                    {command.status === "queued" ? " · Cihaz henüz almadı" : ""}
+                  </small>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="workspace-integration-note">Henüz cihaza gönderilmiş komut yok. AION bir cihazı kontrol ettiğini yalnız burada kaydı varsa iddia eder.</p>
+          )}
+        </section>
+
         {!deviceBusy && devices.length === 0 ? <EmptyState icon={<Laptop size={21} />} title="Henüz eşleşmiş cihaz yok" copy="Windows eşleştirme kodu oluşturup kendi bilgisayarında kurulum komutunu çalıştır. AION cihazı gördükten sonra izinleri buradan aç." /> : null}
       </div>
     );
@@ -841,7 +984,7 @@ export default function WorkspaceView({
 
   if (view === "inbox") {
     return (
-      <div className="workspace-view">
+      <div className="workspace-view" id="inbox-brief">
         <Header eyebrow="AION sinyal merkezi" title="Gelen Kutusu" copy="Yeni gelişmeler, gerçek kaynak uyarıları ve AION'un dikkat etmeni istediği değişiklikler." loading={loading} onRefresh={onRefresh} />
         <div className="workspace-kpi-row">
           <div className="workspace-kpi"><span className="workspace-kpi-icon"><Activity size={17} /></span><div><strong>{observedChanges.length}</strong><span>son gelişme</span></div></div>
@@ -887,7 +1030,7 @@ export default function WorkspaceView({
 
   if (view === "library") {
     return (
-      <div className="workspace-view">
+      <div className="workspace-view" id="library-memory">
         <Header eyebrow="Kalıcı sohbet geçmişi" title="Geçmiş" copy="AION backend'inde saklanan gerçek sohbet oturumların. Buradan kaldığın yerden devam edebilirsin." loading={loading} onRefresh={onRefresh} />
         <div className="workspace-toolbar">
           <div className="workspace-search"><History size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Sohbetlerde ara" /></div>
@@ -1027,6 +1170,17 @@ export default function WorkspaceView({
                   <StatusPill value={criterion.state} />
                 </div>
                 <p>{criterion.detail}</p>
+                {criterion.action && onNavigate ? (
+                  <button
+                    type="button"
+                    className="workspace-repair-button"
+                    onClick={() => onNavigate(criterion.action!.surface, criterion.action!.anchor)}
+                    data-testid={`readiness-action-${criterion.id}`}
+                  >
+                    {criterion.action.label}
+                    <ArrowUpRight size={14} />
+                  </button>
+                ) : null}
               </article>
             ))}
           </div>
@@ -1038,7 +1192,7 @@ export default function WorkspaceView({
           ) : null}
         </section>
 
-        <section className="workspace-connections-panel" aria-label="AION bağlantıları">
+        <section className="workspace-connections-panel" id="setup-connections" aria-label="AION bağlantıları">
           <div className="workspace-connections-heading">
             <div><small>Gerçek veri kaynakları</small><strong>Bağlantılar</strong></div>
             <span>Credential değerleri UI'da gösterilmez</span>
@@ -1079,6 +1233,7 @@ export default function WorkspaceView({
               {vercelStatus === "CONNECTED" ? <small className="workspace-integration-meta">{listValue(vercel.projects).length} proje · {listValue(vercel.deployments).length} deployment gözleniyor</small> : null}
               {integrationNote.vercel ? <p className="workspace-integration-note" role="status">{integrationNote.vercel}</p> : null}
               <button type="button" className="workspace-integration-help" onClick={() => onAsk("AION, Vercel tokenını nereden oluşturacağımı kısa ve güvenli biçimde anlat. Token değerini sohbete yazmamı isteme; Ayarlar > Bağlantılar alanına yapıştıracağım.")}>Token nereden alınır?</button>
+              <SetupSteps id="vercel" />
             </article>
 
             <article className="workspace-connection-card is-configurable" data-testid="integration-supabase-card">
@@ -1128,9 +1283,10 @@ export default function WorkspaceView({
               {supabaseStatus === "CONNECTED" ? <small className="workspace-integration-meta">{listValue(supabase.tables).length} exposed tablo metadata'sı gözleniyor</small> : null}
               {integrationNote.supabase ? <p className="workspace-integration-note" role="status">{integrationNote.supabase}</p> : null}
               <button type="button" className="workspace-integration-help" onClick={() => onAsk("AION, Supabase Project URL ve publishable/anon key'i nereden bulacağımı kısa anlat. service_role isteme; değerleri Ayarlar > Bağlantılar alanına yapıştıracağım.")}>Bilgiler nerede?</button>
+              <SetupSteps id="supabase" />
             </article>
 
-            <article className="workspace-connection-card is-configurable" data-testid="integration-elevenlabs-card">
+            <article className="workspace-connection-card is-configurable" id="setup-voice" data-testid="integration-elevenlabs-card">
               <div className="workspace-connection-top"><span><Activity size={17} /></span><StatusPill value={elevenStatus} /></div>
               <h3>Premium AION Sesi · ElevenLabs</h3>
               <p>Robotik tarayıcı sesi yerine AION'un backend'den ürettiği doğal Türkçe sesi kullanır. API key hiçbir zaman tarayıcıya geri gönderilmez.</p>
@@ -1174,6 +1330,7 @@ export default function WorkspaceView({
               </div>
               {elevenConfigured ? <small className="workspace-integration-meta">Aktif ses: {stringValue(elevenlabs.voice_name, stringValue(elevenlabs.voice_id, "Seçili ElevenLabs sesi"))}</small> : null}
               {integrationNote.elevenlabs ? <p className="workspace-integration-note" role="status">{integrationNote.elevenlabs}</p> : null}
+              <SetupSteps id="elevenlabs" />
             </article>
 
             <article className="workspace-connection-card">
@@ -1182,6 +1339,7 @@ export default function WorkspaceView({
               <p>Public web/API health izleniyor; pozisyon, strateji ve risk telemetrisi henüz AION'a read-only bağlı değil. LIVE işlem yetkisi açılmaz.</p>
               <code>PAPER-first · SPOT-only · no withdrawal · no Martingale</code>
               <button type="button" onClick={() => onAsk("AION, AION Trade için yalnız read-only pozisyon, strateji ve risk telemetrisi bağlantısını planla. LIVE işlem, withdrawal veya emir yetkisi verme. Önce mevcut gerçek API yüzeyini ve gereken en düşük yetkiyi kontrol et.")}>Telemetri planını incele</button>
+              <SetupSteps id="aion_trade" />
             </article>
           </div>
         </section>
@@ -1190,6 +1348,10 @@ export default function WorkspaceView({
           <div className="workspace-connections-heading">
             <div><small>Kişisel ses profili</small><strong>Konuşma karakteri ve telaffuz</strong></div>
             <StatusPill value={voiceSettingsState?.provider === "elevenlabs" ? "Premium TTS" : "Cihaz / yerel fallback"} />
+          </div>
+          <div className="workspace-voice-architecture" data-testid="voice-architecture">
+            <p><strong>Ses mimarisi — olduğu gibi.</strong> Mikrofonunu tarayıcı yazıya çevirir, AION cevabı üretir, ses backend'de sentezlenir. Sesli konuşma sırasında mikrofon açık kalır, bu yüzden AION'un sözünü kesebilirsin.</p>
+            <p>Bu <b>ham-ses full-duplex değildir</b>: aynı anda dinleyip konuşan tek bir ses akışı, ücretli bir realtime ses sağlayıcısı gerektirir ve bağlı değildir. AION bağlamadığı sürece bu özelliği var gibi göstermez.</p>
           </div>
           <div className="workspace-voice-profile-grid">
             <div className="workspace-voice-sliders">
@@ -1226,7 +1388,7 @@ export default function WorkspaceView({
           {integrationNote.voice ? <p className="workspace-integration-note" role="status">{integrationNote.voice}</p> : null}
         </section>
 
-        <section className="workspace-accounts-panel" aria-label="Hesaplar ve API bağlantıları" data-testid="accounts-api-panel">
+        <section className="workspace-accounts-panel" id="setup-accounts" aria-label="Hesaplar ve API bağlantıları" data-testid="accounts-api-panel">
           <div className="workspace-connections-heading">
             <div><small>Genel entegrasyon merkezi</small><strong>Hesaplar & API</strong></div>
             <span>{marketplacePlugins.filter((plugin) => plugin.status === "connected").length} bağlı · {marketplacePlugins.length} kullanılabilir servis</span>
@@ -1270,6 +1432,13 @@ export default function WorkspaceView({
                     <StatusPill value={connected ? "CONNECTED" : plugin.status || "not_connected"} />
                   </div>
                   <p>{plugin.description || "AION bağlantısı"}</p>
+                  {connected ? (
+                    <p className={`workspace-account-tool${plugin.live_callable ? " is-live" : ""}`} data-testid={`account-tool-${plugin.id}`}>
+                      {plugin.live_callable
+                        ? <><ShieldCheck size={13} aria-hidden="true" /> AION aracı kullanılabilir{plugin.native_tool ? <code>{plugin.native_tool}</code> : null}</>
+                        : <><AlertTriangle size={13} aria-hidden="true" /> Hesap bağlı, ancak AION bu servisi henüz araç olarak çağıramıyor.</>}
+                    </p>
+                  ) : null}
                   <div className="workspace-account-actions">
                     {connected ? (
                       <button type="button" onClick={() => { void disconnectMarketplace(plugin); }} disabled={marketplaceBusy === plugin.id}>Bağlantıyı kaldır</button>
@@ -1310,7 +1479,7 @@ export default function WorkspaceView({
         loading={loading}
         onRefresh={onRefresh}
       />
-      <div className="workspace-profile-card is-personal-profile">
+      <div className="workspace-profile-card is-personal-profile" id="profile-owner-card">
         <div className="workspace-profile-avatar">M</div>
         <div className="workspace-profile-copy">
           <p>Tek kullanıcı · Europe/Istanbul · Türkçe</p>
