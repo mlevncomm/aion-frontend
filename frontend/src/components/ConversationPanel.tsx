@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { AudioLines, Bot, Plus, X } from "lucide-react";
+import { AudioLines, Bot, Menu, Plus, X } from "lucide-react";
 import ChatComposer from "@/components/ChatComposer";
 import type { VoiceStatus } from "@/hooks/useVoiceAssistant";
 
@@ -17,6 +17,9 @@ interface ConversationPanelProps {
   onClose: () => void;
   onMic: () => void;
   onNewChat: () => void;
+  /** Mobile only: the full-screen panel covers the top bar, so navigation
+      needs its own way in from here. */
+  onOpenMenu?: () => void;
   onSubmit: () => void;
   open: boolean;
   voiceError: string;
@@ -41,6 +44,7 @@ export default function ConversationPanel({
   onClose,
   onMic,
   onNewChat,
+  onOpenMenu,
   onSubmit,
   open,
   voiceError,
@@ -76,6 +80,17 @@ export default function ConversationPanel({
       <section className="conversation-panel" role="dialog" aria-modal="true" aria-labelledby="conversation-title" data-testid="conversation-panel">
         <div className="conversation-handle" aria-hidden="true" />
         <header className="conversation-header">
+          {onOpenMenu ? (
+            <button
+              type="button"
+              className="conversation-menu"
+              onClick={onOpenMenu}
+              aria-label="Menüyü aç"
+              data-testid="conversation-menu-button"
+            >
+              <Menu size={18} aria-hidden="true" />
+            </button>
+          ) : null}
           <div className="conversation-heading">
             <span className={`conversation-voice-dot is-${voiceStatus}`} aria-hidden="true"><AudioLines size={15} /></span>
             <div>

@@ -7656,3 +7656,48 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   .pearl-orb.is-sending .pearl-orb-pulse,
   .pearl-orb.is-typing .pearl-orb-pulse { animation: none; }
 }
+
+/* The mobile conversation panel is full screen, so it covers the top bar and
+   with it the only way into navigation. Desktop and tablet keep the rail on
+   screen beside the panel and need no second entrance. */
+.conversation-menu {
+  display: none;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  margin-right: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  color: #a5adb1;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.conversation-menu:hover,
+.conversation-menu:focus-visible {
+  color: rgb(var(--aion-bright-rgb) / 0.95);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+@media (max-width: 767px) {
+  .conversation-menu { display: grid; }
+  /* The drawer has to win over the panel it is opened from. */
+  .aion-rail { z-index: 90; }
+  .mobile-sidebar-backdrop { z-index: 85; }
+}
+
+/* A 568px-tall phone left the drawer's navigation 163px of scrollable space
+   for 553px of rows, so most of the menu sat outside the clip and could not
+   be reached. On a short viewport the supplementary status strip gives up its
+   room to the navigation it was sitting under; the same numbers are on the
+   home screen, so nothing is lost. */
+@media (max-width: 767px) and (max-height: 720px) {
+  .rail-pulseline { display: none; }
+  .rail-surface { padding: 14px 12px 10px; gap: 10px; }
+  .rail-head { margin-bottom: 2px; }
+  .rail-compose { padding: 10px 12px; }
+  .rail-profile { padding: 8px 10px; }
+  .rail-heading { margin: 8px 12px 6px; }
+}

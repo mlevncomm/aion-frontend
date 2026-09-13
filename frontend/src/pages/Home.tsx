@@ -352,6 +352,14 @@ export default function Home() {
       openChat();
       return;
     }
+    // The first tap starts continuous listening rather than muting anything,
+    // so reporting "microphone muted" there told the owner the opposite of
+    // what just happened.
+    if (!voice.continuousEnabled) {
+      voice.toggleMute();
+      setStatusNote("Sürekli dinleme başlatılıyor");
+      return;
+    }
     voice.toggleMute();
     setStatusNote(voice.muted ? "Mikrofon yeniden açılıyor" : "Mikrofon susturuldu");
   };
@@ -563,6 +571,7 @@ export default function Home() {
           onClose={() => setChatOpen(false)}
           onMic={handleMute}
           onNewChat={() => { void handleNewChat(); }}
+          onOpenMenu={() => setMobileMenuOpen(true)}
           onSubmit={handleSubmit}
           open={chatOpen}
           voiceError={voice.error}

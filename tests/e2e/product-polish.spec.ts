@@ -483,3 +483,37 @@ test('a blocked readiness item routes to the panel that fixes it', async ({ page
   await expect(history).toContainText('Tarayıcı açılamadı');
   await expectNoHorizontalOverflow(page);
 });
+
+test('the left menu stays reachable from inside chat on a phone', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1440) >= 768, 'the rail is already on screen above the drawer breakpoint');
+  await authenticate(page);
+  await mockProductData(page);
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+
+  // The panel covers the top bar, so the hamburger behind it is not a way in.
+  await page.getByTestId('global-chat-fab').click();
+  await expect(page.getByTestId('conversation-panel')).toBeVisible();
+  const menu = page.getByTestId('conversation-menu-button');
+  await expect(menu).toBeVisible();
+  await menu.click();
+
+  const rail = page.getByTestId('assistant-sidebar');
+  await expect(rail).toHaveClass(/is-mobile-open/);
+  await expect.poll(async () => (await rail.boundingBox())?.x ?? -1).toBeGreaterThanOrEqual(0);
+
+  // Visible is not enough: the drawer has to win the hit test against the
+  // panel it was opened from.
+  const row = page.getByTestId('sidebar-projects-button');
+  await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const owns = await row.evaluate((el) => {
+    const b = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+    return Boolean(hit && hit.closest('[data-testid="sidebar-projects-button"]'));
+  });
+  expect(owns, 'the drawer row must be hittable above the chat panel').toBeTruthy();
+
+  await row.click();
+  await expect(page.locator('.workspace-view-header h1')).toContainText('Projeler');
+  await expectNoHorizontalOverflow(page);
+});
