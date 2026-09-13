@@ -91,6 +91,28 @@ async function mockProductData(page: Page) {
       body: JSON.stringify({ family, configured: route.request().method() !== 'DELETE', secret_configured: false }),
     });
   });
+  await page.route('**/api/aion/readiness', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        contract: 'JARVIS Kurulum Dosyası / AION kişisel AI OS',
+        state: 'READY_WITH_OWNER_ACTIONS',
+        connected_accounts: [],
+        reauth_accounts: [],
+        hard_blockers: [],
+        owner_actions: ['actions', 'voice_input'],
+        observed_at: Date.now(),
+        criteria: [
+          { id: 'business_context', label: 'İş ve kişisel bağlam', state: 'READY', detail: 'AION Mehmet bağlamını kullanıyor.' },
+          { id: 'real_data', label: 'Gerçek veri kaynakları', state: 'READY', detail: 'Repository kaynakları doğrulandı.' },
+          { id: 'actions', label: 'Gerçek aksiyon ve çok adımlı işler', state: 'OWNER_CONNECTION_REQUIRED', detail: 'Harici hesap için bağlantı gerekiyor.' },
+          { id: 'voice_input', label: 'Türkçe mikrofon girişi', state: 'VERIFY_ON_DEVICE', detail: 'Mikrofon cihazda doğrulanmalı.' },
+          { id: 'daily_brief', label: "Günlük yönetici brief'i", state: 'READY', detail: 'Brief hazır.' },
+        ],
+      }),
+    });
+  });
   await page.route('**/api/aion/voice/settings', async (route) => {
     await route.fulfill({
       status: 200,
@@ -230,6 +252,9 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await page.getByTestId('sidebar-settings-button').click();
   await expect(page.getByTestId('sidebar-settings-button')).toHaveClass(/is-active/);
   await expect(page.locator('.workspace-view h1')).toHaveText('Ayarlar');
+  await expect(page.getByTestId('pdf-contract-readiness')).toContainText('AION tamamlanma durumu');
+  await expect(page.getByTestId('readiness-business_context')).toContainText('READY');
+  await expect(page.getByTestId('readiness-actions')).toContainText('OWNER_CONNECTION_REQUIRED');
   await expect(page.locator('.workspace-connections-panel')).toContainText('Vercel Account API');
   await expect(page.locator('.workspace-connections-panel')).toContainText('Supabase');
   await expect(page.locator('.workspace-connections-panel')).toContainText('AION Trade Telemetri');

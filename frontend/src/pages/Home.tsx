@@ -151,10 +151,20 @@ export default function Home() {
   }, [refreshWorkspace]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const refreshIfVisible = () => {
       if (document.visibilityState === "visible") void refreshWorkspace();
-    }, 60_000);
-    return () => window.clearInterval(timer);
+    };
+    // Keep the command center visibly live without hammering provider APIs.
+    // The backend observer owns external probes; this keeps browser state in
+    // sync with internal task/action changes and new observer snapshots.
+    const timer = window.setInterval(refreshIfVisible, 20_000);
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
   }, [refreshWorkspace]);
 
   const handleSidebarSelect = (item: string) => {
@@ -188,6 +198,9 @@ export default function Home() {
       ]);
       setStatusNote("Yanıt gerçek AION backend'inden geldi");
       void listAionChatSessions().then(setSessions).catch(() => undefined);
+      // A tool call may have completed a task, changed an integration or moved
+      // a workflow. Refresh immediately instead of waiting for the next poll.
+      void refreshWorkspace();
       await speak(result.text);
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Bilinmeyen bağlantı hatası";
@@ -200,7 +213,7 @@ export default function Home() {
     } finally {
       setIsSending(false);
     }
-  }, [chatSessionId, isSending, markIdle, markProcessing, speak]);
+  }, [chatSessionId, isSending, markIdle, markProcessing, refreshWorkspace, speak]);
 
   const handleSubmit = () => {
     if (message.trim()) setChatOpen(true);

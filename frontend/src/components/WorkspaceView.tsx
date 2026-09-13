@@ -32,6 +32,7 @@ import {
   disconnectMarketplacePlugin,
   getAionControlKey,
   getAionOAuthClients,
+  getAionReadiness,
   getAionVoiceSettings,
   getMarketplacePlugins,
   listElevenLabsVoices,
@@ -46,6 +47,7 @@ import {
   type AionIntegrations,
   type AionOAuthClients,
   type AionPersonalProfile,
+  type AionReadiness,
   type AionSettings,
   type AionStatusSummary,
   type AionVoiceSettings,
@@ -120,8 +122,8 @@ function formatSessionTime(value?: number): string {
 function statusTone(value: string): "ok" | "warn" | "bad" | "muted" {
   const normalized = value.toLowerCase();
   if (["error", "failed", "500", "blocked", "offline", "down"].some((word) => normalized.includes(word))) return "bad";
-  if (["auth", "unknown", "stale", "404", "not_found", "warning", "pending"].some((word) => normalized.includes(word))) return "warn";
-  if (["connected", "reachable", "active", "healthy", "success", "ok", "200", "observed"].some((word) => normalized.includes(word))) return "ok";
+  if (["auth", "unknown", "stale", "404", "not_found", "warning", "pending", "owner_connection", "verify_on_device"].some((word) => normalized.includes(word))) return "warn";
+  if (["connected", "reachable", "active", "healthy", "success", "ok", "200", "observed", "ready"].some((word) => normalized.includes(word))) return "ok";
   return "muted";
 }
 
@@ -203,6 +205,7 @@ export default function WorkspaceView({
   const [marketplaceBusy, setMarketplaceBusy] = useState("");
   const [marketplaceNote, setMarketplaceNote] = useState("");
   const [oauthClients, setOauthClients] = useState<AionOAuthClients | null>(null);
+  const [readiness, setReadiness] = useState<AionReadiness | null>(null);
   const [oauthFamily, setOauthFamily] = useState("");
   const [oauthClientId, setOauthClientId] = useState("");
   const [oauthClientSecret, setOauthClientSecret] = useState("");
@@ -238,7 +241,7 @@ export default function WorkspaceView({
     if (view !== "settings") return;
     let cancelled = false;
     setMarketplaceLoading(true);
-    Promise.allSettled([getMarketplacePlugins(), getAionVoiceSettings(), getAionOAuthClients()]).then(([catalog, voice, oauth]) => {
+    Promise.allSettled([getMarketplacePlugins(), getAionVoiceSettings(), getAionOAuthClients(), getAionReadiness()]).then(([catalog, voice, oauth, contract]) => {
       if (cancelled) return;
       if (catalog.status === "fulfilled") setMarketplacePlugins(catalog.value.plugins ?? []);
       if (voice.status === "fulfilled") {
@@ -246,6 +249,7 @@ export default function WorkspaceView({
         setPronunciationDraft(Object.entries(voice.value.custom_pronunciations ?? {}).map(([term, spoken]) => `${term}=${spoken}`).join("\n"));
       }
       if (oauth.status === "fulfilled") setOauthClients(oauth.value);
+      if (contract.status === "fulfilled") setReadiness(contract.value);
       setMarketplaceLoading(false);
     });
     if (integrations?.elevenlabs?.configured) {
@@ -824,6 +828,31 @@ export default function WorkspaceView({
           </article>
           <button type="button" className="workspace-setting-card is-button" onClick={onOpenTheme}><span><Palette size={17} /></span><div><small>Görünüm</small><strong>Tema ve atmosfer</strong><p>Renk temasını bu tarayıcı için değiştir.</p></div><ArrowUpRight size={15} /></button>
         </div>
+
+        <section className="workspace-accounts-panel" aria-label="PDF AION tamamlanma sözleşmesi" data-testid="pdf-contract-readiness">
+          <div className="workspace-connections-heading">
+            <div><small>JARVIS Kurulum Dosyası · gerçek sistem sözleşmesi</small><strong>AION tamamlanma durumu</strong></div>
+            <StatusPill value={readiness?.state ?? "Kontrol ediliyor"} />
+          </div>
+          <p className="workspace-accounts-copy">Bu bölüm arayüzün güzel olup olmadığını değil, PDF'deki gerçek veri, aksiyon, hafıza, ses, takip ve günlük brief kriterlerini doğrular. Kullanıcı hesabı veya cihaz izni gerektiren maddeyi AION kendi kendine tamamlanmış saymaz.</p>
+          <div className="workspace-account-grid">
+            {(readiness?.criteria ?? []).map((criterion) => (
+              <article key={criterion.id} className={`workspace-account-card${criterion.state === "READY" ? " is-connected" : ""}`} data-testid={`readiness-${criterion.id}`}>
+                <div className="workspace-account-card-top">
+                  <strong>{criterion.label}</strong>
+                  <StatusPill value={criterion.state} />
+                </div>
+                <p>{criterion.detail}</p>
+              </article>
+            ))}
+          </div>
+          {!readiness ? <p className="workspace-integration-note">PDF tamamlanma durumu backend'den doğrulanıyor…</p> : null}
+          {readiness?.owner_actions?.length ? (
+            <div className="workspace-integration-actions">
+              <button type="button" onClick={() => onAsk("AION, PDF tamamlanma sözleşmesinde benden işlem gerektiren maddeleri gerçek mevcut duruma göre sırala. Yalnız benim yapmam gereken hesap bağlantısı veya cihaz izni adımlarını kısa ve adım adım anlat.")}>Benden gerekenleri göster</button>
+            </div>
+          ) : null}
+        </section>
 
         <section className="workspace-connections-panel" aria-label="AION bağlantıları">
           <div className="workspace-connections-heading">

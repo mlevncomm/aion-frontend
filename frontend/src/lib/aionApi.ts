@@ -127,6 +127,24 @@ export interface AionVoiceSettings {
   custom_pronunciations: Record<string, string>;
 }
 
+export interface AionReadinessCriterion {
+  id: string;
+  label: string;
+  state: "READY" | "ACTION_REQUIRED" | "OWNER_CONNECTION_REQUIRED" | "VERIFY_ON_DEVICE";
+  detail: string;
+}
+
+export interface AionReadiness {
+  contract: string;
+  state: "READY" | "READY_WITH_OWNER_ACTIONS" | "ACTION_REQUIRED";
+  criteria: AionReadinessCriterion[];
+  connected_accounts: string[];
+  reauth_accounts: string[];
+  hard_blockers: string[];
+  owner_actions: string[];
+  observed_at?: number;
+}
+
 export interface ElevenLabsVoice {
   voice_id: string;
   name: string;
@@ -186,6 +204,10 @@ export interface AionConversationMessage {
 
 export async function getAionStatus(): Promise<AionStatusSummary> {
   return apiGet<AionStatusSummary>("/aion/status");
+}
+
+export async function getAionReadiness(): Promise<AionReadiness> {
+  return apiGet<AionReadiness>("/aion/readiness");
 }
 
 export async function getAionSettings(): Promise<AionSettings> {
