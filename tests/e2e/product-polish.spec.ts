@@ -245,15 +245,24 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await expect(page.getByTestId('sidebar-home-button')).toHaveClass(/is-active/);
   await expect(page.getByTestId('sidebar-chat-button')).toBeVisible();
   await expect(page.getByTestId('sidebar-new-chat-button')).toBeVisible();
+  // The collapsible/hover rail was rejected and removed. Desktop now shows one
+  // stable command rail: labels always legible, no collapse control at all.
   const sidebar = page.getByTestId('assistant-sidebar');
-  await expect(sidebar).toHaveAttribute('data-collapsed', 'true');
-  const collapsedBox = await sidebar.boundingBox();
-  expect(collapsedBox).not.toBeNull();
-  expect(collapsedBox!.width).toBeLessThan(120);
-  await sidebar.hover();
-  await expect.poll(async () => (await sidebar.boundingBox())?.width ?? 0).toBeGreaterThan(220);
-  await page.getByTestId('desktop-sidebar-toggle').click();
-  await expect(sidebar).toHaveAttribute('data-collapsed', 'false');
+  const railBox = await sidebar.boundingBox();
+  expect(railBox).not.toBeNull();
+  expect(railBox!.width).toBeGreaterThan(220);
+  await expect(page.getByTestId('desktop-sidebar-toggle')).toHaveCount(0);
+  await expect(page.locator('.rail-surface')).toBeVisible();
+  await expect(page.getByTestId('rail-status-strip')).toBeVisible();
+  // A single marker travels between rows rather than each row lighting itself.
+  await expect(page.locator('.rail-marker.is-visible')).toHaveCount(1);
+  const homeMarker = await page.locator('.rail-marker').boundingBox();
+  await page.getByTestId('sidebar-tasks-button').click();
+  await expect(page.getByTestId('sidebar-tasks-button')).toHaveClass(/is-active/);
+  await expect.poll(async () => (await page.locator('.rail-marker').boundingBox())?.y ?? 0)
+    .not.toBe(homeMarker!.y);
+  await expect(page.locator('.rail-marker.is-visible')).toHaveCount(1);
+  await page.getByTestId('sidebar-home-button').click();
   await expectNoHorizontalOverflow(page);
 
   const sections = [

@@ -1,12 +1,11 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
-  ChevronLeft,
-  ChevronRight,
   History,
   House,
   Inbox,
-  ListTodo,
   Laptop,
+  ListTodo,
   LogOut,
   MessageCircle,
   Plus,
@@ -18,15 +17,17 @@ import {
 
 interface SidebarProps {
   activeItem: string;
-  collapsed: boolean;
   mobileOpen: boolean;
   projectCount: number;
   taskCount: number;
   alertCount: number;
   chatOpen: boolean;
+  activeServices: number;
+  totalServices: number;
+  blockedIntegrations: number;
+  lastObserved: string;
   onClose: () => void;
   onLogout: () => void;
-  onToggleCollapsed: () => void;
   onSelect: (item: string) => void;
   onOpenChat: () => void;
   onNewChat: () => void;
@@ -37,19 +38,63 @@ interface NavigationItem {
   label: string;
   icon: LucideIcon;
   badge?: number;
+  alert?: boolean;
+}
+
+/**
+ * The active marker is one element that travels between rows rather than a
+ * background that switches on each button. Moving a single shape is what makes
+ * the navigation read as one continuous surface instead of a list of tiles.
+ */
+function useTravellingMarker(activeKey: string) {
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [marker, setMarker] = useState<{ y: number; h: number; visible: boolean }>({
+    y: 0,
+    h: 0,
+    visible: false,
+  });
+
+  const measure = useCallback(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const active = list.querySelector<HTMLElement>("[data-rail-active='true']");
+    if (!active) {
+      setMarker((current) => ({ ...current, visible: false }));
+      return;
+    }
+    setMarker({ y: active.offsetTop, h: active.offsetHeight, visible: true });
+  }, []);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [activeKey, measure]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || typeof ResizeObserver === "undefined") return;
+    // Row heights change with viewport and font loading; the marker follows.
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    list.querySelectorAll("[data-rail-row='true']").forEach((row) => observer.observe(row));
+    return () => observer.disconnect();
+  }, [measure]);
+
+  return { listRef, marker, measure };
 }
 
 export default function Sidebar({
   activeItem,
-  collapsed,
   mobileOpen,
   projectCount,
   taskCount,
   alertCount,
   chatOpen,
+  activeServices,
+  totalServices,
+  blockedIntegrations,
+  lastObserved,
   onClose,
   onLogout,
-  onToggleCollapsed,
   onSelect,
   onOpenChat,
   onNewChat,
@@ -58,31 +103,43 @@ export default function Sidebar({
     { id: "home", label: "Ana Sayfa", icon: House },
     { id: "projects", label: "Projeler", icon: BriefcaseBusiness, badge: projectCount },
     { id: "tasks", label: "Görevler", icon: ListTodo, badge: taskCount },
+    { id: "inbox", label: "Gelen Kutusu", icon: Inbox, badge: alertCount, alert: true },
     { id: "devices", label: "Cihazlar", icon: Laptop },
-    { id: "inbox", label: "Gelen Kutusu", icon: Inbox, badge: alertCount },
-    { id: "library", label: "Geçmiş", icon: History },
     { id: "automations", label: "Otomasyonlar", icon: Workflow },
+    { id: "library", label: "Geçmiş", icon: History },
   ];
 
-  const renderNavigationItem = ({ id, label, icon: Icon, badge }: NavigationItem) => {
-    const isActive = activeItem === id && !chatOpen;
+  // Chat is a peer of the workspace rows so the marker can travel onto it.
+  const activeKey = chatOpen ? "chat" : activeItem;
+  const { listRef, marker } = useTravellingMarker(activeKey);
+
+  const renderRow = (
+    { id, label, icon: Icon, badge, alert }: NavigationItem,
+    options: { onClick: () => void; testId: string; trailing?: React.ReactNode },
+  ) => {
+    const isActive = activeKey === id;
     return (
       <button
         key={id}
         type="button"
-        className={`sidebar-button${isActive ? " is-active" : ""}`}
-        onClick={() => onSelect(id)}
-        aria-label={label}
-        title={collapsed ? label : undefined}
+        data-rail-row="true"
+        data-rail-active={isActive ? "true" : "false"}
+        className={`rail-row${isActive ? " is-active" : ""}`}
+        onClick={options.onClick}
         aria-current={isActive ? "page" : undefined}
-        data-testid={`sidebar-${id}-button`}
+        title={label}
+        data-testid={options.testId}
       >
-        <span className="sidebar-icon-wrap" aria-hidden="true">
-          <Icon strokeWidth={isActive ? 2.3 : 1.8} />
+        <span className="rail-glyph" aria-hidden="true">
+          <Icon size={19} strokeWidth={isActive ? 2.15 : 1.7} />
         </span>
-        <span className="sidebar-label">{label}</span>
+        <span className="rail-label">{label}</span>
+        {options.trailing}
         {typeof badge === "number" && badge > 0 ? (
-          <span className={`sidebar-badge${id === "inbox" ? " is-alert" : ""}`} aria-label={`${badge} kayıt`}>
+          <span
+            className={`rail-badge${alert ? " is-alert" : ""}`}
+            aria-label={`${badge} kayıt`}
+          >
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
@@ -92,113 +149,124 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`assistant-sidebar${collapsed ? " is-collapsed" : ""}${mobileOpen ? " is-mobile-open" : ""}`}
+      className={`aion-rail${mobileOpen ? " is-mobile-open" : ""}`}
       aria-label="Ana navigasyon"
-      data-collapsed={collapsed ? "true" : "false"}
       data-testid="assistant-sidebar"
     >
-      <div className="sidebar-top">
-        <div className="sidebar-brand-row">
-          <div className="sidebar-brand-copy">
-            <div className="brand-mark" data-testid="brand-mark">AION</div>
-            <p className="sidebar-product-label"><span className="sidebar-live-dot" aria-hidden="true" /> Mehmet · Personal AI OS</p>
+      <div className="rail-surface">
+        <header className="rail-head">
+          <div className="rail-identity">
+            <span className="rail-wordmark" data-testid="brand-mark">AION</span>
+            <span className="rail-owner">
+              <span className="rail-pulse" aria-hidden="true" />
+              Mehmet · Personal AI OS
+            </span>
           </div>
           <button
             type="button"
-            className="desktop-sidebar-toggle"
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
-            aria-pressed={collapsed}
-            title={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
-            data-testid="desktop-sidebar-toggle"
-          >
-            {collapsed ? <ChevronRight size={17} aria-hidden="true" /> : <ChevronLeft size={17} aria-hidden="true" />}
-          </button>
-          <button
-            type="button"
-            className="mobile-sidebar-close"
+            className="rail-close"
             onClick={onClose}
             aria-label="Menüyü kapat"
             data-testid="mobile-sidebar-close-button"
           >
-            <X size={20} aria-hidden="true" />
+            <X size={18} aria-hidden="true" />
           </button>
-        </div>
+        </header>
 
         <button
           type="button"
-          className="sidebar-new-chat"
+          className="rail-compose"
           onClick={onNewChat}
           data-testid="sidebar-new-chat-button"
         >
-          <Plus size={18} aria-hidden="true" />
-          <span>Yeni sohbet</span>
+          <span className="rail-compose-glyph" aria-hidden="true">
+            <Plus size={16} strokeWidth={2.4} />
+          </span>
+          <span className="rail-compose-label">Yeni sohbet</span>
         </button>
 
-        <div className="sidebar-section">
-          <span className="sidebar-section-title">AION</span>
-          <button
-            type="button"
-            className={`sidebar-button sidebar-chat-button${chatOpen ? " is-active" : ""}`}
-            onClick={onOpenChat}
-            aria-label="AION sohbetini aç"
-            aria-current={chatOpen ? "page" : undefined}
-            data-testid="sidebar-chat-button"
-          >
-            <span className="sidebar-icon-wrap" aria-hidden="true"><MessageCircle strokeWidth={chatOpen ? 2.3 : 1.8} /></span>
-            <span className="sidebar-label">Sohbet</span>
-            <span className="sidebar-live-pill">Canlı</span>
-          </button>
+        <div className="rail-scroll">
+          <div className="rail-list" ref={listRef}>
+            <span
+              className={`rail-marker${marker.visible ? " is-visible" : ""}`}
+              aria-hidden="true"
+              style={{ transform: `translate3d(0, ${marker.y}px, 0)`, height: `${marker.h}px` }}
+            />
+
+            <p className="rail-heading">AION</p>
+            {renderRow(
+              { id: "chat", label: "Sohbet", icon: MessageCircle },
+              {
+                onClick: onOpenChat,
+                testId: "sidebar-chat-button",
+                trailing: <span className="rail-live">Canlı</span>,
+              },
+            )}
+
+            <p className="rail-heading">Çalışma alanı</p>
+            {workspaceItems.map((item) =>
+              renderRow(item, {
+                onClick: () => onSelect(item.id),
+                testId: `sidebar-${item.id}-button`,
+              }),
+            )}
+
+            <p className="rail-heading">Sistem</p>
+            {renderRow(
+              { id: "settings", label: "Ayarlar", icon: Settings },
+              { onClick: () => onSelect("settings"), testId: "sidebar-settings-button" },
+            )}
+          </div>
         </div>
 
-        <div className="sidebar-section">
-          <span className="sidebar-section-title">Mehmet'in alanı</span>
-          <nav className="sidebar-navigation">
-            {workspaceItems.map(renderNavigationItem)}
-          </nav>
+        <div className="rail-pulseline" data-testid="rail-status-strip">
+          <span className="rail-pulseline-row">
+            <span className="rail-pulseline-key">Servisler</span>
+            <strong className={totalServices > 0 && activeServices < totalServices ? "is-warn" : undefined}>
+              {totalServices > 0 ? `${activeServices}/${totalServices}` : "—"}
+            </strong>
+          </span>
+          <span className="rail-pulseline-row">
+            <span className="rail-pulseline-key">Eksik bağlantı</span>
+            <strong className={blockedIntegrations > 0 ? "is-warn" : undefined}>
+              {blockedIntegrations > 0 ? blockedIntegrations : "yok"}
+            </strong>
+          </span>
+          <span className="rail-pulseline-row">
+            <span className="rail-pulseline-key">Son gözlem</span>
+            <strong>{lastObserved}</strong>
+          </span>
         </div>
-      </div>
 
-      <div className="sidebar-bottom">
-        <div className="sidebar-section sidebar-system-section">
-          <span className="sidebar-section-title">Sistem</span>
+        <footer className="rail-foot">
           <button
             type="button"
-            className={`sidebar-button${activeItem === "settings" && !chatOpen ? " is-active" : ""}`}
-            onClick={() => onSelect("settings")}
-            aria-label="Ayarlar"
-            aria-current={activeItem === "settings" && !chatOpen ? "page" : undefined}
-            data-testid="sidebar-settings-button"
+            className={`rail-profile${activeKey === "profile" ? " is-active" : ""}`}
+            onClick={() => onSelect("profile")}
+            aria-label="Mehmet profilini aç"
+            aria-current={activeKey === "profile" ? "page" : undefined}
+            data-testid="sidebar-profile-button"
           >
-            <span className="sidebar-icon-wrap" aria-hidden="true"><Settings strokeWidth={1.8} /></span>
-            <span className="sidebar-label">Ayarlar</span>
+            <span className="rail-avatar" data-testid="sidebar-profile-avatar" aria-hidden="true">
+              M
+            </span>
+            <span className="rail-profile-copy">
+              <strong data-testid="sidebar-profile-name">Mehmet</strong>
+              <small>Kişisel çalışma alanı</small>
+            </span>
+            <span className="rail-online" aria-hidden="true" />
           </button>
           <button
             type="button"
-            className="sidebar-button"
+            className="rail-signout"
             onClick={onLogout}
             aria-label="Çıkış yap"
+            title="Çıkış yap"
             data-testid="sidebar-logout-button"
           >
-            <span className="sidebar-icon-wrap" aria-hidden="true"><LogOut strokeWidth={1.8} /></span>
-            <span className="sidebar-label">Çıkış Yap</span>
+            <LogOut size={17} strokeWidth={1.8} aria-hidden="true" />
           </button>
-        </div>
-
-        <button
-          type="button"
-          className={`profile-button${activeItem === "profile" && !chatOpen ? " is-active" : ""}`}
-          onClick={() => onSelect("profile")}
-          aria-label="Mehmet profilini aç"
-          data-testid="sidebar-profile-button"
-        >
-          <span className="profile-monogram" data-testid="sidebar-profile-avatar" aria-hidden="true">M</span>
-          <span className="profile-copy">
-            <strong className="profile-name" data-testid="sidebar-profile-name">Mehmet</strong>
-            <small>Kişisel çalışma alanı</small>
-          </span>
-          <span className="profile-status-dot" aria-hidden="true" />
-        </button>
+        </footer>
       </div>
     </aside>
   );

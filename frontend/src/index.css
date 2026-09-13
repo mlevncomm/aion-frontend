@@ -9155,3 +9155,507 @@ html[data-aion-theme="reference"] .sidebar-button.is-active {
     right: -13px;
   }
 }
+
+/* ==========================================================================
+   AION command rail — replaces the rejected collapsible sidebar.
+   A floating inset dock with one marker that travels between rows, rather
+   than an edge-to-edge column of tiles that each light up on their own.
+   Namespaced under .aion-rail so none of the retired .sidebar-* rules apply.
+   ========================================================================== */
+
+.aion-rail {
+  --rail-width: 280px;
+  position: relative;
+  z-index: 40;
+  display: flex;
+  width: var(--rail-width);
+  flex-shrink: 0;
+  padding: 18px 0 18px 18px;
+}
+
+.rail-surface {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 14px 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(165deg, rgb(var(--aion-panel-rgb) / 0.96) 0%, rgb(var(--aion-panel-rgb) / 0.82) 100%);
+  box-shadow:
+    0 24px 60px -28px rgba(0, 0, 0, 0.85),
+    0 2px 10px -4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+/* A single hairline of accent light along the top edge. */
+.rail-surface::before {
+  position: absolute;
+  top: 0;
+  left: 22%;
+  width: 56%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--aion-active-rgb) / 0.55), transparent);
+  content: "";
+}
+
+.rail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 6px 0;
+}
+
+.rail-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.rail-wordmark {
+  color: #f7f8f8;
+  font-family: "Outfit Variable", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  line-height: 1;
+}
+
+.rail-owner {
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  gap: 7px;
+  color: var(--aion-muted);
+  font-size: 11px;
+  letter-spacing: 0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-pulse {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--aion-active-bright);
+  box-shadow: 0 0 0 3px rgb(var(--aion-active-rgb) / 0.16);
+  animation: rail-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes rail-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.rail-close {
+  display: none;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rail-compose {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgb(var(--aion-active-rgb) / 0.34);
+  border-radius: 14px;
+  color: var(--aion-text-tint);
+  background: linear-gradient(135deg, rgb(var(--aion-active-rgb) / 0.22), rgb(var(--aion-active-rgb) / 0.08));
+  font-size: 13.5px;
+  font-weight: 520;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.rail-compose:hover,
+.rail-compose:focus-visible {
+  border-color: rgb(var(--aion-active-rgb) / 0.6);
+  box-shadow: 0 10px 24px -14px rgb(var(--aion-active-rgb) / 0.9);
+  transform: translateY(-1px);
+}
+
+.rail-compose-glyph {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9px;
+  color: #eafaf2;
+  background: rgb(var(--aion-active-rgb) / 0.55);
+}
+
+.rail-scroll {
+  flex: 1;
+  min-height: 0;
+  margin: 0 -4px;
+  padding: 0 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.rail-scroll::-webkit-scrollbar { width: 4px; }
+.rail-scroll::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.rail-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The travelling marker. One shape, moved — never a per-row background. */
+.rail-marker {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-radius: 13px;
+  opacity: 0;
+  background: linear-gradient(100deg, rgb(var(--aion-active-rgb) / 0.9), rgb(var(--aion-active-rgb) / 0.62));
+  box-shadow:
+    0 10px 26px -14px rgb(var(--aion-active-rgb) / 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform 540ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease;
+}
+
+.rail-marker.is-visible { opacity: 1; }
+
+.rail-heading {
+  margin: 14px 0 5px;
+  padding: 0 12px;
+  color: var(--aion-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.rail-list .rail-heading:first-of-type { margin-top: 2px; }
+
+.rail-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 460;
+  text-align: left;
+  transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rail-row:hover,
+.rail-row:focus-visible {
+  color: rgba(255, 255, 255, 0.96);
+  transform: translateX(2px);
+}
+
+.rail-row:not(.is-active):hover::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.045);
+  content: "";
+}
+
+.rail-row.is-active {
+  color: #f3fbf7;
+  font-weight: 540;
+}
+
+.rail-glyph {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+}
+
+.rail-label {
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-badge {
+  min-width: 21px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.rail-badge.is-alert {
+  color: #ffd9d2;
+  background: rgba(226, 106, 84, 0.26);
+}
+
+.rail-row.is-active .rail-badge {
+  color: #eafaf2;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rail-live {
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--aion-active-bright);
+  background: rgb(var(--aion-active-rgb) / 0.16);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rail-row.is-active .rail-live {
+  color: #eafaf2;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rail-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rail-profile {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.rail-profile:hover,
+.rail-profile:focus-visible,
+.rail-profile.is-active {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rail-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid rgb(var(--aion-active-rgb) / 0.4);
+  border-radius: 11px;
+  color: var(--aion-text-tint);
+  background: linear-gradient(140deg, rgb(var(--aion-active-rgb) / 0.5), rgb(var(--aion-accent-rgb) / 0.3));
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rail-profile-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rail-profile-copy strong {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.93);
+  font-size: 13px;
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-profile-copy small {
+  overflow: hidden;
+  color: var(--aion-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-online {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--aion-active-bright);
+  box-shadow: 0 0 0 3px rgb(var(--aion-active-rgb) / 0.18);
+}
+
+.rail-signout {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease;
+}
+
+.rail-signout:hover,
+.rail-signout:focus-visible {
+  border-color: rgba(226, 106, 84, 0.4);
+  color: #ffc9bd;
+  background: rgba(226, 106, 84, 0.12);
+}
+
+/* Tablet: an intentional icon rail. Labels are hidden outright, never crushed. */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .aion-rail { --rail-width: 92px; padding: 16px 0 16px 14px; }
+  .rail-surface { padding: 18px 10px 12px; gap: 12px; border-radius: 22px; }
+  .rail-head { justify-content: center; padding: 0; }
+  .rail-owner { display: none; }
+  .rail-wordmark { font-size: 15px; letter-spacing: 0.1em; }
+  .rail-compose { justify-content: center; padding: 10px 0; }
+  .rail-compose-label { display: none; }
+  .rail-heading { padding: 0; text-align: center; font-size: 9px; letter-spacing: 0.1em; }
+  .rail-row { justify-content: center; padding: 11px 0; gap: 0; }
+  .rail-row:hover { transform: none; }
+  .rail-label,
+  .rail-live { display: none; }
+  .rail-badge {
+    position: absolute;
+    top: 4px;
+    right: 10px;
+    min-width: 17px;
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+  .rail-foot { flex-direction: column; gap: 6px; }
+  .rail-profile { justify-content: center; width: 100%; flex: none; padding: 8px 0; }
+  .rail-profile-copy,
+  .rail-online { display: none; }
+}
+
+/* Mobile: a real slide-in drawer with a scrim and safe areas. */
+@media (max-width: 767px) {
+  .aion-rail {
+    --rail-width: min(310px, 86vw);
+    position: fixed;
+    z-index: 70;
+    top: 0;
+    left: 0;
+    height: 100svh;
+    padding: 10px 0 10px 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    padding-top: calc(10px + env(safe-area-inset-top));
+    transform: translate3d(-104%, 0, 0);
+    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  .aion-rail.is-mobile-open { transform: translate3d(0, 0, 0); }
+
+  .rail-surface {
+    border-radius: 22px;
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+  }
+
+  .rail-close { display: flex; }
+  /* Comfortable touch targets. */
+  .rail-row { padding: 12px; font-size: 14.5px; }
+  .rail-compose { padding: 12px; font-size: 14.5px; }
+  .rail-profile { padding: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aion-rail,
+  .rail-marker,
+  .rail-row,
+  .rail-compose { transition-duration: 1ms; }
+  .rail-pulse { animation: none; }
+}
+
+/* Real status, not decoration: the numbers below the navigation are the same
+   observed values the workspace shows. Nothing here is a placeholder. */
+.rail-pulseline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.rail-pulseline-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rail-pulseline-key {
+  color: var(--aion-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+
+.rail-pulseline strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-pulseline strong.is-warn { color: #ffc9bd; }
+
+/* A soft accent edge makes the travelling marker read as one lit surface. */
+.rail-marker::after {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 18px;
+  border-radius: 0 3px 3px 0;
+  background: rgba(255, 255, 255, 0.75);
+  content: "";
+  transform: translateY(-50%);
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .rail-pulseline { display: none; }
+}
