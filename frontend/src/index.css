@@ -2123,7 +2123,6 @@ body,
 button,
 input,
 textarea,
-.brand-mark,
 .login-brand-mark,
 .login-mobile-brand,
 .login-visual h1,
@@ -4390,7 +4389,6 @@ select {
 .assistant-content.is-home,
 .assistant-content.is-workspace,
 .conversation-messages,
-.assistant-sidebar,
 .theme-picker {
   -webkit-overflow-scrolling: touch;
 }
@@ -6767,11 +6765,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   }
 }
 
-@media (max-width: 1100px) {
-}
-
 @media (max-width: 767px) {
-
   .mobile-sidebar-backdrop {
     background: rgba(3, 4, 7, 0.62);
     backdrop-filter: blur(5px);
@@ -6780,22 +6774,11 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
 @media (prefers-reduced-motion: reduce) {
   .assistant-shell,
-  .assistant-sidebar,
   .assistant-content,
   .workspace-view,
-  .hero-content,
-  .desktop-sidebar-toggle {
+  .hero-content {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
-  }
-}
-
-/* ============================================================
-   AION navigation v2 — compact-by-default hover expansion
-   ============================================================ */
-@media (min-width: 1101px) {
-  .assistant-shell.is-sidebar-collapsed {
-    grid-template-columns: 88px minmax(0, 1fr);
   }
 }
 
