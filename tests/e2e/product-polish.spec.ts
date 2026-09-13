@@ -246,12 +246,15 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   await expect(page.getByTestId('sidebar-chat-button')).toBeVisible();
   await expect(page.getByTestId('sidebar-new-chat-button')).toBeVisible();
   const sidebar = page.getByTestId('assistant-sidebar');
-  await expect(sidebar).toHaveAttribute('data-collapsed', 'false');
-  await page.getByTestId('desktop-sidebar-toggle').click();
   await expect(sidebar).toHaveAttribute('data-collapsed', 'true');
-  await expectNoHorizontalOverflow(page);
+  const collapsedBox = await sidebar.boundingBox();
+  expect(collapsedBox).not.toBeNull();
+  expect(collapsedBox!.width).toBeLessThan(120);
+  await sidebar.hover();
+  await expect.poll(async () => (await sidebar.boundingBox())?.width ?? 0).toBeGreaterThan(220);
   await page.getByTestId('desktop-sidebar-toggle').click();
   await expect(sidebar).toHaveAttribute('data-collapsed', 'false');
+  await expectNoHorizontalOverflow(page);
 
   const sections = [
     ['projects', 'Projeler'],

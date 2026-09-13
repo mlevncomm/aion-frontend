@@ -38,7 +38,7 @@ const quickPrompts: Record<string, string> = {
   integrations: "AION, eksik veya kısmi entegrasyonları kontrol et. Hangisinin neyi engellediğini ve benim yapmam gereken bağlantı adımını kısa Türkçe anlat.",
 };
 
-const SIDEBAR_COLLAPSED_KEY = "aion-sidebar-collapsed";
+const SIDEBAR_COLLAPSED_KEY = "aion-sidebar-collapsed-v2";
 
 const sectionNames: Record<string, string> = {
   home: "Ana Sayfa",
@@ -85,8 +85,9 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [statusNote, setStatusNote] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return stored === null ? true : stored === "true";
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
