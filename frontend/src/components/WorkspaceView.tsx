@@ -541,12 +541,23 @@ export default function WorkspaceView({
       const voices = await previewElevenLabsVoices(elevenApiKey.trim());
       setElevenVoices(voices);
       if (!elevenVoiceId && voices.length) {
-        const preferred = voices.find((voice) => (voice.gender ?? "").toLowerCase() === "female" && (voice.language ?? "").toLowerCase().startsWith("tr"))
-          ?? voices.find((voice) => (voice.gender ?? "").toLowerCase() === "female")
-          ?? voices[0];
+        const scoreVoice = (voice: ElevenLabsVoice) => {
+          const text = `${voice.name ?? ""} ${voice.gender ?? ""} ${voice.language ?? ""} ${voice.accent ?? ""} ${voice.description ?? ""} ${voice.category ?? ""}`.toLocaleLowerCase("tr-TR");
+          let score = 0;
+          if ((voice.language ?? "").toLocaleLowerCase("tr-TR").startsWith("tr") || text.includes("turkish") || text.includes("türk")) score += 120;
+          if ((voice.gender ?? "").toLocaleLowerCase("tr-TR") === "female" || text.includes("female") || text.includes("woman") || text.includes("kadın")) score += 80;
+          if (text.includes("natural") || text.includes("conversational") || text.includes("warm") || text.includes("calm")) score += 35;
+          if (text.includes("professional") || text.includes("narration")) score += 14;
+          if (text.includes("multilingual")) score += 10;
+          if (text.includes("male") || text.includes("man")) score -= 90;
+          return score;
+        };
+        const preferred = [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0];
         setElevenVoiceId(preferred.voice_id);
+        setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. AION en uygun kadın/Türkçe/doğal sesi otomatik seçti: ${preferred.name}. İstersen listeden değiştirebilirsin.` }));
+      } else {
+        setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. Beğendiğin sesi seçip kaydet.` }));
       }
-      setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. Beğendiğin sesi seçip kaydet.` }));
     } catch (error) {
       setIntegrationNote((current) => ({ ...current, elevenlabs: apiErrorDetail(error, "ElevenLabs API key doğrulanamadı.") }));
     } finally {
