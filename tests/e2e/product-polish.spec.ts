@@ -517,3 +517,39 @@ test('the left menu stays reachable from inside chat on a phone', async ({ page 
   await expect(page.locator('.workspace-view-header h1')).toContainText('Projeler');
   await expectNoHorizontalOverflow(page);
 });
+
+test('every navigation row is on screen in the phone drawer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1440) >= 768, 'the rail is not a drawer above this breakpoint');
+  await authenticate(page);
+  await mockProductData(page);
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+  await page.getByTestId('mobile-menu-button').click();
+
+  const rail = page.getByTestId('assistant-sidebar');
+  await expect(rail).toHaveClass(/is-mobile-open/);
+  await expect.poll(async () => (await rail.boundingBox())?.x ?? -1).toBeGreaterThanOrEqual(0);
+
+  // Reachable-by-scrolling is not the contract: Ayarlar used to sit outside
+  // the clip on every phone, so the owner never saw that it existed.
+  const report = await page.evaluate(() => {
+    const scroll = document.querySelector('.rail-scroll')!;
+    const area = scroll.getBoundingClientRect();
+    const rows = [...document.querySelectorAll('[data-rail-row="true"]')];
+    const clipped = rows
+      .filter((el) => {
+        const b = el.getBoundingClientRect();
+        return b.top < area.top - 0.5 || b.bottom > area.bottom + 0.5;
+      })
+      .map((el) => (el.textContent || '').trim());
+    const truncated = rows
+      .map((el) => el.querySelector('.rail-label'))
+      .filter((l): l is HTMLElement => Boolean(l) && l!.scrollWidth > l!.clientWidth + 1)
+      .map((l) => l.textContent || '');
+    return { total: rows.length, clipped, truncated };
+  });
+
+  expect(report.total).toBeGreaterThanOrEqual(9);
+  expect(report.clipped, 'no navigation row may sit outside the drawer').toEqual([]);
+  expect(report.truncated, 'no navigation label may be cut off').toEqual([]);
+});

@@ -7688,16 +7688,83 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   .mobile-sidebar-backdrop { z-index: 85; }
 }
 
-/* A 568px-tall phone left the drawer's navigation 163px of scrollable space
-   for 553px of rows, so most of the menu sat outside the clip and could not
-   be reached. On a short viewport the supplementary status strip gives up its
-   room to the navigation it was sitting under; the same numbers are on the
-   home screen, so nothing is lost. */
-@media (max-width: 767px) and (max-height: 720px) {
+/* Every navigation row has to be on screen in the drawer. Measured, it was
+   not: 553px of rows against 304-545px of space left Ayarlar cut off even on
+   a 932px-tall phone, and a height-only threshold made a 740px phone worse
+   than a 640px one. So the drawer's chrome is trimmed on every phone rather
+   than below one arbitrary height.
+
+   The status strip goes first — it is supplementary and the same numbers sit
+   on the home screen. The group headings become the hairline the tablet rail
+   already uses, which keeps the grouping and returns the text height. */
+@media (max-width: 767px) {
   .rail-pulseline { display: none; }
-  .rail-surface { padding: 14px 12px 10px; gap: 10px; }
-  .rail-head { margin-bottom: 2px; }
+  .rail-surface { padding: 14px 11px 10px; gap: 9px; }
+  .rail-head { margin-bottom: 0; }
   .rail-compose { padding: 10px 12px; }
+  .rail-row { padding: 10px 12px; }
   .rail-profile { padding: 8px 10px; }
-  .rail-heading { margin: 8px 12px 6px; }
+
+  .rail-heading {
+    height: 1px;
+    margin: 7px 12px 6px;
+    padding: 0;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.09);
+    text-indent: -999em;
+  }
+
+  .rail-list .rail-heading:first-of-type { margin-top: 2px; }
+}
+
+/* The two shortest phones still could not fit nine rows in one column — a
+   320x568 screen leaves 327px for 449px of navigation. Two columns turn nine
+   rows into five, which fits with room to spare, and the owner sees the whole
+   menu instead of discovering Ayarlar by scrolling.
+
+   The travelling marker assumes a single column, so it stands down here and
+   the active row carries the same gradient directly. */
+@media (max-width: 767px) and (max-height: 700px) {
+  .rail-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 7px;
+    align-content: start;
+  }
+
+  .rail-heading { grid-column: 1 / -1; }
+  .rail-marker { display: none; }
+
+  /* A 123px column is tight for an icon plus "Otomasyonlar", so the tile keeps
+     the horizontal layout that fits vertically and buys the label its width
+     back from the glyph, the gaps and the live pill instead. */
+  .rail-row {
+    gap: 6px;
+    padding: 9px 8px;
+    font-size: 12.5px;
+  }
+
+  .rail-row .rail-glyph svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .rail-row .rail-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The live pill has no room here and the same state is on the home screen. */
+  .rail-row .rail-live,
+  .rail-row .rail-badge { display: none; }
+
+  .rail-row.is-active {
+    color: #fff;
+    background: linear-gradient(100deg, rgb(var(--aion-active-rgb) / 0.9), rgb(var(--aion-active-rgb) / 0.62));
+    box-shadow:
+      0 10px 26px -14px rgb(var(--aion-active-rgb) / 0.95),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
 }
