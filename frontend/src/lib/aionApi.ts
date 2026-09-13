@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 
 const CHAT_SESSION_KEY = "aion-live-chat-session";
 export const DEFAULT_AION_MODEL = "nex-agi/nex-n2.5-mini:free";
@@ -184,6 +184,25 @@ export interface AionOAuthClients {
   families: Record<string, { configured: boolean; secret_configured: boolean }>;
 }
 
+export interface AionDevice {
+  id: string;
+  name: string;
+  platform: string;
+  capabilities: string[];
+  permissions: Record<string, boolean>;
+  created_at?: number;
+  last_seen?: number | null;
+  status: "ONLINE" | "OFFLINE";
+  revoked?: boolean;
+}
+
+export interface AionDevicePairing {
+  pairing_id: string;
+  pairing_token: string;
+  expires_at: number;
+  expires_in_seconds: number;
+}
+
 export interface AionTaskItem {
   id: string;
   project: string;
@@ -297,6 +316,31 @@ export async function saveAionOAuthClient(
 
 export async function deleteAionOAuthClient(family: string): Promise<Record<string, unknown>> {
   return apiDelete<Record<string, unknown>>(`/aion/oauth-clients/${encodeURIComponent(family)}`);
+}
+
+export async function getAionDevices(): Promise<AionDevice[]> {
+  const result = await apiGet<{ items: AionDevice[] }>("/aion/devices");
+  return result.items ?? [];
+}
+
+export async function createAionDevicePairing(): Promise<AionDevicePairing> {
+  return apiPost<AionDevicePairing>("/aion/devices/pairing", {});
+}
+
+export async function updateAionDevicePermissions(deviceId: string, permissions: Record<string, boolean>): Promise<AionDevice> {
+  return apiPatch<AionDevice>(`/aion/devices/${encodeURIComponent(deviceId)}/permissions`, { permissions });
+}
+
+export async function revokeAionDevice(deviceId: string): Promise<void> {
+  await apiDelete<void>(`/aion/devices/${encodeURIComponent(deviceId)}`);
+}
+
+export async function queueAionDeviceCommand(
+  deviceId: string,
+  command: "open_url" | "open_app" | "notify",
+  args: Record<string, string>,
+): Promise<Record<string, unknown>> {
+  return apiPost<Record<string, unknown>>(`/aion/devices/${encodeURIComponent(deviceId)}/commands/${command}`, { args });
 }
 
 export async function listAionTasks(): Promise<AionTaskItem[]> {

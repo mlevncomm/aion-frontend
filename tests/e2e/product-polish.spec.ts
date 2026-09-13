@@ -91,6 +91,27 @@ async function mockProductData(page: Page) {
       body: JSON.stringify({ family, configured: route.request().method() !== 'DELETE', secret_configured: false }),
     });
   });
+  await page.route('**/api/aion/devices', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ pairing_id: 'pair-1', pairing_token: 'synthetic-pair-token-abcdefghijklmnopqrstuvwxyz', expires_at: Date.now() / 1000 + 600, expires_in_seconds: 600 }) });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ items: [{ id: 'device-1', name: 'Mehmet-PC', platform: 'windows', capabilities: ['open_url', 'open_app', 'notify'], permissions: { open_url: true, open_app: false, notify: true }, status: 'ONLINE', created_at: Date.now() / 1000, last_seen: Date.now() / 1000 }] }),
+    });
+  });
+  await page.route('**/api/aion/devices/pairing', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ pairing_id: 'pair-1', pairing_token: 'synthetic-pair-token-abcdefghijklmnopqrstuvwxyz', expires_at: Date.now() / 1000 + 600, expires_in_seconds: 600 }) });
+  });
+  await page.route('**/api/aion/devices/*/permissions', async (route) => {
+    const body = route.request().postDataJSON() as { permissions?: Record<string, boolean> };
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'device-1', name: 'Mehmet-PC', platform: 'windows', capabilities: ['open_url', 'open_app', 'notify'], permissions: { open_url: true, open_app: Boolean(body.permissions?.open_app), notify: true }, status: 'ONLINE' }) });
+  });
+  await page.route('**/api/aion/devices/*/commands/notify', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'command-1', status: 'queued' }) });
+  });
   await page.route('**/api/aion/readiness', async (route) => {
     await route.fulfill({
       status: 200,
@@ -228,6 +249,7 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
   const sections = [
     ['projects', 'Projeler'],
     ['tasks', 'Görevler'],
+    ['devices', 'Cihazlar'],
     ['inbox', 'Gelen Kutusu'],
     ['library', 'Geçmiş'],
     ['automations', 'Otomasyonlar'],
@@ -237,6 +259,10 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
     await button.click();
     await expect(button).toHaveClass(/is-active/);
     await expect(page.locator('.workspace-view h1')).toHaveText(title);
+    if (id === 'devices') {
+      await expect(page.getByTestId('device-pairing-panel')).toContainText('Windows bilgisayar bağla');
+      await expect(page.getByTestId('device-device-1')).toContainText('Mehmet-PC');
+    }
     if (id === 'inbox') {
       await expect(page.locator('.workspace-alert-card.is-change')).toContainText('public uygulama durumu değişti');
     }
@@ -327,7 +353,7 @@ test('mobile drawer, sections and full-screen chat stay usable', async ({ page }
   await expect(page.getByTestId('mobile-topbar')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  const sections = ['projects', 'tasks', 'inbox', 'library', 'automations'] as const;
+  const sections = ['projects', 'tasks', 'devices', 'inbox', 'library', 'automations'] as const;
   for (const id of sections) {
     await page.getByTestId('mobile-menu-button').click();
     await expect(page.getByTestId('assistant-sidebar')).toHaveClass(/is-mobile-open/);

@@ -79,7 +79,7 @@ for (const viewport of phoneViewports) {
       }
     }
 
-    for (const section of ['projects', 'tasks', 'inbox', 'library', 'automations', 'settings', 'profile']) {
+    for (const section of ['projects', 'tasks', 'devices', 'inbox', 'library', 'automations', 'settings', 'profile']) {
       await selectSection(page, section, true);
       await expect(page.getByTestId('mobile-brand')).toBeVisible();
       await assertNoHorizontalOverflow(page, `${viewport.name} ${section}`);

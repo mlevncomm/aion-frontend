@@ -15,6 +15,8 @@ import {
   Gauge,
   History,
   KeyRound,
+  Laptop,
+  Link2,
   MessageCircle,
   Palette,
   RefreshCw,
@@ -27,10 +29,12 @@ import {
 } from "lucide-react";
 import {
   connectMarketplaceToken,
+  createAionDevicePairing,
   deleteAionOAuthClient,
   disconnectAionIntegration,
   disconnectMarketplacePlugin,
   getAionControlKey,
+  getAionDevices,
   getAionOAuthClients,
   getAionReadiness,
   getAionVoiceSettings,
@@ -39,11 +43,16 @@ import {
   mutateAionTask,
   pollMarketplaceConnect,
   previewElevenLabsVoices,
+  queueAionDeviceCommand,
+  revokeAionDevice,
   saveAionIntegration,
   saveAionOAuthClient,
   saveAionVoiceSettings,
   startMarketplaceConnect,
+  updateAionDevicePermissions,
   type AgentChatSession,
+  type AionDevice,
+  type AionDevicePairing,
   type AionIntegrations,
   type AionOAuthClients,
   type AionPersonalProfile,
@@ -56,7 +65,7 @@ import {
 } from "@/lib/aionApi";
 import { ApiError } from "@/lib/api";
 
-export type WorkspaceViewId = "projects" | "tasks" | "inbox" | "library" | "automations" | "settings" | "profile";
+export type WorkspaceViewId = "projects" | "tasks" | "devices" | "inbox" | "library" | "automations" | "settings" | "profile";
 
 interface WorkspaceViewProps {
   view: WorkspaceViewId;
@@ -216,6 +225,10 @@ export default function WorkspaceView({
   const [elevenVoices, setElevenVoices] = useState<ElevenLabsVoice[]>([]);
   const [voiceSettingsState, setVoiceSettingsState] = useState<AionVoiceSettings | null>(null);
   const [pronunciationDraft, setPronunciationDraft] = useState("");
+  const [devices, setDevices] = useState<AionDevice[]>([]);
+  const [devicePairing, setDevicePairing] = useState<AionDevicePairing | null>(null);
+  const [deviceBusy, setDeviceBusy] = useState("");
+  const [deviceNote, setDeviceNote] = useState("");
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
   const internalTasks = useMemo(() => listValue(status?.internal_tasks).map(record), [status]);
   const observedChanges = useMemo(() => listValue(status?.observed_changes).map(record), [status]);
@@ -257,6 +270,94 @@ export default function WorkspaceView({
     }
     return () => { cancelled = true; };
   }, [view, integrations?.elevenlabs?.configured]);
+
+  useEffect(() => {
+    if (view !== "devices") return;
+    let cancelled = false;
+    setDeviceBusy("loading");
+    void getAionDevices()
+      .then((items) => { if (!cancelled) setDevices(items); })
+      .catch(() => { if (!cancelled) setDeviceNote("Cihaz listesi alınamadı."); })
+      .finally(() => { if (!cancelled) setDeviceBusy(""); });
+    const timer = window.setInterval(() => {
+      void getAionDevices().then((items) => { if (!cancelled) setDevices(items); }).catch(() => undefined);
+    }, 10_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [view]);
+
+  const refreshDevices = async () => {
+    setDeviceBusy("loading");
+    try {
+      setDevices(await getAionDevices());
+    } catch {
+      setDeviceNote("Cihaz listesi alınamadı.");
+    } finally {
+      setDeviceBusy("");
+    }
+  };
+
+  const createDevicePair = async () => {
+    setDeviceBusy("pairing");
+    setDeviceNote("");
+    try {
+      const pairing = await createAionDevicePairing();
+      setDevicePairing(pairing);
+      setDeviceNote("Eşleştirme kodu 10 dakika geçerli. Windows komutunu kendi bilgisayarında çalıştır.");
+    } catch {
+      setDeviceNote("Eşleştirme kodu oluşturulamadı.");
+    } finally {
+      setDeviceBusy("");
+    }
+  };
+
+  const copyWindowsPairCommand = async () => {
+    if (!devicePairing) return;
+    const command = `powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Join-Path $env:TEMP 'aion-companion.ps1'; iwr https://aion.wexon.dev/api/aion/devices/companion/windows.ps1 -OutFile $p; & $p -PairToken '${devicePairing.pairing_token}'"`;
+    try {
+      await navigator.clipboard.writeText(command);
+      setDeviceNote("Windows eşleştirme komutu panoya kopyalandı.");
+    } catch {
+      setDeviceNote("Komut panoya kopyalanamadı.");
+    }
+  };
+
+  const changeDevicePermission = async (device: AionDevice, permission: string, enabled: boolean) => {
+    setDeviceBusy(`${device.id}:${permission}`);
+    try {
+      const updated = await updateAionDevicePermissions(device.id, { [permission]: enabled });
+      setDevices((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setDeviceNote(`${device.name}: ${permission} ${enabled ? "açıldı" : "kapatıldı"}.`);
+    } catch {
+      setDeviceNote("Cihaz yetkisi güncellenemedi.");
+    } finally {
+      setDeviceBusy("");
+    }
+  };
+
+  const removePairedDevice = async (device: AionDevice) => {
+    setDeviceBusy(`remove:${device.id}`);
+    try {
+      await revokeAionDevice(device.id);
+      setDevices((current) => current.filter((item) => item.id !== device.id));
+      setDeviceNote(`${device.name} eşleştirmesi kaldırıldı.`);
+    } catch {
+      setDeviceNote("Cihaz eşleştirmesi kaldırılamadı.");
+    } finally {
+      setDeviceBusy("");
+    }
+  };
+
+  const testDeviceNotification = async (device: AionDevice) => {
+    setDeviceBusy(`test:${device.id}`);
+    try {
+      await queueAionDeviceCommand(device.id, "notify", { text: "AION cihaz bağlantısı aktif." });
+      setDeviceNote(`${device.name} için test bildirimi kuyruğa alındı.`);
+    } catch (error) {
+      setDeviceNote(apiErrorDetail(error, "Test bildirimi gönderilemedi. Bildirim yetkisini aç ve companion'ın çalıştığını kontrol et."));
+    } finally {
+      setDeviceBusy("");
+    }
+  };
 
   const revealControlKey = async () => {
     if (controlKey) {
@@ -651,6 +752,78 @@ export default function WorkspaceView({
         {!loading && internalTasks.length === 0 ? (
           <EmptyState icon={<CheckCircle2 size={21} />} title="İç görev yok" copy="AION'a doğal şekilde bir görev söyle; görev gerçek kişisel görev hafızasına kaydedilir ve burada görünür." />
         ) : null}
+      </div>
+    );
+  }
+
+  if (view === "devices") {
+    const onlineCount = devices.filter((device) => device.status === "ONLINE").length;
+    return (
+      <div className="workspace-view">
+        <Header
+          eyebrow="Premium AION · güvenli cihaz erişimi"
+          title="Cihazlar"
+          copy="Bilgisayarını AION'a tek kullanımlık kodla eşleştir. Hiçbir cihaz yetkisi varsayılan açık değildir; uygulama/URL/bildirim izinlerini tek tek sen açarsın."
+          loading={deviceBusy === "loading"}
+          onRefresh={() => { void refreshDevices(); }}
+        />
+        <div className="workspace-kpi-row">
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><Laptop size={17} /></span><div><strong>{devices.length}</strong><span>eşleşmiş cihaz</span></div></div>
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><Activity size={17} /></span><div><strong>{onlineCount}</strong><span>çevrimiçi</span></div></div>
+          <div className="workspace-kpi"><span className="workspace-kpi-icon"><ShieldCheck size={17} /></span><div><strong>İzinli</strong><span>varsayılan kapalı</span></div></div>
+        </div>
+
+        <section className="workspace-device-pairing" data-testid="device-pairing-panel">
+          <div className="workspace-connections-heading">
+            <div><small>AION Companion</small><strong>Windows bilgisayar bağla</strong></div>
+            <StatusPill value={devicePairing ? "10 dk eşleştirme" : "Hazır"} />
+          </div>
+          <p>Tek kullanımlık eşleştirme kodu oluştur. Komut yalnız senin bilgisayarında çalışır; device token sohbete veya frontend'e geri gösterilmez.</p>
+          <div className="workspace-integration-actions">
+            <button type="button" className="is-primary" disabled={Boolean(deviceBusy)} onClick={() => { void createDevicePair(); }} data-testid="device-pair-create-button">
+              {deviceBusy === "pairing" ? "Kod oluşturuluyor…" : "Windows eşleştirme kodu oluştur"}
+            </button>
+            {devicePairing ? <button type="button" onClick={() => { void copyWindowsPairCommand(); }} data-testid="device-pair-copy-button"><Copy size={14} /> Kurulum komutunu kopyala</button> : null}
+          </div>
+          {devicePairing ? (
+            <div className="workspace-device-pair-code">
+              <small>Tek kullanımlık token · {Math.max(0, Math.round((devicePairing.expires_at * 1000 - Date.now()) / 60000))} dk</small>
+              <code>{devicePairing.pairing_token}</code>
+              <p>Windows Terminal / PowerShell'i normal kullanıcı olarak aç ve kopyaladığın komutu çalıştır. Pencere açık kaldığı sürece Companion çevrimiçi olur.</p>
+            </div>
+          ) : null}
+          {deviceNote ? <p className="workspace-integration-note" role="status">{deviceNote}</p> : null}
+        </section>
+
+        <div className="workspace-device-list">
+          {devices.map((device) => (
+            <article key={device.id} className={`workspace-device-card${device.status === "ONLINE" ? " is-online" : ""}`} data-testid={`device-${device.id}`}>
+              <div className="workspace-device-card-top">
+                <span className="workspace-card-icon"><Laptop size={18} /></span>
+                <div><small>{device.platform}</small><h2>{device.name}</h2></div>
+                <StatusPill value={device.status} />
+              </div>
+              <div className="workspace-device-permissions">
+                {device.capabilities.map((capability) => (
+                  <label key={capability}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(device.permissions[capability])}
+                      disabled={Boolean(deviceBusy)}
+                      onChange={(event) => { void changeDevicePermission(device, capability, event.target.checked); }}
+                    />
+                    <span>{capability === "open_url" ? "Tarayıcıda URL aç" : capability === "open_app" ? "Uygulama aç" : "Sistem bildirimi"}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="workspace-integration-actions">
+                {device.capabilities.includes("notify") ? <button type="button" disabled={!device.permissions.notify || Boolean(deviceBusy)} onClick={() => { void testDeviceNotification(device); }}><Link2 size={14} /> Bağlantıyı test et</button> : null}
+                <button type="button" disabled={Boolean(deviceBusy)} onClick={() => { void removePairedDevice(device); }}><Trash2 size={14} /> Eşleştirmeyi kaldır</button>
+              </div>
+            </article>
+          ))}
+        </div>
+        {!deviceBusy && devices.length === 0 ? <EmptyState icon={<Laptop size={21} />} title="Henüz eşleşmiş cihaz yok" copy="Windows eşleştirme kodu oluşturup kendi bilgisayarında kurulum komutunu çalıştır. AION cihazı gördükten sonra izinleri buradan aç." /> : null}
       </div>
     );
   }

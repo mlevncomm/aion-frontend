@@ -42,6 +42,7 @@ const sectionNames: Record<string, string> = {
   home: "Ana Sayfa",
   projects: "Projeler",
   tasks: "Görevler",
+  devices: "Cihazlar",
   inbox: "Gelen Kutusu",
   library: "Geçmiş",
   automations: "Otomasyonlar",

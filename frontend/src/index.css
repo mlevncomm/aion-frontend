@@ -8639,3 +8639,121 @@ html[data-aion-theme="reference"] .sidebar-button.is-active {
   .workspace-oauth-client-form input,
   .workspace-oauth-client-form button { min-height: 44px; }
 }
+
+
+/* Premium AION Device Center */
+.workspace-device-pairing {
+  margin: 14px 0;
+  padding: 17px;
+  border: 1px solid rgba(171, 163, 220, 0.1);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(136, 125, 199, 0.07), transparent 32%),
+    rgba(255, 255, 255, 0.015);
+}
+.workspace-device-pairing > p {
+  margin: 9px 0 13px;
+  max-width: 850px;
+  color: rgba(180, 182, 194, 0.66);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.workspace-device-pair-code {
+  display: grid;
+  gap: 7px;
+  margin-top: 13px;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 14px;
+  background: rgba(7, 8, 12, 0.58);
+}
+.workspace-device-pair-code small {
+  color: rgba(151, 153, 166, 0.55);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.workspace-device-pair-code code {
+  display: block;
+  max-width: 100%;
+  overflow: auto;
+  color: rgba(232, 229, 248, 0.88);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.workspace-device-pair-code p {
+  margin: 0;
+  color: rgba(164, 166, 177, 0.58);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.workspace-device-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.workspace-device-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,.025), rgba(255,255,255,.008)), rgba(10,11,16,.66);
+}
+.workspace-device-card.is-online {
+  border-color: rgba(113, 190, 151, 0.16);
+}
+.workspace-device-card-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.workspace-device-card-top > div {
+  min-width: 0;
+}
+.workspace-device-card-top small {
+  color: rgba(146, 149, 161, 0.5);
+  font-family: "JetBrains Mono Variable", monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.workspace-device-card-top h2 {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: rgba(239, 238, 246, 0.92);
+  font-size: 13px;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-device-permissions {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0;
+}
+.workspace-device-permissions label {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: rgba(255,255,255,.014);
+  color: rgba(190, 191, 202, .72);
+  font-size: 10px;
+}
+.workspace-device-permissions input {
+  width: 15px;
+  height: 15px;
+  accent-color: #9f96cf;
+}
+@media (max-width: 900px) {
+  .workspace-device-list { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .workspace-device-pairing { padding: 14px; }
+  .workspace-device-card { padding: 14px; }
+  .workspace-device-card-top { grid-template-columns: auto minmax(0, 1fr); }
+  .workspace-device-card-top > :last-child { grid-column: 1 / -1; justify-self: start; }
+}
