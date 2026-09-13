@@ -273,7 +273,7 @@ textarea:focus-visible {
   margin: 0 0 19px;
   color: #8caaa0;
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -293,7 +293,7 @@ textarea:focus-visible {
   max-width: 520px;
   margin: 25px 0 0;
   color: rgba(176, 188, 194, 0.68);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.65;
 }
 
@@ -314,14 +314,14 @@ textarea:focus-visible {
   border-radius: 999px;
   color: rgba(221, 232, 236, 0.72);
   background: rgba(255, 255, 255, 0.025);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .login-domain {
   margin: 0;
   color: rgba(164, 176, 181, 0.46);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 10px;
+  font-size: 13.5px;
   letter-spacing: 0.08em;
 }
 
@@ -380,7 +380,7 @@ textarea:focus-visible {
   margin: 0 0 10px;
   color: #91aa9f;
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 10px;
+  font-size: 13.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -398,7 +398,7 @@ textarea:focus-visible {
 .login-card-copy {
   margin: 13px 0 0;
   color: rgba(165, 176, 182, 0.65);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.55;
 }
 
@@ -417,7 +417,7 @@ textarea:focus-visible {
 
 .login-field label {
   color: rgba(224, 232, 235, 0.78);
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 500;
 }
 
@@ -486,7 +486,7 @@ textarea:focus-visible {
   min-height: 18px;
   margin-top: -6px;
   color: #efaa9e;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -498,7 +498,7 @@ textarea:focus-visible {
   color: #f5faf7;
   background: linear-gradient(135deg, var(--aion-active), var(--aion-active-bright));
   box-shadow: 0 10px 24px rgb(var(--aion-active-rgb) / 0.12), inset 0 1px rgba(255, 255, 255, 0.18);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 620;
   transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
 }
@@ -522,7 +522,7 @@ textarea:focus-visible {
   padding-top: 22px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   color: rgba(142, 157, 163, 0.55);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 
 @keyframes login-card-in {
@@ -558,7 +558,7 @@ textarea:focus-visible {
     top: calc(26px + env(safe-area-inset-top));
     left: 24px;
     display: block;
-    font-size: 17px;
+    font-size: 17.5px;
   }
 
   .login-card {
@@ -739,7 +739,7 @@ textarea:focus-visible {
 .greeting-subtitle {
   margin-top: 14px;
   color: rgba(166, 190, 178, 0.68);
-  font-size: 14px;
+  font-size: 15.5px;
   line-height: 1.42;
 }
 
@@ -775,7 +775,7 @@ textarea:focus-visible {
   outline: 0;
   color: #ebedf0;
   background: transparent;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -865,7 +865,7 @@ textarea:focus-visible {
   margin: 11px 0 0;
   color: rgba(166, 184, 175, 0.58);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 10px;
+  font-size: 13.5px;
   letter-spacing: 0.02em;
 }
 
@@ -945,14 +945,14 @@ textarea:focus-visible {
 .theme-picker-heading h2 {
   color: #f5f7f6;
   font-family: "Outfit Variable", sans-serif;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
 }
 
 .theme-picker-heading p {
   margin-top: 2px;
   color: rgba(176, 188, 182, 0.62);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 
 .theme-picker-close {
@@ -1031,13 +1031,13 @@ textarea:focus-visible {
   flex: 1;
   flex-direction: column;
   gap: 3px;
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 560;
 }
 
 .theme-option-copy small {
   color: rgba(164, 175, 169, 0.55);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 400;
 }
 
@@ -1049,7 +1049,7 @@ textarea:focus-visible {
   margin: 13px 0 0;
   color: rgba(151, 165, 158, 0.48);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 9px;
+  font-size: 12.5px;
   text-align: center;
 }
 
@@ -1168,7 +1168,7 @@ textarea:focus-visible {
   .mobile-brand {
     color: #f4f7f8;
     font-family: "Outfit Variable", sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 620;
     letter-spacing: 0.16em;
   }
@@ -1202,7 +1202,7 @@ textarea:focus-visible {
   }
 
   .greeting-subtitle {
-    font-size: 12px;
+    font-size: 14.5px;
   }
 
   .composer-wrap {
@@ -1437,14 +1437,14 @@ textarea:focus-visible {
 .conversation-heading h2 {
   color: #f1f5f7;
   font-family: "Outfit Variable", sans-serif;
-  font-size: 17px;
+  font-size: 17.5px;
   font-weight: 590;
 }
 
 .conversation-heading p {
   margin-top: 2px;
   color: rgba(143, 160, 169, 0.65);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 
 .conversation-voice-dot {
@@ -1518,7 +1518,7 @@ textarea:focus-visible {
   border-radius: 10px;
   color: #a8b5ba;
   background: rgba(255, 255, 255, 0.025);
-  font-size: 10px;
+  font-size: 13.5px;
   font-weight: 650;
 }
 
@@ -1533,7 +1533,7 @@ textarea:focus-visible {
   border-radius: 6px 16px 16px 16px;
   color: rgba(223, 231, 235, 0.82);
   background: rgba(255, 255, 255, 0.035);
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1.52;
 }
 
@@ -1569,7 +1569,7 @@ textarea:focus-visible {
   border-radius: 11px;
   color: rgba(177, 207, 192, 0.72);
   background: rgba(34, 126, 83, 0.08);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .voice-error {
@@ -2252,7 +2252,7 @@ body {
 
 .voice-console-copy strong {
   overflow: hidden;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 620;
   letter-spacing: -0.015em;
   text-overflow: ellipsis;
@@ -2262,7 +2262,7 @@ body {
 .voice-console-copy small {
   overflow: hidden;
   color: rgba(153, 169, 161, 0.62);
-  font-size: 10px;
+  font-size: 13.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2626,7 +2626,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   margin: 0 0 8px;
   color: rgb(var(--aion-bright-rgb) / 0.72);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2646,7 +2646,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   max-width: 680px;
   margin: 10px 0 0;
   color: rgba(173, 184, 189, 0.66);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -2671,7 +2671,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(222, 229, 232, 0.78);
   background: rgba(255, 255, 255, 0.025);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .workspace-refresh:hover:not(:disabled) {
@@ -2725,7 +2725,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   outline: 0;
   color: #eef2f3;
   background: transparent;
-  font-size: 12px;
+  font-size: 14.5px;
 }
 
 .workspace-search input::placeholder {
@@ -2738,7 +2738,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   gap: 6px;
   color: rgba(145, 159, 166, 0.58);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 9px;
+  font-size: 12.5px;
   letter-spacing: 0.03em;
 }
 
@@ -2809,7 +2809,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-profile-grid article p {
   margin: 0;
   color: rgba(167, 180, 186, 0.62);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
@@ -2829,7 +2829,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   border-radius: 9px;
   color: rgba(167, 180, 186, 0.66);
   background: rgba(255, 255, 255, 0.018);
-  font-size: 9px;
+  font-size: 12.5px;
 }
 
 .workspace-status-pill {
@@ -2844,7 +2844,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   color: rgba(190, 201, 206, 0.7);
   background: rgba(255, 255, 255, 0.025);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2886,7 +2886,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-check-row > span:first-child {
   overflow: hidden;
   color: rgba(171, 183, 188, 0.58);
-  font-size: 9px;
+  font-size: 12.5px;
   text-overflow: ellipsis;
   text-transform: capitalize;
   white-space: nowrap;
@@ -2899,7 +2899,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   border: 1px solid rgb(var(--aion-active-rgb) / 0.18);
   color: rgb(var(--aion-bright-rgb) / 0.9);
   background: rgb(var(--aion-active-rgb) / 0.055);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 
 .workspace-card-action:hover {
@@ -2935,13 +2935,13 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
 .workspace-kpi strong {
   color: #f0f4f5;
-  font-size: 18px;
+  font-size: 18.5px;
   font-weight: 650;
 }
 
 .workspace-kpi div span {
   color: rgba(160, 174, 180, 0.55);
-  font-size: 9px;
+  font-size: 12.5px;
 }
 
 .workspace-alert-list,
@@ -2968,14 +2968,14 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-alert-card strong,
 .workspace-session-copy strong {
   color: rgba(237, 242, 244, 0.9);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .workspace-alert-card p {
   margin: 3px 0 0;
   color: rgba(165, 178, 184, 0.62);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.45;
 }
 
@@ -2985,7 +2985,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   border: 1px solid rgba(255, 255, 255, 0.07);
   color: rgba(223, 231, 234, 0.72);
   background: rgba(255, 255, 255, 0.025);
-  font-size: 9px;
+  font-size: 12.5px;
 }
 
 .workspace-empty {
@@ -3011,14 +3011,14 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
 .workspace-empty strong {
   color: rgba(230, 236, 238, 0.84);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .workspace-empty p {
   max-width: 360px;
   margin: 6px 0 0;
   color: rgba(158, 172, 178, 0.52);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.5;
 }
 
@@ -3057,7 +3057,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-session-copy small {
   overflow: hidden;
   color: rgba(159, 173, 179, 0.58);
-  font-size: 10px;
+  font-size: 13.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3065,7 +3065,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-session-copy > span {
   color: rgba(137, 151, 157, 0.46);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .workspace-delete {
@@ -3111,7 +3111,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   margin: 17px 0 0 !important;
   color: rgb(var(--aion-bright-rgb) / 0.58) !important;
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px !important;
+  font-size: 12px !important;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3134,7 +3134,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   color: white;
   background: var(--aion-active);
   box-shadow: 0 10px 24px rgb(var(--aion-active-rgb) / 0.18);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 
 .workspace-primary-action:hover {
@@ -3167,7 +3167,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-setting-card small {
   color: rgba(143, 158, 165, 0.48);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -3176,14 +3176,14 @@ html[data-aion-theme="reference"] .login-feature-row span {
   display: block;
   margin-top: 4px;
   color: rgba(236, 241, 243, 0.9);
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 600;
 }
 
 .workspace-setting-card p {
   margin: 5px 0 0;
   color: rgba(160, 174, 180, 0.56);
-  font-size: 9.5px;
+  font-size: 13px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -3208,7 +3208,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   color: #fff;
   background: var(--aion-active);
   box-shadow: 0 12px 30px rgb(var(--aion-active-rgb) / 0.2);
-  font-size: 18px;
+  font-size: 18.5px;
   font-weight: 650;
 }
 
@@ -3225,7 +3225,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
 .workspace-profile-copy p {
   color: rgba(143, 158, 165, 0.5);
-  font-size: 9px;
+  font-size: 12.5px;
 }
 
 .workspace-profile-copy h2 {
@@ -3234,7 +3234,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
 .workspace-profile-copy span {
   color: rgba(165, 178, 184, 0.58);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 
 .workspace-profile-grid article {
@@ -3253,7 +3253,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .workspace-profile-grid article strong {
   margin-top: 18px;
   color: rgba(236, 241, 243, 0.9);
-  font-size: 12px;
+  font-size: 14.5px;
 }
 
 .workspace-profile-grid article p {
@@ -3288,7 +3288,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
 .composer-hint {
   color: rgba(142, 156, 163, 0.42);
-  font-size: 8.5px;
+  font-size: 12px;
 }
 
 .send-button:disabled {
@@ -3330,7 +3330,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
   .workspace-view-copy {
     max-width: 92%;
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .workspace-refresh {
@@ -3835,43 +3835,43 @@ html[data-aion-theme="reference"] .login-feature-row span {
 .greeting { margin-top: 28px; }
 .greeting-lead { font-size: clamp(29px, 3vw, 42px); }
 .greeting h1 { font-size: clamp(39px, 4vw, 56px); }
-.greeting-subtitle { margin-top: 13px; font-size: clamp(13px, 1.15vw, 16px); }
+.greeting-subtitle { margin-top: 13px; font-size: clamp(15px, 1.15vw, 17px); }
 .voice-console { min-height: 54px; margin-top: 24px; }
 .quick-actions { width: min(100%, 820px); gap: 12px; margin-top: 20px; }
-.quick-action-button { min-height: 52px; padding: 0 16px; border-radius: 15px; font-size: 12px; }
-.status-note { min-height: 18px; margin-top: 14px; font-size: 10px; }
+.quick-action-button { min-height: 52px; padding: 0 16px; border-radius: 15px; font-size: 14.5px; }
+.status-note { min-height: 18px; margin-top: 14px; font-size: 13.5px; }
 
 .assistant-content.is-workspace { padding: 0 var(--aion-shell-gutter); }
 .workspace-view { width: min(100%, var(--aion-page-max)); padding-top: 54px; }
 .workspace-view-header h1 { font-size: clamp(38px, 4vw, 54px); }
-.workspace-view-copy { margin-top: 12px; font-size: 14px; }
-.workspace-refresh { height: 42px; padding: 0 15px; font-size: 12px; }
+.workspace-view-copy { margin-top: 12px; font-size: 15.5px; }
+.workspace-refresh { height: 42px; padding: 0 15px; font-size: 14.5px; }
 .workspace-toolbar { margin: 28px 0 22px; }
 .workspace-search { height: 46px; width: min(100%, 450px); }
-.workspace-search input { font-size: 13px; }
-.workspace-observed { font-size: 10px; }
+.workspace-search input { font-size: 15px; }
+.workspace-observed { font-size: 13.5px; }
 .workspace-project-grid { gap: 16px; }
 .workspace-project-card { min-height: 300px; padding: 24px; border-radius: 22px; }
 .workspace-project-card h2, .workspace-automation-card h2 { font-size: 23px; }
-.workspace-project-card > p, .workspace-automation-card p, .workspace-profile-grid article p { font-size: 12px; }
-.workspace-project-meta span { padding: 7px 9px; font-size: 10px; }
-.workspace-check-row > span:first-child { font-size: 10px; }
-.workspace-status-pill { min-height: 27px; padding: 5px 9px; font-size: 9px; }
-.workspace-card-action { height: 38px; padding: 0 13px; font-size: 11px; }
+.workspace-project-card > p, .workspace-automation-card p, .workspace-profile-grid article p { font-size: 14.5px; }
+.workspace-project-meta span { padding: 7px 9px; font-size: 13.5px; }
+.workspace-check-row > span:first-child { font-size: 13.5px; }
+.workspace-status-pill { min-height: 27px; padding: 5px 9px; font-size: 12.5px; }
+.workspace-card-action { height: 38px; padding: 0 13px; font-size: 14px; }
 .workspace-kpi { min-height: 84px; padding: 18px; }
 .workspace-kpi strong { font-size: 22px; }
-.workspace-kpi div span { font-size: 10px; }
+.workspace-kpi div span { font-size: 13.5px; }
 .workspace-alert-card { padding: 17px 18px; }
-.workspace-alert-card strong { font-size: 12px; }
-.workspace-alert-card p { font-size: 11px; }
+.workspace-alert-card strong { font-size: 14.5px; }
+.workspace-alert-card p { font-size: 14px; }
 .workspace-session-card { min-height: 92px; }
 .workspace-session-main { padding-top: 16px; padding-bottom: 16px; }
-.workspace-session-copy strong { font-size: 13px; }
-.workspace-session-copy small { font-size: 11px; }
+.workspace-session-copy strong { font-size: 15px; }
+.workspace-session-copy small { font-size: 14px; }
 .workspace-automation-card { min-height: 270px; padding: 22px; }
 .workspace-setting-card { min-height: 170px; padding: 20px; }
-.workspace-setting-card strong { font-size: 14px; }
-.workspace-setting-card p { font-size: 11px; }
+.workspace-setting-card strong { font-size: 15.5px; }
+.workspace-setting-card p { font-size: 14px; }
 .workspace-profile-grid article { min-height: 190px; padding: 20px; }
 
 .global-chat-fab {
@@ -3887,9 +3887,9 @@ html[data-aion-theme="reference"] .login-feature-row span {
   width: min(620px, calc(100vw - 280px));
 }
 .conversation-heading h2 { font-size: 20px; }
-.conversation-message { font-size: 13px; line-height: 1.6; }
+.conversation-message { font-size: 15px; line-height: 1.6; }
 .conversation-panel .composer-panel { min-height: 132px; }
-.conversation-panel .composer-input { font-size: 14px; }
+.conversation-panel .composer-input { font-size: 15.5px; }
 
 @keyframes pearl-orb-float {
   0%, 100% { transform: translate3d(0, 0, 0); }
@@ -3930,14 +3930,14 @@ html[data-aion-theme="reference"] .login-feature-row span {
   .greeting { margin-top: 22px; }
   .greeting-lead { font-size: clamp(26px, 8vw, 34px); }
   .greeting h1 { font-size: clamp(31px, 9vw, 40px); line-height: 1.02; }
-  .greeting-subtitle { max-width: 330px; font-size: 13px; }
+  .greeting-subtitle { max-width: 330px; font-size: 15px; }
   .voice-console { width: min(100%, 390px); min-height: 56px; }
   .quick-actions { width: 100%; grid-template-columns: 1fr 1fr; gap: 9px; }
   .quick-action-button { min-height: 54px; padding: 0 12px; }
   .workspace-view { padding: 22px 0 100px; }
   .workspace-view-header { display: grid; grid-template-columns: 1fr auto; }
   .workspace-view-header h1 { font-size: 36px; }
-  .workspace-view-copy { max-width: 100%; font-size: 12px; }
+  .workspace-view-copy { max-width: 100%; font-size: 14.5px; }
   .workspace-project-card { min-height: 0; padding: 20px; }
   .workspace-kpi-row { grid-template-columns: 1fr; }
   .workspace-alert-card { grid-template-columns: auto 1fr; }
@@ -4054,19 +4054,23 @@ html[data-aion-theme="reference"] .login-feature-row span {
 
 .quick-action-copy strong {
   overflow: hidden;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* At a readable size these subtitles no longer fit one line in a five-card
+   row. Wrapping to a second line keeps the sentence whole; truncating it
+   would trade the readability the larger type was raised for. */
 .quick-action-copy small {
+  display: -webkit-box;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: rgba(161, 174, 181, 0.54);
-  font-size: 8.5px;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .voice-console {
@@ -4087,7 +4091,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
 }
 
 .conversation-messages {
-  font-size: 14px;
+  font-size: 15.5px;
 }
 
 @media (min-width: 1500px) {
@@ -4292,7 +4296,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   overflow: hidden;
   color: rgba(220, 226, 255, 0.74) !important;
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px !important;
+  font-size: 12px !important;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4313,7 +4317,7 @@ html[data-aion-theme="reference"] .login-feature-row span {
   border-radius: 9px;
   color: rgba(226, 231, 244, 0.78);
   background: rgba(122, 112, 218, 0.06);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 600;
   transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
 }
@@ -4521,7 +4525,7 @@ select {
   .mobile-brand {
     max-width: calc(100vw - 142px);
     overflow: hidden;
-    font-size: 14px;
+    font-size: 15.5px;
     letter-spacing: 0.11em;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -4572,7 +4576,7 @@ select {
   .greeting-subtitle {
     max-width: 400px;
     margin-top: 10px;
-    font-size: 14px;
+    font-size: 15.5px;
     line-height: 1.5;
   }
 
@@ -4629,13 +4633,13 @@ select {
   }
 
   .quick-action-copy strong {
-    font-size: 12px;
+    font-size: 14.5px;
   }
 
   .quick-action-copy small {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 9.5px;
+    font-size: 13px;
     line-height: 1.25;
     white-space: normal;
     -webkit-box-orient: vertical;
@@ -4646,7 +4650,7 @@ select {
     width: 100%;
     min-height: 16px;
     margin-top: 12px;
-    font-size: 9.5px;
+    font-size: 13px;
     line-height: 1.4;
   }
 
@@ -4671,7 +4675,7 @@ select {
   }
 
   .workspace-eyebrow {
-    font-size: 9px;
+    font-size: 12.5px;
   }
 
   .workspace-view-header h1 {
@@ -4682,7 +4686,7 @@ select {
   .workspace-view-copy {
     max-width: none;
     margin-top: 9px;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.55;
   }
 
@@ -4713,11 +4717,11 @@ select {
   .workspace-search input,
   .composer-input,
   .login-input {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .workspace-observed {
-    font-size: 10px;
+    font-size: 13.5px;
     line-height: 1.4;
   }
 
@@ -4757,7 +4761,7 @@ select {
   .workspace-project-card > p,
   .workspace-automation-card p,
   .workspace-profile-grid article p {
-    font-size: 12.5px;
+    font-size: 14.5px;
     line-height: 1.55;
   }
 
@@ -4767,7 +4771,7 @@ select {
 
   .workspace-project-meta span {
     max-width: 100%;
-    font-size: 10px;
+    font-size: 13.5px;
   }
 
   .workspace-card-topline,
@@ -4787,7 +4791,7 @@ select {
     flex: 1 1 auto;
     padding-top: 5px;
     overflow: visible;
-    font-size: 10.5px;
+    font-size: 13.5px;
     text-overflow: initial;
     white-space: normal;
   }
@@ -4797,7 +4801,7 @@ select {
   .workspace-alert-card > button {
     min-height: 44px;
     padding: 0 14px;
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .workspace-kpi {
@@ -4810,7 +4814,7 @@ select {
   }
 
   .workspace-kpi div span {
-    font-size: 10px;
+    font-size: 13.5px;
   }
 
   .workspace-alert-card {
@@ -4820,11 +4824,11 @@ select {
   }
 
   .workspace-alert-card strong {
-    font-size: 12.5px;
+    font-size: 14.5px;
   }
 
   .workspace-alert-card p {
-    font-size: 11.5px;
+    font-size: 14px;
   }
 
   .workspace-alert-card > button {
@@ -4849,13 +4853,13 @@ select {
   }
 
   .workspace-session-copy strong {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .workspace-session-copy small {
     display: -webkit-box;
     overflow: hidden;
-    font-size: 11px;
+    font-size: 14px;
     line-height: 1.4;
     white-space: normal;
     -webkit-box-orient: vertical;
@@ -4863,7 +4867,7 @@ select {
   }
 
   .workspace-session-copy > span {
-    font-size: 9px;
+    font-size: 12.5px;
   }
 
   .workspace-delete {
@@ -4889,11 +4893,11 @@ select {
   }
 
   .workspace-setting-card strong {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .workspace-setting-card p {
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .workspace-access-key {
@@ -4987,11 +4991,11 @@ select {
   }
 
   .conversation-heading h2 {
-    font-size: 17px;
+    font-size: 17.5px;
   }
 
   .conversation-heading p {
-    font-size: 10px;
+    font-size: 13.5px;
   }
 
   .conversation-voice-dot {
@@ -5034,7 +5038,7 @@ select {
   .conversation-message p {
     max-width: calc(100vw - 76px);
     padding: 10px 12px;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.55;
   }
 
@@ -5124,11 +5128,11 @@ select {
   }
 
   .theme-option-copy {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .theme-option-copy small {
-    font-size: 10px;
+    font-size: 13.5px;
     line-height: 1.35;
   }
 
@@ -5228,7 +5232,7 @@ select {
 
   .mobile-brand {
     max-width: calc(100vw - 132px);
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .orb-frame.pearl-orb {
@@ -5476,7 +5480,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   margin: 0 0 9px;
   color: rgba(184, 179, 220, 0.62);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 650;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -5541,13 +5545,13 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .personal-metrics-grid span {
   margin-top: 3px;
   color: rgba(188, 188, 200, 0.68);
-  font-size: 9.5px;
+  font-size: 13px;
 }
 
 .personal-metrics-grid small {
   color: rgba(142, 143, 155, 0.45);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 7.5px;
+  font-size: 12px;
 }
 
 .today-focus-panel {
@@ -5582,7 +5586,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .personal-success-card small {
   color: rgba(151, 153, 165, 0.5);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -5591,7 +5595,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .personal-rules-heading strong,
 .personal-success-card strong {
   color: rgba(239, 238, 246, 0.92);
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 620;
 }
 
@@ -5602,7 +5606,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 10px;
   color: rgba(220, 216, 239, 0.78);
   background: rgba(128, 117, 190, 0.05);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 620;
 }
 
@@ -5640,7 +5644,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .personal-rules-list > div > span {
   color: rgba(173, 166, 216, 0.48);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -5649,7 +5653,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.42;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -5701,7 +5705,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   max-width: 880px;
   margin: 3px 0 0;
   color: rgba(186, 188, 199, 0.68);
-  font-size: 11.5px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -5733,7 +5737,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .personal-rules-list p {
   margin: 0;
   color: rgba(184, 186, 197, 0.67);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.48;
   overflow-wrap: anywhere;
 }
@@ -5755,7 +5759,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 @media (max-width: 767px) {
   .personal-os-kicker {
     margin-bottom: 7px;
-    font-size: 8px;
+    font-size: 12px;
   }
 
   .personal-metrics-grid {
@@ -5773,7 +5777,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   }
 
   .personal-metrics-grid strong {
-    font-size: 18px;
+    font-size: 18.5px;
   }
 
   .today-focus-panel {
@@ -5841,7 +5845,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   min-width: 0;
   margin: 0;
   color: rgba(170, 173, 185, 0.58);
-  font-size: 10.5px;
+  font-size: 13.5px;
   line-height: 1.45;
 }
 
@@ -5854,7 +5858,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 11px;
   color: rgba(227, 223, 244, 0.84);
   background: rgba(128, 118, 191, 0.055);
-  font-size: 9.5px;
+  font-size: 13px;
   font-weight: 620;
   transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
 }
@@ -5922,7 +5926,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-task-copy h2 {
   overflow: hidden;
   color: rgba(235, 234, 242, 0.9);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 610;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5935,7 +5939,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
 .workspace-task-copy p {
   color: rgba(160, 163, 175, 0.56);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -5951,7 +5955,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   overflow: hidden;
   color: rgba(151, 153, 165, 0.5);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -6003,14 +6007,14 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
 .workspace-signal-heading > span {
   color: rgba(232, 231, 240, 0.86);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 620;
 }
 
 .workspace-signal-heading > small {
   color: rgba(145, 147, 159, 0.48);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 7.5px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   text-align: right;
 }
@@ -6066,13 +6070,13 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-connections-heading > span {
   color: rgba(145, 147, 159, 0.48);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 0.05em;
 }
 
 .workspace-connections-heading strong {
   color: rgba(239, 238, 246, 0.92);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 620;
 }
 
@@ -6117,13 +6121,13 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
 .workspace-connection-card h3 {
   color: rgba(235, 234, 242, 0.9);
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 620;
 }
 
 .workspace-connection-card p {
   color: rgba(166, 168, 180, 0.58);
-  font-size: 9.8px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -6137,7 +6141,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   color: rgba(179, 174, 211, 0.64);
   background: rgba(255, 255, 255, 0.015);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 7.5px;
+  font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -6151,7 +6155,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 10px;
   color: rgba(221, 218, 238, 0.78);
   background: rgba(128, 118, 191, 0.045);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 620;
 }
 
@@ -6197,7 +6201,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-integration-form label > span {
   color: rgba(169, 166, 190, 0.62);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 7.5px;
+  font-size: 12px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -6213,7 +6217,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   color: rgba(238, 237, 245, 0.92);
   background: rgba(4, 5, 8, 0.62);
   font-family: "Inter Variable", sans-serif;
-  font-size: 11px;
+  font-size: 14px;
   transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
@@ -6241,7 +6245,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 10px;
   color: rgba(216, 213, 232, 0.72);
   background: rgba(255, 255, 255, 0.018);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 620;
 }
 
@@ -6269,7 +6273,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   display: block;
   margin: 0;
   color: rgba(155, 172, 164, 0.66);
-  font-size: 8.8px;
+  font-size: 12.5px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -6290,7 +6294,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 @media (max-width: 767px) {
   .workspace-integration-form input {
     min-height: 46px;
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .workspace-integration-actions {
@@ -6341,14 +6345,14 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   justify-content: space-between;
   gap: 8px;
   color: rgba(194, 194, 205, .72);
-  font-size: 10px;
+  font-size: 13.5px;
   font-weight: 580;
 }
 
 .workspace-voice-sliders label b {
   color: rgba(224, 220, 241, .72);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .workspace-voice-sliders input[type="range"] {
@@ -6373,13 +6377,13 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   resize: vertical;
   padding: 11px 12px;
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 9px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 
 .workspace-pronunciation-editor small {
   color: rgba(145,148,160,.5);
-  font-size: 8.5px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -6392,7 +6396,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   max-width: 900px;
   margin: -2px 0 13px;
   color: rgba(167,169,181,.6);
-  font-size: 10.5px;
+  font-size: 13.5px;
   line-height: 1.55;
 }
 
@@ -6406,7 +6410,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-account-search input {
   min-height: 42px;
   padding: 0 12px;
-  font-size: 10.5px;
+  font-size: 13.5px;
 }
 
 .workspace-account-search button,
@@ -6418,7 +6422,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 10px;
   color: rgba(222,219,239,.8);
   background: rgba(126,116,188,.05);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 620;
 }
 
@@ -6476,7 +6480,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-account-card-top strong {
   overflow: hidden;
   color: rgba(238,237,245,.91);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 640;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6485,14 +6489,14 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-account-card-top small {
   color: rgba(146,148,159,.48);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 7.5px;
+  font-size: 12px;
 }
 
 .workspace-account-card > p {
   min-height: 42px;
   margin: 0;
   color: rgba(164,166,177,.58);
-  font-size: 9.5px;
+  font-size: 13px;
   line-height: 1.48;
 }
 
@@ -6513,7 +6517,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-account-token-form input {
   min-height: 40px;
   padding: 0 10px;
-  font-size: 9.5px;
+  font-size: 13px;
 }
 
 @media (max-width: 1100px) {
@@ -6550,21 +6554,21 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-oauth-client-editor small {
   color: rgba(174, 167, 211, .62);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: .06em;
 }
 
 .workspace-oauth-client-editor strong {
   color: rgba(238, 236, 247, .9);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 620;
 }
 
 .workspace-oauth-client-editor p {
   margin: 0;
   color: rgba(166, 168, 180, .58);
-  font-size: 9px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
@@ -6588,7 +6592,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   color: rgba(235,233,244,.9);
   background: rgba(7,8,12,.68);
   outline: none;
-  font-size: 9.5px;
+  font-size: 13px;
 }
 
 .workspace-oauth-client-form button {
@@ -6598,7 +6602,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 10px;
   color: rgba(222,219,239,.8);
   background: rgba(126,116,188,.05);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 620;
 }
 
@@ -6631,7 +6635,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   margin: 9px 0 13px;
   max-width: 850px;
   color: rgba(180, 182, 194, 0.66);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.55;
 }
 .workspace-device-pair-code {
@@ -6646,7 +6650,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-device-pair-code small {
   color: rgba(151, 153, 166, 0.55);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -6655,13 +6659,13 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   max-width: 100%;
   overflow: auto;
   color: rgba(232, 229, 248, 0.88);
-  font-size: 10px;
+  font-size: 13.5px;
   white-space: nowrap;
 }
 .workspace-device-pair-code p {
   margin: 0;
   color: rgba(164, 166, 177, 0.58);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.5;
 }
 .workspace-device-list {
@@ -6691,14 +6695,14 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-device-card-top small {
   color: rgba(146, 149, 161, 0.5);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 .workspace-device-card-top h2 {
   margin: 2px 0 0;
   overflow: hidden;
   color: rgba(239, 238, 246, 0.92);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 620;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6717,7 +6721,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 11px;
   background: rgba(255,255,255,.014);
   color: rgba(190, 191, 202, .72);
-  font-size: 10px;
+  font-size: 13.5px;
 }
 .workspace-device-permissions input {
   width: 15px;
@@ -6860,7 +6864,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   align-items: center;
   gap: 7px;
   color: var(--aion-muted);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.015em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6903,7 +6907,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 14px;
   color: var(--aion-text-tint);
   background: linear-gradient(135deg, rgb(var(--aion-active-rgb) / 0.22), rgb(var(--aion-active-rgb) / 0.08));
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 520;
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 220ms ease, box-shadow 220ms ease;
 }
@@ -6974,7 +6978,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   margin: 14px 0 5px;
   padding: 0 12px;
   color: var(--aion-muted);
-  font-size: 10px;
+  font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -6994,7 +6998,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 13px;
   color: rgba(255, 255, 255, 0.7);
   background: transparent;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 460;
   text-align: left;
   transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -7039,7 +7043,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.82);
   background: rgba(255, 255, 255, 0.09);
-  font-size: 10.5px;
+  font-size: 13.5px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -7060,7 +7064,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 999px;
   color: var(--aion-active-bright);
   background: rgb(var(--aion-active-rgb) / 0.16);
-  font-size: 9.5px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7111,7 +7115,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 11px;
   color: var(--aion-text-tint);
   background: linear-gradient(140deg, rgb(var(--aion-active-rgb) / 0.5), rgb(var(--aion-accent-rgb) / 0.3));
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -7125,18 +7129,20 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .rail-profile-copy strong {
   overflow: hidden;
   color: rgba(255, 255, 255, 0.93);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 560;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .rail-profile-copy small {
+  display: -webkit-box;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: var(--aion-muted);
-  font-size: 10.5px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  font-size: 13.5px;
 }
 
 .rail-online {
@@ -7174,7 +7180,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   .rail-surface { padding: 18px 10px 12px; gap: 12px; border-radius: 22px; }
   .rail-head { justify-content: center; padding: 0; }
   .rail-owner { display: none; }
-  .rail-wordmark { font-size: 15px; letter-spacing: 0.1em; }
+  .rail-wordmark { font-size: 16px; letter-spacing: 0.1em; }
   .rail-compose { justify-content: center; padding: 10px 0; }
   .rail-compose-label { display: none; }
   /* A wrapped two-line heading in a 92px rail reads as broken. Groups are
@@ -7198,7 +7204,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
     right: 10px;
     min-width: 17px;
     padding: 1px 4px;
-    font-size: 9px;
+    font-size: 12.5px;
   }
   .rail-foot { flex-direction: column; gap: 6px; }
   .rail-profile { justify-content: center; width: 100%; flex: none; padding: 8px 0; }
@@ -7232,8 +7238,8 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
   .rail-close { display: flex; }
   /* Comfortable touch targets. */
-  .rail-row { padding: 12px; font-size: 14.5px; }
-  .rail-compose { padding: 12px; font-size: 14.5px; }
+  .rail-row { padding: 12px; font-size: 15.5px; }
+  .rail-compose { padding: 12px; font-size: 15.5px; }
   .rail-profile { padding: 10px; }
 }
 
@@ -7266,13 +7272,13 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
 .rail-pulseline-key {
   color: var(--aion-muted);
-  font-size: 10.5px;
+  font-size: 13.5px;
   letter-spacing: 0.03em;
 }
 
 .rail-pulseline strong {
   color: rgba(255, 255, 255, 0.88);
-  font-size: 11.5px;
+  font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -7318,7 +7324,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border: 0;
   background: none;
   color: rgba(216, 213, 232, 0.66);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 640;
   letter-spacing: 0.02em;
   text-align: left;
@@ -7359,7 +7365,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   display: grid;
   gap: 6px;
   color: rgba(216, 213, 232, 0.74);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.55;
 }
 
@@ -7376,7 +7382,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 9px;
   background: rgba(226, 164, 120, 0.06);
   color: rgba(238, 206, 178, 0.9);
-  font-size: 9px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
@@ -7391,7 +7397,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 9px;
   background: rgba(128, 116, 196, 0.1);
   color: rgba(236, 233, 248, 0.92);
-  font-size: 9px;
+  font-size: 12.5px;
   font-weight: 660;
   cursor: pointer;
   transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
@@ -7434,7 +7440,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 9px;
   background: rgba(226, 164, 120, 0.06);
   color: rgba(238, 206, 178, 0.88);
-  font-size: 9px;
+  font-size: 12.5px;
   line-height: 1.45;
 }
 
@@ -7449,7 +7455,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.05);
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 /* Companion honesty: an offline device and an empty command log must both be
@@ -7457,7 +7463,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-device-seen {
   margin: 8px 0 0;
   color: rgba(216, 213, 232, 0.6);
-  font-size: 9px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
@@ -7488,14 +7494,14 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
 .workspace-command-head code {
   font-family: "JetBrains Mono Variable", monospace;
-  font-size: 9px;
+  font-size: 12.5px;
   color: rgba(236, 233, 248, 0.9);
 }
 
 .workspace-command-row p {
   margin: 5px 0 0;
   color: rgba(216, 213, 232, 0.74);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -7504,7 +7510,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   display: block;
   margin-top: 5px;
   color: rgba(216, 213, 232, 0.52);
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -7523,7 +7529,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 .workspace-voice-architecture p {
   margin: 0;
   color: rgba(216, 213, 232, 0.72);
-  font-size: 10px;
+  font-size: 13.5px;
   line-height: 1.55;
 }
 
