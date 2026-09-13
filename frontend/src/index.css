@@ -640,36 +640,12 @@ textarea:focus-visible {
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.022);
 }
 
-.assistant-sidebar {
-  display: flex;
-  z-index: 30;
-  width: 88px;
-  flex-shrink: 0;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 34px 0 28px;
-  border-right: 1px solid rgba(255, 255, 255, 0.055);
-  background: rgba(7, 9, 8, 0.34);
-  backdrop-filter: blur(10px);
-}
-
 .mobile-sidebar-close,
 .mobile-topbar,
 .mobile-sidebar-backdrop,
 .sidebar-label,
 .profile-name {
   display: none;
-}
-
-.brand-mark {
-  padding: 0 0 1px;
-  color: #f6f6f7;
-  font-family: "Outfit Variable", sans-serif;
-  font-size: 19px;
-  font-weight: 580;
-  letter-spacing: 0.08em;
-  line-height: 1;
 }
 
 .assistant-content {
@@ -1144,32 +1120,6 @@ textarea:focus-visible {
     height: 100svh;
   }
 
-  .assistant-sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    z-index: 40;
-    width: min(82vw, 300px);
-    align-items: stretch;
-    padding: max(24px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
-    border-right-color: rgba(255, 255, 255, 0.075);
-    background: linear-gradient(155deg, color-mix(in srgb, var(--aion-base) 97%, transparent), color-mix(in srgb, var(--aion-surface-strong) 82%, transparent));
-    box-shadow: 24px 0 60px rgba(0, 0, 0, 0.42);
-    backdrop-filter: blur(14px);
-    visibility: hidden;
-    clip-path: inset(0 100% 0 0);
-    opacity: 0;
-    pointer-events: none;
-    transition: clip-path 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease, visibility 0s linear 280ms;
-  }
-
-  .assistant-sidebar.is-mobile-open {
-    visibility: visible;
-    clip-path: inset(0 0 0 0);
-    opacity: 1;
-    pointer-events: auto;
-    transition-delay: 0s;
-  }
-
   .mobile-sidebar-backdrop {
     position: fixed;
     inset: 0;
@@ -1221,11 +1171,6 @@ textarea:focus-visible {
     font-size: 16px;
     font-weight: 620;
     letter-spacing: 0.16em;
-  }
-
-  .brand-mark {
-    padding-left: 8px;
-    font-size: 19px;
   }
 
   .assistant-content {
@@ -1854,19 +1799,6 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-.assistant-sidebar {
-  width: 100px;
-  padding: 43px 0 29px;
-  border-right-color: rgba(255, 255, 255, 0.055);
-  background: rgba(4, 6, 8, 0.18);
-  backdrop-filter: blur(8px);
-}
-
-.brand-mark {
-  font-size: 21px;
-  letter-spacing: 0.02em;
-}
-
 .assistant-content {
   height: 100%;
   padding: 57px 40px 42px;
@@ -2030,11 +1962,6 @@ textarea:focus-visible {
     border: 0;
     border-radius: 0;
     animation: none;
-  }
-
-  .assistant-sidebar {
-    width: min(82vw, 300px);
-    padding: max(24px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
   }
 
   .assistant-content {
@@ -2222,11 +2149,6 @@ body {
 .greeting h1 {
   font-weight: 540;
   letter-spacing: -0.052em;
-}
-
-.brand-mark {
-  font-weight: 640;
-  letter-spacing: 0.1em;
 }
 
 .login-eyebrow,
@@ -3904,13 +3826,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
   grid-template-columns: 248px minmax(0, 1fr);
 }
 
-.assistant-sidebar {
-  width: 248px;
-  padding: 30px 20px 24px;
-}
-
-.brand-mark { font-size: 21px; }
-
 .assistant-content.is-home { padding: 0 clamp(26px, 4vw, 64px); }
 .hero-content {
   width: min(100%, 900px);
@@ -3996,8 +3911,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
 /* Tablet: icon rail + generous main canvas. */
 @media (max-width: 1100px) and (min-width: 768px) {
   .assistant-shell { grid-template-columns: 86px minmax(0, 1fr); }
-  .assistant-sidebar { width: 86px; padding: 26px 13px 20px; }
-  .brand-mark { font-size: 15px; letter-spacing: 0.08em; }
   .assistant-content.is-home { padding: 0 24px; }
   .conversation-panel { width: min(610px, calc(100vw - 100px)); }
   .workspace-project-grid, .workspace-settings-grid { grid-template-columns: 1fr; }
@@ -4006,7 +3919,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
 /* Mobile: full-width product, large touch targets, no squeezed desktop UI. */
 @media (max-width: 767px) {
   .assistant-shell { display: block; }
-  .assistant-sidebar { width: min(88vw, 320px); padding: 28px 18px 24px; }
   .assistant-content.is-home,
   .assistant-content.is-workspace {
     min-height: 100svh;
@@ -4076,12 +3988,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
   .assistant-shell {
     display: grid;
     grid-template-columns: 252px minmax(0, 1fr);
-  }
-
-  .assistant-sidebar {
-    width: auto;
-    align-items: stretch;
-    padding: 30px 18px 24px;
   }
 }
 
@@ -4190,11 +4096,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
     grid-template-columns: 272px minmax(0, 1fr);
   }
 
-  .assistant-sidebar {
-    padding-right: 20px;
-    padding-left: 20px;
-  }
-
   .orb-frame.pearl-orb {
     width: clamp(310px, 24vw, 390px);
   }
@@ -4241,10 +4142,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
     grid-template-columns: 86px minmax(0, 1fr);
   }
 
-  .assistant-sidebar {
-    width: auto;
-  }
-
   .quick-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: 720px;
@@ -4266,10 +4163,6 @@ html[data-aion-theme="reference"] .login-feature-row span {
 @media (max-width: 767px) {
   .assistant-shell {
     display: block;
-  }
-
-  .assistant-sidebar {
-    align-items: stretch;
   }
 
   .hero-content {
@@ -4634,21 +4527,6 @@ select {
     letter-spacing: 0.11em;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .assistant-sidebar {
-    top: 0;
-    bottom: 0;
-    width: min(88vw, 340px);
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding:
-      calc(18px + env(safe-area-inset-top))
-      max(16px, env(safe-area-inset-right))
-      calc(18px + env(safe-area-inset-bottom))
-      max(16px, env(safe-area-inset-left));
   }
 
   .assistant-content.is-home,
@@ -5460,14 +5338,6 @@ html[data-aion-theme="reference"] .content-wash {
     radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.018), transparent 28%);
 }
 
-html[data-aion-theme="reference"] .assistant-sidebar {
-  border-right-color: rgba(255, 255, 255, 0.055);
-  background:
-    linear-gradient(180deg, rgba(15, 17, 23, 0.96), rgba(9, 10, 14, 0.985)),
-    #0b0c10;
-  box-shadow: 18px 0 54px rgba(0, 0, 0, 0.18), inset -1px 0 rgba(255, 255, 255, 0.018);
-}
-
 html[data-aion-theme="reference"] .quick-action-button,
 html[data-aion-theme="reference"] .voice-console,
 html[data-aion-theme="reference"] .home-system-strip,
@@ -5582,22 +5452,12 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   background: linear-gradient(145deg, #090a0e, #7770b8 58%, #e2def5);
 }
 
-/* Refined sidebar information architecture. */
-.assistant-sidebar {
-  gap: 0;
-}
-
 /* Tablet uses an intentional icon rail instead of crushed labels. */
 @media (min-width: 768px) and (max-width: 1100px) {
 }
 
 /* Mobile restores complete labels and large touch targets. */
 @media (max-width: 767px) {
-  html[data-aion-theme="reference"] .assistant-sidebar {
-    background:
-      radial-gradient(circle at 30% 0%, rgba(146, 136, 205, 0.07), transparent 28%),
-      linear-gradient(180deg, rgba(15, 17, 23, 0.995), rgba(8, 9, 13, 0.995));
-  }
 
   html[data-aion-theme="reference"] .conversation-panel {
     background:
@@ -6876,13 +6736,6 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   .workspace-device-card-top > :last-child { grid-column: 1 / -1; justify-self: start; }
 }
 
-/* ============================================================
-   AION premium navigation motion — collapsible desktop rail
-   ============================================================ */
-.desktop-sidebar-toggle {
-  display: none;
-}
-
 @media (min-width: 1101px) {
   .assistant-shell {
     grid-template-columns: 252px minmax(0, 1fr);
@@ -6891,152 +6744,6 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 
   .assistant-shell.is-sidebar-collapsed {
     grid-template-columns: 88px minmax(0, 1fr);
-  }
-
-  .assistant-sidebar {
-    position: relative;
-    overflow: visible;
-    transition:
-      padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 220ms ease,
-      border-color 220ms ease;
-  }
-
-  .desktop-sidebar-toggle {
-    position: absolute;
-    top: 38px;
-    right: -13px;
-    z-index: 45;
-    display: grid;
-    width: 27px;
-    height: 27px;
-    place-items: center;
-    border: 1px solid rgba(190, 184, 226, 0.15);
-    border-radius: 10px;
-    color: rgba(224, 221, 240, 0.72);
-    background: rgba(13, 14, 20, 0.96);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(14px);
-    transition: transform 180ms ease, border-color 180ms ease, color 180ms ease, background-color 180ms ease;
-  }
-
-  .desktop-sidebar-toggle:hover,
-  .desktop-sidebar-toggle:focus-visible {
-    color: #f3f0ff;
-    border-color: rgba(190, 184, 226, 0.32);
-    background: rgba(32, 30, 47, 0.98);
-    transform: scale(1.06);
-  }
-
-  .assistant-sidebar .sidebar-label,
-  .assistant-sidebar .sidebar-section-title,
-  .assistant-sidebar .sidebar-product-label,
-  .assistant-sidebar .sidebar-live-pill,
-  .assistant-sidebar .sidebar-badge,
-  .assistant-sidebar .profile-copy {
-    transition:
-      opacity 170ms ease,
-      max-width 320ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
-      margin 250ms ease,
-      padding 250ms ease;
-  }
-
-  .assistant-sidebar .sidebar-label,
-  .assistant-sidebar .profile-copy {
-    max-width: 170px;
-  }
-
-  .assistant-sidebar .sidebar-product-label {
-    max-width: 190px;
-    overflow: hidden;
-  }
-
-  .assistant-sidebar.is-collapsed {
-    padding-right: 14px;
-    padding-left: 14px;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-brand-row {
-    justify-content: center;
-    padding-right: 0;
-    padding-left: 0;
-  }
-
-  .assistant-sidebar.is-collapsed .brand-mark {
-    font-size: 16px;
-    letter-spacing: 0.04em;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-product-label,
-  .assistant-sidebar.is-collapsed .sidebar-section-title,
-  .assistant-sidebar.is-collapsed .sidebar-label,
-  .assistant-sidebar.is-collapsed .sidebar-live-pill,
-  .assistant-sidebar.is-collapsed .sidebar-badge,
-  .assistant-sidebar.is-collapsed .profile-copy {
-    max-width: 0;
-    margin: 0;
-    padding: 0;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-8px);
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-section-title {
-    height: 0;
-    line-height: 0;
-    overflow: hidden;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-top {
-    gap: 17px;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-section,
-  .assistant-sidebar.is-collapsed .sidebar-navigation {
-    justify-items: center;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-new-chat,
-  .assistant-sidebar.is-collapsed .sidebar-button,
-  .assistant-sidebar.is-collapsed .profile-button {
-    width: 52px;
-    min-width: 52px;
-    margin-right: auto;
-    margin-left: auto;
-    justify-content: center;
-    padding-right: 0;
-    padding-left: 0;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-new-chat {
-    height: 50px;
-    min-height: 50px;
-    border-radius: 15px;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-button {
-    height: 50px;
-    min-height: 50px;
-    gap: 0;
-    border-radius: 15px;
-  }
-
-  .assistant-sidebar.is-collapsed .sidebar-button.is-active,
-  html[data-aion-theme="reference"] .assistant-sidebar.is-collapsed .sidebar-button.is-active {
-    box-shadow: inset 0 0 0 1px rgba(166, 157, 219, 0.1), 0 8px 24px rgba(0, 0, 0, 0.12);
-  }
-
-  .assistant-sidebar.is-collapsed .profile-button {
-    min-height: 52px;
-    padding: 0;
-  }
-
-  .assistant-sidebar.is-collapsed .profile-status-dot {
-    position: absolute;
-    right: 3px;
-    bottom: 4px;
-    margin: 0;
   }
 
   .assistant-content {
@@ -7061,31 +6768,9 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 }
 
 @media (max-width: 1100px) {
-  .desktop-sidebar-toggle {
-    display: none !important;
-  }
 }
 
 @media (max-width: 767px) {
-  .assistant-sidebar {
-    transform: translateX(-18px);
-    clip-path: none;
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 180ms ease,
-      visibility 0s linear 300ms;
-  }
-
-  .assistant-sidebar.is-mobile-open {
-    visibility: visible;
-    transform: translateX(0);
-    opacity: 1;
-    pointer-events: auto;
-    transition-delay: 0s;
-  }
 
   .mobile-sidebar-backdrop {
     background: rgba(3, 4, 7, 0.62);
@@ -7111,130 +6796,6 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
 @media (min-width: 1101px) {
   .assistant-shell.is-sidebar-collapsed {
     grid-template-columns: 88px minmax(0, 1fr);
-  }
-
-  .assistant-sidebar.is-collapsed {
-    position: relative;
-    z-index: 50;
-    width: 88px;
-    overflow: visible;
-    background:
-      linear-gradient(180deg, rgba(10, 11, 16, 0.96), rgba(7, 8, 12, 0.94));
-    box-shadow: 10px 0 28px rgba(0, 0, 0, 0.08);
-    transition:
-      width 340ms cubic-bezier(0.22, 1, 0.36, 1),
-      padding 340ms cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 240ms ease,
-      box-shadow 240ms ease;
-  }
-
-  .assistant-sidebar.is-collapsed:hover,
-  .assistant-sidebar.is-collapsed:focus-within {
-    width: 252px;
-    padding-right: 18px;
-    padding-left: 18px;
-    background:
-      radial-gradient(circle at 28% 0%, rgba(145, 135, 205, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(13, 14, 20, 0.985), rgba(8, 9, 13, 0.985));
-    box-shadow: 28px 0 70px rgba(0, 0, 0, 0.34), inset -1px 0 rgba(255, 255, 255, 0.035);
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-brand-row,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-brand-row {
-    justify-content: flex-start;
-    padding-right: 11px;
-    padding-left: 11px;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .brand-mark,
-  .assistant-sidebar.is-collapsed:focus-within .brand-mark {
-    font-size: 21px;
-    letter-spacing: 0.08em;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-product-label,
-  .assistant-sidebar.is-collapsed:hover .sidebar-section-title,
-  .assistant-sidebar.is-collapsed:hover .sidebar-label,
-  .assistant-sidebar.is-collapsed:hover .sidebar-live-pill,
-  .assistant-sidebar.is-collapsed:hover .sidebar-badge,
-  .assistant-sidebar.is-collapsed:hover .profile-copy,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-product-label,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-section-title,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-label,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-live-pill,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-badge,
-  .assistant-sidebar.is-collapsed:focus-within .profile-copy {
-    max-width: 190px;
-    margin: initial;
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateX(0);
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-section-title,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-section-title {
-    height: auto;
-    padding: 0 11px;
-    line-height: normal;
-    overflow: visible;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-top,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-top {
-    gap: 22px;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-section,
-  .assistant-sidebar.is-collapsed:hover .sidebar-navigation,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-section,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-navigation {
-    justify-items: stretch;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-new-chat,
-  .assistant-sidebar.is-collapsed:hover .sidebar-button,
-  .assistant-sidebar.is-collapsed:hover .profile-button,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-new-chat,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-button,
-  .assistant-sidebar.is-collapsed:focus-within .profile-button {
-    width: 100%;
-    min-width: 0;
-    margin-right: 0;
-    margin-left: 0;
-    justify-content: flex-start;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-new-chat,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-new-chat {
-    min-height: 47px;
-    padding-right: 14px;
-    padding-left: 14px;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .sidebar-button,
-  .assistant-sidebar.is-collapsed:focus-within .sidebar-button {
-    min-height: 48px;
-    gap: 12px;
-    padding-right: 13px;
-    padding-left: 13px;
-    border-radius: 14px;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .profile-button,
-  .assistant-sidebar.is-collapsed:focus-within .profile-button {
-    min-height: 56px;
-    padding: 9px 11px;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .profile-status-dot,
-  .assistant-sidebar.is-collapsed:focus-within .profile-status-dot {
-    position: static;
-    margin-left: auto;
-  }
-
-  .assistant-sidebar.is-collapsed:hover .desktop-sidebar-toggle,
-  .assistant-sidebar.is-collapsed:focus-within .desktop-sidebar-toggle {
-    right: -13px;
   }
 }
 
