@@ -556,7 +556,7 @@ export default function WorkspaceView({
         setElevenVoiceId(preferred.voice_id);
         setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. AION en uygun kadın/Türkçe/doğal sesi otomatik seçti: ${preferred.name}. İstersen listeden değiştirebilirsin.` }));
       } else {
-        setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. Beğendiğin sesi seçip kaydet.` }));
+        setIntegrationNote((current) => ({ ...current, elevenlabs: `${voices.length} ses bulundu. AION uygun kadın sesi otomatik seçti; API key gerçek TTS üretimiyle “Kaydet ve test et” sırasında doğrulanacak.` }));
       }
     } catch (error) {
       setIntegrationNote((current) => ({ ...current, elevenlabs: apiErrorDetail(error, "ElevenLabs API key doğrulanamadı.") }));
