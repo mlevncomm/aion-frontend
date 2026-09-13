@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AudioLines, Menu, MessageCircle, Mic, MicOff, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConversationPanel, { type ChatMessage } from "@/components/ConversationPanel";
@@ -80,6 +80,7 @@ function stringList(value: unknown): string[] {
 export default function Home() {
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("home");
+  const queuedTurnRef = useRef<{ text: string; inputMode: "text" | "voice" } | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [statusNote, setStatusNote] = useState("");
@@ -200,8 +201,18 @@ export default function Home() {
 
   const submitPrompt = useCallback(async (prompt: string, inputMode: "text" | "voice" = "text") => {
     const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt || isSending) {
-      if (!trimmedPrompt) setStatusNote("Başlamak için bir mesaj yaz");
+    if (!trimmedPrompt) {
+      setStatusNote("Başlamak için bir mesaj yaz");
+      return;
+    }
+    // Speaking again while AION is still answering used to drop the sentence
+    // on the floor: the voice hook had already stopped the microphone and
+    // moved to "thinking", and nothing was left to bring it back, so the UI
+    // waited forever. Hold the turn instead and run it when the current one
+    // finishes — a spoken sentence is not something to silently discard.
+    if (isSending) {
+      queuedTurnRef.current = { text: trimmedPrompt, inputMode };
+      setStatusNote("Şu anki yanıt bitince sıradaki mesajını göndereceğim");
       return;
     }
 
@@ -249,6 +260,15 @@ export default function Home() {
     void submitPrompt(transcript, "voice");
     consumeTranscript();
   }, [consumeTranscript, submitPrompt, transcript]);
+
+  // Drain whatever was said mid-answer as soon as the turn in flight ends.
+  useEffect(() => {
+    if (isSending) return;
+    const queued = queuedTurnRef.current;
+    if (!queued) return;
+    queuedTurnRef.current = null;
+    void submitPrompt(queued.text, queued.inputMode);
+  }, [isSending, submitPrompt]);
 
   const openChat = () => {
     setMobileMenuOpen(false);

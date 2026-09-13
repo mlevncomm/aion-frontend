@@ -6799,6 +6799,12 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   z-index: 40;
   display: flex;
   width: var(--rail-width);
+  height: 100%;
+  /* A grid item defaults to min-height:auto and grows to its content, so on a
+     laptop the rail stood 906px tall inside a 720px row and pushed the status
+     strip and the profile off the bottom of the screen. Bounding it lets
+     .rail-scroll do the shrinking it was already set up for. */
+  min-height: 0;
   flex-shrink: 0;
   padding: 18px 0 18px 18px;
 }
@@ -6807,6 +6813,7 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   position: relative;
   display: flex;
   width: 100%;
+  min-height: 0;
   flex-direction: column;
   gap: 14px;
   padding: 20px 14px 14px;
@@ -7767,4 +7774,34 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
       0 10px 26px -14px rgb(var(--aion-active-rgb) / 0.95),
       inset 0 1px 0 rgba(255, 255, 255, 0.16);
   }
+}
+
+/* A laptop is a short screen too. Once the rail stopped overflowing the
+   viewport, the same squeeze the phone drawer had showed up here: at 720px of
+   height four rows fell outside the scroll area, Ayarlar among them. The rail
+   gives up its decorative height in two steps rather than hiding navigation. */
+@media (min-width: 768px) and (max-height: 900px) {
+  .aion-rail { padding: 12px 0 12px 14px; }
+  .rail-surface { padding: 16px 12px 12px; gap: 11px; }
+
+  .rail-heading {
+    height: 1px;
+    margin: 8px 12px 7px;
+    padding: 0;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.09);
+    text-indent: -999em;
+  }
+
+  .rail-list .rail-heading:first-of-type { margin-top: 2px; }
+  .rail-row { padding: 8px 12px; }
+  .rail-compose { padding: 10px 12px; }
+}
+
+/* Below this the status strip costs more than it tells: its numbers are on the
+   home screen, the navigation is not anywhere else. */
+@media (min-width: 768px) and (max-height: 790px) {
+  .rail-pulseline { display: none; }
+  .rail-profile { padding: 8px 10px; }
+  .rail-row { padding: 7px 12px; }
 }

@@ -438,6 +438,9 @@ export async function createAionChatSession(): Promise<string> {
   return session.session_id;
 }
 
+/** The guard's message when the session's model is no longer free + tools. */
+const MODEL_GUARD_ERROR = /Ücretsiz uygun model bulunamadı/i;
+
 export async function ensureAionChatSession(): Promise<string> {
   const current = sessionStorage.getItem(CHAT_SESSION_KEY);
   if (current) {
@@ -490,23 +493,39 @@ export async function sendAionMessage(
   sessionId?: string,
   inputMode: "text" | "voice" = "text",
 ): Promise<{ sessionId: string; text: string }> {
-  const activeSession = sessionId ?? await ensureAionChatSession();
-  const accepted = await apiPost<TurnAccepted>(
+  let activeSession = sessionId ?? await ensureAionChatSession();
+  const body = {
+    text,
+    input_mode: inputMode,
+    attachments: [],
+    tool_choices: [],
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul",
+  };
+  let accepted = await apiPost<TurnAccepted>(
     `/agent-chat/sessions/${encodeURIComponent(activeSession)}/messages`,
-    {
-      text,
-      input_mode: inputMode,
-      attachments: [],
-      tool_choices: [],
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul",
-    },
+    body,
   );
 
   const deadline = Date.now() + 90_000;
+  let retried = false;
   while (Date.now() < deadline) {
     const snapshot = await apiGet<AgentChatSnapshot>(`/agent-chat/sessions/${encodeURIComponent(activeSession)}`);
     const result = turnFinished(snapshot.events, accepted.turn_id);
     if (result.done) {
+      // A session remembers the model it was opened with. When that model
+      // leaves OpenRouter's free tool-capable list, every later turn in the
+      // session dies on the guard and the chat is permanently dead even though
+      // a usable free model exists. Reopen once on the current default rather
+      // than leave the owner with a chat that can never answer again.
+      if (result.error && MODEL_GUARD_ERROR.test(result.error) && !retried) {
+        retried = true;
+        activeSession = await resetAionChatSession();
+        accepted = await apiPost<TurnAccepted>(
+          `/agent-chat/sessions/${encodeURIComponent(activeSession)}/messages`,
+          body,
+        );
+        continue;
+      }
       if (result.error) throw new Error(result.error);
       const answer = assistantTextForTurn(snapshot.events, accepted.turn_id) || snapshot.session.preview?.trim();
       if (!answer) throw new Error("AION boş bir yanıt döndürdü.");
