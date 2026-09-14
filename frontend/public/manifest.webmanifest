@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "AION — Mehmet'in kişisel AI OS'u",
+  "short_name": "AION",
+  "description": "Projeleri, sunucuyu, görevleri ve kritik değişiklikleri gerçek kaynaklardan takip eden kişisel AI işletim sistemi.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#0a0d14",
+  "theme_color": "#0a0d14",
+  "lang": "tr",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "/brand/aion-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/aion-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/aion-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Günlük brief", "short_name": "Brief", "url": "/?panel=brief", "icons": [{ "src": "/brand/aion-192.png", "sizes": "192x192" }] },
+    { "name": "Ayarlar", "short_name": "Ayarlar", "url": "/?panel=settings", "icons": [{ "src": "/brand/aion-192.png", "sizes": "192x192" }] }
+  ]
+}

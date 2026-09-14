@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 220" role="img" aria-label="AION">
+  <title>AION</title>
+  <defs>
+    <radialGradient id="wpearl" cx="38%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="26%" stop-color="#e9e4ff"/>
+      <stop offset="54%" stop-color="#bcb0ff"/>
+      <stop offset="78%" stop-color="#8f86f0"/>
+      <stop offset="100%" stop-color="#5d55b8"/>
+    </radialGradient>
+    <linearGradient id="wring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cfc6ff"/>
+      <stop offset="50%" stop-color="#8fb6ff"/>
+      <stop offset="100%" stop-color="#7d6ee8"/>
+    </linearGradient>
+    <linearGradient id="wtext" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbc3ff"/>
+    </linearGradient>
+    <mask id="wbehind">
+      <rect width="880" height="220" fill="#fff"/>
+      <circle cx="110" cy="110" r="64" fill="#000"/>
+    </mask>
+  </defs>
+
+  <g transform="rotate(-24 110 110)">
+    <ellipse cx="110" cy="110" rx="99" ry="41" fill="none" stroke="url(#wring)"
+             stroke-width="7" stroke-linecap="round" opacity=".55" mask="url(#wbehind)"/>
+  </g>
+  <circle cx="110" cy="110" r="64" fill="url(#wpearl)"/>
+  <circle cx="110" cy="110" r="64" fill="none" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.4"/>
+  <g transform="rotate(-24 110 110)">
+    <path d="M 11 110 A 99 41 0 0 0 209 110" fill="none" stroke="url(#wring)"
+          stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <text x="248" y="150" fill="url(#wtext)"
+        font-family="Urbanist Variable, Urbanist, Inter, system-ui, sans-serif"
+        font-size="118" font-weight="600" letter-spacing="26">AION</text>
+</svg>
