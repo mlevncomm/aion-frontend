@@ -581,3 +581,26 @@ test('a stalled voice endpoint can never wedge the chat', async ({ page }) => {
   await page.getByTestId('chat-send-button').click();
   await expect(page.getByTestId('conversation-message-list')).toContainText('İkinci mesaj', { timeout: 20_000 });
 });
+
+test('the desktop app and the Companion are findable from the product', async ({ page }) => {
+  await authenticate(page);
+  await mockProductData(page);
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+
+  // Installing was buried in a browser menu, which is the same as absent.
+  await openSection(page, 'settings');
+  const install = page.getByTestId('desktop-install-card');
+  await install.scrollIntoViewIfNeeded();
+  await expect(install).toBeVisible();
+  await expect(install).toContainText('uygulama olarak yükle');
+
+  // The pairing steps used to send the owner looking for an application that
+  // does not exist. The Companion is a script, and the page now says so and
+  // hands it over.
+  await openSection(page, 'devices');
+  await expect(page.getByTestId('device-pairing-panel')).toContainText('Aranacak ayrı bir uygulama yok');
+  const script = page.getByTestId('companion-download-link');
+  await expect(script).toHaveAttribute('href', '/api/aion/devices/companion/windows.ps1');
+  await expect(script).toHaveAttribute('download', 'aion-companion.ps1');
+});

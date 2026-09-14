@@ -20,6 +20,7 @@ import {
   Link2,
   ListChecks,
   MessageCircle,
+  MonitorDown,
   Palette,
   RefreshCw,
   Server,
@@ -68,6 +69,7 @@ import {
   type MarketplacePlugin,
 } from "@/lib/aionApi";
 import { ApiError } from "@/lib/api";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 // Owner-facing setup instructions live next to the form that consumes them.
 // They describe the real provider screens and the least privilege that works,
@@ -108,12 +110,14 @@ const SETUP_STEPS: Record<string, { title: string; steps: string[]; note?: strin
   devices: {
     title: "Cihaz eşleştirmesini adım adım yap",
     steps: [
-      "Bu sayfada Eşleştirme kodu üret düğmesine bas.",
-      "Kod tek kullanımlıktır ve kısa sürede geçersizleşir.",
-      "AION Companion uygulamasını bilgisayarında aç ve kodu gir.",
-      "Eşleşme tamamlandıktan sonra yetkileri tek tek aç; hepsi kapalı başlar.",
-      "Cihaz ONLINE görünmeden AION bilgisayarını kontrol edilebilir saymaz.",
+      "Bu sayfada Windows eşleştirme kodu oluştur düğmesine bas.",
+      "Kurulum komutunu kopyala düğmesine bas; komut panoya gider.",
+      "Windows'ta Başlat'a PowerShell yaz, normal kullanıcı olarak aç (yönetici gerekmez).",
+      "Komutu yapıştır ve Enter'a bas. Companion, AION'un sunucusundan inip çalışmaya başlar.",
+      "Pencereyi açık bırak; kapatırsan cihaz çevrimdışı olur.",
+      "Eşleşme bitince bu sayfada yetkileri tek tek aç; hepsi kapalı başlar.",
     ],
+    note: "İndirilecek ayrı bir Companion uygulaması yoktur. Companion, kopyaladığın komutun indirip çalıştırdığı PowerShell betiğidir; kaynağını aşağıdaki bağlantıdan okuyabilirsin.",
   },
   aion_trade: {
     title: "AION Trade telemetrisi için gerekenler",
@@ -286,6 +290,8 @@ export default function WorkspaceView({
   onNavigate,
 }: WorkspaceViewProps) {
   const [query, setQuery] = useState("");
+  const { state: installState, install } = useInstallPrompt();
+  const [installNote, setInstallNote] = useState("");
   const [controlKey, setControlKey] = useState("");
   const [controlMasked, setControlMasked] = useState("");
   const [controlKeyVisible, setControlKeyVisible] = useState(false);
@@ -901,11 +907,23 @@ export default function WorkspaceView({
             <StatusPill value={devicePairing ? "10 dk eşleştirme" : "Hazır"} />
           </div>
           <p>Tek kullanımlık eşleştirme kodu oluştur. Komut yalnız senin bilgisayarında çalışır; device token sohbete veya frontend'e geri gösterilmez.</p>
+          <p className="workspace-companion-hint">
+            Aranacak ayrı bir uygulama yok: Companion, kopyaladığın komutun indirip çalıştırdığı bir PowerShell betiği.
+            Komutu <strong>PowerShell</strong>'e yapıştırıp Enter'a basman yeterli.
+          </p>
           <div className="workspace-integration-actions">
             <button type="button" className="is-primary" disabled={Boolean(deviceBusy)} onClick={() => { void createDevicePair(); }} data-testid="device-pair-create-button">
               {deviceBusy === "pairing" ? "Kod oluşturuluyor…" : "Windows eşleştirme kodu oluştur"}
             </button>
             {devicePairing ? <button type="button" onClick={() => { void copyWindowsPairCommand(); }} data-testid="device-pair-copy-button"><Copy size={14} /> Kurulum komutunu kopyala</button> : null}
+            <a
+              className="workspace-companion-link"
+              href="/api/aion/devices/companion/windows.ps1"
+              download="aion-companion.ps1"
+              data-testid="companion-download-link"
+            >
+              <MonitorDown size={14} /> Companion betiğini indir / oku
+            </a>
           </div>
           {devicePairing ? (
             <div className="workspace-device-pair-code">
@@ -1154,6 +1172,42 @@ export default function WorkspaceView({
             </div>
           </article>
           <button type="button" className="workspace-setting-card is-button" onClick={onOpenTheme}><span><Palette size={17} /></span><div><small>Görünüm</small><strong>Tema ve atmosfer</strong><p>Renk temasını bu tarayıcı için değiştir.</p></div><ArrowUpRight size={15} /></button>
+
+          <article className="workspace-setting-card workspace-install-card" id="setup-desktop" data-testid="desktop-install-card">
+            <span><MonitorDown size={17} /></span>
+            <div>
+              <small>Masaüstü uygulaması</small>
+              <strong>AION'u uygulama olarak yükle</strong>
+              {installState === "installed" ? (
+                <p>AION bu cihaza uygulama olarak yüklü; kendi penceresinde açılıyor.</p>
+              ) : installState === "available" ? (
+                <p>Kendi penceresi, kendi ikonu ve görev çubuğunda kendi yeri olur. Tarayıcı sekmesi gerekmez.</p>
+              ) : (
+                <p>Bu tarayıcı yükleme düğmesini vermiyor. Edge/Chrome'da adres çubuğundaki yükle simgesini ya da menüden “Uygulamayı yükle” seçeneğini kullan; iPhone'da Paylaş → Ana Ekrana Ekle.</p>
+              )}
+              {installNote ? <p className="workspace-integration-note" role="status">{installNote}</p> : null}
+              {installState === "available" ? (
+                <div className="workspace-access-actions">
+                  <button
+                    type="button"
+                    className="is-primary"
+                    data-testid="desktop-install-button"
+                    onClick={() => {
+                      void install().then((outcome) => {
+                        setInstallNote(outcome === "accepted"
+                          ? "AION uygulama olarak yüklendi."
+                          : outcome === "dismissed"
+                            ? "Yükleme iptal edildi; istediğinde tekrar deneyebilirsin."
+                            : "Bu tarayıcı yüklemeyi şu anda sunmuyor.");
+                      });
+                    }}
+                  >
+                    <MonitorDown size={14} /> Uygulamayı yükle
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </article>
         </div>
 
         <section className="workspace-accounts-panel" aria-label="PDF AION tamamlanma sözleşmesi" data-testid="pdf-contract-readiness">

@@ -7805,3 +7805,47 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   .rail-profile { padding: 8px 10px; }
   .rail-row { padding: 7px 12px; }
 }
+
+/* Installing the app and finding the Companion were both invisible: one was
+   buried in a browser menu, the other described an application that does not
+   exist. Both are now ordinary controls on the page. */
+.workspace-install-card .workspace-access-actions { margin-top: 10px; }
+
+.workspace-companion-hint {
+  margin: 8px 0 0;
+  padding: 9px 11px;
+  border: 1px solid rgb(var(--aion-bright-rgb) / 0.18);
+  border-radius: 10px;
+  background: rgb(var(--aion-bright-rgb) / 0.05);
+  color: rgba(216, 213, 232, 0.82);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.workspace-companion-hint strong {
+  color: rgb(var(--aion-bright-rgb) / 0.95);
+  font-family: "JetBrains Mono Variable", monospace;
+}
+
+.workspace-companion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(175, 168, 220, 0.16);
+  border-radius: 10px;
+  color: rgba(216, 213, 232, 0.8);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 12.5px;
+  font-weight: 620;
+  text-decoration: none;
+  transition: border-color 180ms ease, color 180ms ease, background-color 180ms ease;
+}
+
+.workspace-companion-link:hover,
+.workspace-companion-link:focus-visible {
+  border-color: rgb(var(--aion-bright-rgb) / 0.4);
+  color: rgb(var(--aion-bright-rgb) / 0.95);
+  background: rgb(var(--aion-bright-rgb) / 0.07);
+}
