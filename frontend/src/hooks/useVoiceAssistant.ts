@@ -67,6 +67,15 @@ const RECOGNITION_RESTART_MS = 180;
 // output is largely removed before these frames are measured; the grace window
 // and the consecutive-frame requirement absorb what echo cancellation misses,
 // so a speaker in a quiet room does not interrupt itself.
+// Ceiling for one spoken reply: synthesis plus playback of a long answer.
+// Passing it means something is wedged, not that AION is still talking.
+const SPEAK_WATCHDOG_MS = 60_000;
+// Some mobile browsers never fire `onend` for an utterance. Estimating the
+// spoken duration keeps the chunk loop moving instead of waiting forever.
+const UTTERANCE_MS_PER_CHAR = 95;
+const UTTERANCE_MIN_MS = 2_000;
+const UTTERANCE_MAX_MS = 20_000;
+
 const BARGE_IN_LEVEL = 0.22;
 const BARGE_IN_FRAMES = 9;
 const BARGE_IN_GRACE_MS = 700;
@@ -186,6 +195,7 @@ export function useVoiceAssistant() {
   const bargeInHitsRef = useRef(0);
   const bargeInSinceRef = useRef(0);
   const bargeInHandlerRef = useRef<() => void>(() => undefined);
+  const watchdogRef = useRef<number | null>(null);
   const playbackAudioContextRef = useRef<AudioContext | null>(null);
   const playbackSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -528,6 +538,10 @@ export function useVoiceAssistant() {
     const resumeAfterSpeech = () => {
       if (resumed) return;
       resumed = true;
+      if (watchdogRef.current !== null) {
+        window.clearTimeout(watchdogRef.current);
+        watchdogRef.current = null;
+      }
       bargeInArmedRef.current = false;
       bargeInHitsRef.current = 0;
       stopSpeakingMeter();
@@ -543,6 +557,20 @@ export function useVoiceAssistant() {
       }
     };
 
+    // Whatever happens below — a stalled fetch, an audio element that never
+    // fires a single event, a mobile speechSynthesis that swallows onend — the
+    // session must come back. Without this the hook sits in "thinking" with the
+    // microphone closed and nothing to reopen it, which is what froze the chat.
+    if (watchdogRef.current !== null) window.clearTimeout(watchdogRef.current);
+    watchdogRef.current = window.setTimeout(() => {
+      playbackRef.current?.pause();
+      playbackRef.current = null;
+      window.speechSynthesis?.cancel();
+      interrupted = true;
+      setError("Sesli yanıt tamamlanamadı; yazılı yanıt hazır.");
+      resumeAfterSpeech();
+    }, SPEAK_WATCHDOG_MS);
+
     // Cutting AION off must behave exactly like its sentence ending, so the
     // same resume path runs and the owner keeps the turn.
     bargeInHandlerRef.current = () => {
@@ -553,7 +581,11 @@ export function useVoiceAssistant() {
       resumeAfterSpeech();
     };
 
+    let serverSpeechFailed = false;
     const playServerSpeech = async (): Promise<boolean> => {
+      // One stalled synthesis is evidence enough. Trying again only doubles
+      // the time the owner waits before the written answer is usable.
+      if (serverSpeechFailed) return false;
       try {
         const audio = await speakWithAion(speechText);
         // Synthesis is a network round trip; the owner may already have taken
@@ -578,6 +610,7 @@ export function useVoiceAssistant() {
         return true;
       } catch {
         playbackRef.current = null;
+        serverSpeechFailed = true;
         return false;
       }
     };
@@ -614,12 +647,27 @@ export function useVoiceAssistant() {
               utterance.rate = (natural ? 1.0 : 0.96) + questionLift + longSentenceEase;
               utterance.pitch = feminine ? 1.02 : 1.0;
               utterance.volume = 1;
+              // Several mobile browsers never deliver onend, which used to park
+              // the loop on this chunk forever. Settle on whichever comes
+              // first: the event, or the time the sentence should have taken.
+              const estimate = Math.min(
+                UTTERANCE_MAX_MS,
+                Math.max(UTTERANCE_MIN_MS, chunk.length * UTTERANCE_MS_PER_CHAR),
+              );
+              let settled = false;
+              const settle = () => {
+                if (settled) return;
+                settled = true;
+                window.clearTimeout(fallback);
+                resolve();
+              };
+              const fallback = window.setTimeout(settle, estimate);
               utterance.onstart = () => {
                 setStatus("speaking");
                 if (index === 0) startSpeakingMeter();
               };
-              utterance.onend = () => resolve();
-              utterance.onerror = () => resolve();
+              utterance.onend = settle;
+              utterance.onerror = settle;
               window.speechSynthesis.speak(utterance);
             });
             if (interrupted) return;
@@ -636,9 +684,11 @@ export function useVoiceAssistant() {
     if (await playServerSpeech()) return;
     if (interrupted) return;
 
+    // Every exit from here on has to hand the session back. A reply that could
+    // not be spoken is not a reason to leave the microphone closed and the UI
+    // on "thinking" — that is the state the owner photographed.
     setError("Sesli yanıt oynatılamadı. Yazılı yanıt kullanılabilir.");
-    setStatus("error");
-    pausedForResponseRef.current = false;
+    resumeAfterSpeech();
   }, [startAudioMeter, startPlaybackMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markProcessing = useCallback(() => {
@@ -661,6 +711,23 @@ export function useVoiceAssistant() {
   }, [startAudioMeter, stopSpeakingMeter]);
 
   const consumeTranscript = useCallback(() => setTranscript(""), []);
+
+  // Browsers throttle or stop speech synthesis when the page is hidden, and a
+  // stopped utterance may never deliver its end event. Locking the phone mid
+  // answer is exactly that case, so the session is handed back deliberately
+  // instead of waiting for an event that is not coming.
+  useEffect(() => {
+    const onHidden = () => {
+      if (!document.hidden) return;
+      if (!pausedForResponseRef.current) return;
+      playbackRef.current?.pause();
+      playbackRef.current = null;
+      window.speechSynthesis?.cancel();
+      bargeInHandlerRef.current();
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    return () => document.removeEventListener("visibilitychange", onHidden);
+  }, []);
 
   useEffect(() => () => {
     continuousEnabledRef.current = false;

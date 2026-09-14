@@ -55,6 +55,12 @@ const initialMessages: ChatMessage[] = [
   { id: "welcome", role: "assistant", text: "Merhaba Mehmet. Buradayım; konuşabilir veya yazabilirsin." },
 ];
 
+// Above the hook's own watchdog, so it only fires if that one is bypassed.
+const SPEECH_TURN_CEILING_MS = 70_000;
+// The backend's own answer deadline is 90s; this sits just past the speech
+// ceiling so a wedged turn is released long before the owner gives up.
+const TURN_WATCHDOG_MS = 100_000;
+
 const voiceStatusText: Record<VoiceStatus, string> = {
   idle: "Konuşmak için dokun",
   listening: "Seni dinliyorum",
@@ -235,7 +241,13 @@ export default function Home() {
       // A tool call may have completed a task, changed an integration or moved
       // a workflow. Refresh immediately instead of waiting for the next poll.
       void refreshWorkspace();
-      await speak(result.text);
+      // The answer is on screen; speaking it is a side effect. It must never
+      // decide whether the turn is over, because a turn that never ends keeps
+      // isSending true and silently swallows every later message.
+      await Promise.race([
+        speak(result.text),
+        new Promise<void>((resolve) => window.setTimeout(resolve, SPEECH_TURN_CEILING_MS)),
+      ]);
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Bilinmeyen bağlantı hatası";
       setMessages((current) => [
@@ -260,6 +272,20 @@ export default function Home() {
     void submitPrompt(transcript, "voice");
     consumeTranscript();
   }, [consumeTranscript, submitPrompt, transcript]);
+
+  // Last line of defence. Whatever wedges a turn — a stalled fetch, an audio
+  // element that never reports, a browser that swallows a speech event — the
+  // composer must come back. A chat that cannot accept the next message is
+  // indistinguishable from a dead product.
+  useEffect(() => {
+    if (!isSending) return;
+    const timer = window.setTimeout(() => {
+      setIsSending(false);
+      markIdle();
+      setStatusNote("Yanıt beklenenden uzun sürdü; tekrar yazabilirsin.");
+    }, TURN_WATCHDOG_MS);
+    return () => window.clearTimeout(timer);
+  }, [isSending, markIdle]);
 
   // Drain whatever was said mid-answer as soon as the turn in flight ends.
   useEffect(() => {

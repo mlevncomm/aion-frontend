@@ -553,3 +553,31 @@ test('every navigation row is on screen in the phone drawer', async ({ page }) =
   expect(report.clipped, 'no navigation row may sit outside the drawer').toEqual([]);
   expect(report.truncated, 'no navigation label may be cut off').toEqual([]);
 });
+
+test('a stalled voice endpoint can never wedge the chat', async ({ page }) => {
+  await authenticate(page);
+  await mockProductData(page);
+  // The failure the owner photographed: synthesis never answers, so the promise
+  // the turn is awaiting never settles and the panel sits on "Düşünüyorum"
+  // with the microphone closed and nothing left to reopen it.
+  await page.route('**/api/aion/tts', () => new Promise(() => {}));
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+
+  await page.getByTestId('global-chat-fab').click();
+  await page.getByTestId('chat-message-input').fill('Birinci mesaj');
+  await page.getByTestId('chat-send-button').click();
+  await expect(page.getByTestId('conversation-message-list')).toContainText('VPS test yanıtı hazır.', { timeout: 30_000 });
+
+  // The contract is not "speech works", it is "the owner can talk again".
+  await expect
+    .poll(async () => (await page.getByTestId('conversation-voice-status').textContent())?.trim(), {
+      timeout: 45_000,
+      message: 'voice status must leave "Düşünüyorum" even when synthesis never answers',
+    })
+    .not.toBe('Düşünüyorum');
+
+  await page.getByTestId('chat-message-input').fill('İkinci mesaj');
+  await page.getByTestId('chat-send-button').click();
+  await expect(page.getByTestId('conversation-message-list')).toContainText('İkinci mesaj', { timeout: 20_000 });
+});

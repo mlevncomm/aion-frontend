@@ -537,12 +537,23 @@ export async function sendAionMessage(
 }
 
 export async function speakWithAion(text: string): Promise<HTMLAudioElement> {
-  const response = await fetch("/api/aion/tts", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
+  // Synthesis measured at ~1.3s for a long sentence. A request still pending
+  // after 12s is a stalled mobile connection, and the voice loop must be told
+  // so rather than waiting on a promise that will never settle.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  let response: Response;
+  try {
+    response = await fetch("/api/aion/tts", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!response.ok) throw new Error(`TTS ${response.status}`);
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);

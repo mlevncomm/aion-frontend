@@ -18,13 +18,37 @@ export class ApiError extends Error {
 
 type JsonBody = unknown;
 
+// A phone on one bar can leave a fetch pending indefinitely. Every call here
+// is part of a user-visible turn, so a request that never settles is worse
+// than one that fails: the UI has no way to recover from a promise that never
+// resolves. 20s is far above the slowest real response measured (1.3s TTS).
+const REQUEST_TIMEOUT_MS = 20_000;
+
+export class TimeoutError extends Error {
+  constructor(path: string) {
+    super(`İstek zaman aşımına uğradı: ${path}`);
+    this.name = "TimeoutError";
+  }
+}
+
 async function request<T>(method: string, path: string, body?: JsonBody): Promise<T> {
-  // Auth rides the httpOnly session cookie automatically — never add auth headers here.
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    // Auth rides the httpOnly session cookie automatically — never add auth headers here.
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw new TimeoutError(path);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 
   // FastAPI reports request-validation failures as 422 with a {detail: [...]} body.
   if (!res.ok) {
