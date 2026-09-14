@@ -619,8 +619,12 @@ test('the copied setup commands are PowerShell, not a nested invocation', async 
   const assertNative = (command: string, label: string) => {
     expect(command, `${label} must not nest a second powershell -Command`).not.toContain('powershell -NoProfile');
     expect(command, `${label} must not rely on a temp file the outer shell names`).not.toContain('Join-Path $env:TEMP');
-    expect(command, `${label} should run the script it fetched`).toContain('scriptblock]::Create');
+    // A scriptblock call binds a mis-pasted fragment as a positional argument
+    // and silently overwrites $Server. iex accepts none, so it cannot happen.
+    expect(command, `${label} must not invoke a scriptblock with arguments`).not.toContain('scriptblock]::Create');
+    expect(command, `${label} should run the script it fetched`).toContain('iex (iwr');
     expect(command, `${label} needs basic parsing on stock PowerShell 5.1`).toContain('-UseBasicParsing');
+    expect(command.split('\n').length, `${label} must be one pasteable line`).toBe(1);
   };
 
   await openSection(page, 'settings');
@@ -634,5 +638,5 @@ test('the copied setup commands are PowerShell, not a nested invocation', async 
   await page.getByTestId('device-pair-copy-button').click();
   const pairing = await page.evaluate(() => navigator.clipboard.readText());
   assertNative(pairing, 'pairing command');
-  expect(pairing, 'pairing command must pass the one-time token').toContain('-PairToken');
+  expect(pairing, 'pairing command must carry the one-time token').toContain('$env:AION_PAIR=');
 });

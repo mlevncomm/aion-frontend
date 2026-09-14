@@ -441,7 +441,7 @@ export default function WorkspaceView({
   const copyDesktopSetupCommand = async () => {
     // Same reason as the pairing command: this is pasted into PowerShell, so
     // it has to be PowerShell, not a nested invocation the outer shell mangles.
-    const command = "$s = Invoke-WebRequest https://aion.wexon.dev/api/aion/desktop/windows.ps1 -UseBasicParsing; & ([scriptblock]::Create($s.Content))";
+    const command = "iex (iwr https://aion.wexon.dev/api/aion/desktop/windows.ps1 -UseBasicParsing).Content";
     try {
       await navigator.clipboard.writeText(command);
       setInstallNote("Kurulum komutu panoya kopyalandı. PowerShell'e yapıştırıp Enter'a bas.");
@@ -458,7 +458,11 @@ export default function WorkspaceView({
     // PowerShell, so the command is PowerShell's own syntax: fetch the script
     // and run it from memory. No temp file, and no execution-policy prompt for
     // a file that was just downloaded.
-    const command = `$s = Invoke-WebRequest https://aion.wexon.dev/api/aion/devices/companion/windows.ps1 -UseBasicParsing; & ([scriptblock]::Create($s.Content)) -PairToken '${devicePairing.pairing_token}'`;
+    // Invoking a scriptblock lets a mis-pasted fragment land as a positional
+    // argument and quietly overwrite $Server, which surfaces as an unreadable
+    // "invalid URI". iex takes no arguments at all, so the token travels in the
+    // environment instead and the line is short enough to paste in one piece.
+    const command = `$env:AION_PAIR='${devicePairing.pairing_token}'; iex (iwr https://aion.wexon.dev/api/aion/devices/companion/windows.ps1 -UseBasicParsing).Content`;
     try {
       await navigator.clipboard.writeText(command);
       setDeviceNote("Windows eşleştirme komutu panoya kopyalandı.");
