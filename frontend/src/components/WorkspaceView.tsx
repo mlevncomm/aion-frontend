@@ -439,7 +439,9 @@ export default function WorkspaceView({
   };
 
   const copyDesktopSetupCommand = async () => {
-    const command = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$p=Join-Path $env:TEMP 'aion-masaustu-kur.ps1'; iwr https://aion.wexon.dev/api/aion/desktop/windows.ps1 -OutFile $p; & $p\"";
+    // Same reason as the pairing command: this is pasted into PowerShell, so
+    // it has to be PowerShell, not a nested invocation the outer shell mangles.
+    const command = "$s = Invoke-WebRequest https://aion.wexon.dev/api/aion/desktop/windows.ps1 -UseBasicParsing; & ([scriptblock]::Create($s.Content))";
     try {
       await navigator.clipboard.writeText(command);
       setInstallNote("Kurulum komutu panoya kopyalandı. PowerShell'e yapıştırıp Enter'a bas.");
@@ -450,7 +452,13 @@ export default function WorkspaceView({
 
   const copyWindowsPairCommand = async () => {
     if (!devicePairing) return;
-    const command = `powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Join-Path $env:TEMP 'aion-companion.ps1'; iwr https://aion.wexon.dev/api/aion/devices/companion/windows.ps1 -OutFile $p; & $p -PairToken '${devicePairing.pairing_token}'"`;
+    // Pasted into PowerShell, a nested `powershell -Command "...$p..."` is
+    // expanded by the OUTER shell first, so $p and $env:TEMP become empty and
+    // the line collapses into `=Join-Path`. The steps tell the owner to open
+    // PowerShell, so the command is PowerShell's own syntax: fetch the script
+    // and run it from memory. No temp file, and no execution-policy prompt for
+    // a file that was just downloaded.
+    const command = `$s = Invoke-WebRequest https://aion.wexon.dev/api/aion/devices/companion/windows.ps1 -UseBasicParsing; & ([scriptblock]::Create($s.Content)) -PairToken '${devicePairing.pairing_token}'`;
     try {
       await navigator.clipboard.writeText(command);
       setDeviceNote("Windows eşleştirme komutu panoya kopyalandı.");

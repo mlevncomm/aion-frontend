@@ -604,3 +604,35 @@ test('the desktop app and the Companion are findable from the product', async ({
   await expect(script).toHaveAttribute('href', '/api/aion/devices/companion/windows.ps1');
   await expect(script).toHaveAttribute('download', 'aion-companion.ps1');
 });
+
+test('the copied setup commands are PowerShell, not a nested invocation', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await authenticate(page);
+  await mockProductData(page);
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+
+  // Pasted into PowerShell, `powershell -Command "...$p..."` is expanded by the
+  // OUTER shell first: $p is undefined, so the line collapses to `=Join-Path`
+  // and every step of it fails. The steps say to open PowerShell, so the
+  // command has to be PowerShell's own syntax.
+  const assertNative = (command: string, label: string) => {
+    expect(command, `${label} must not nest a second powershell -Command`).not.toContain('powershell -NoProfile');
+    expect(command, `${label} must not rely on a temp file the outer shell names`).not.toContain('Join-Path $env:TEMP');
+    expect(command, `${label} should run the script it fetched`).toContain('scriptblock]::Create');
+    expect(command, `${label} needs basic parsing on stock PowerShell 5.1`).toContain('-UseBasicParsing');
+  };
+
+  await openSection(page, 'settings');
+  await page.getByTestId('desktop-install-card').scrollIntoViewIfNeeded();
+  await page.getByTestId('desktop-setup-copy').click();
+  assertNative(await page.evaluate(() => navigator.clipboard.readText()), 'desktop installer');
+
+  await openSection(page, 'devices');
+  await page.getByTestId('device-pair-create-button').click();
+  await expect(page.getByTestId('device-pair-copy-button')).toBeVisible();
+  await page.getByTestId('device-pair-copy-button').click();
+  const pairing = await page.evaluate(() => navigator.clipboard.readText());
+  assertNative(pairing, 'pairing command');
+  expect(pairing, 'pairing command must pass the one-time token').toContain('-PairToken');
+});
