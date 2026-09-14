@@ -119,6 +119,17 @@ const SETUP_STEPS: Record<string, { title: string; steps: string[]; note?: strin
     ],
     note: "İndirilecek ayrı bir Companion uygulaması yoktur. Companion, kopyaladığın komutun indirip çalıştırdığı PowerShell betiğidir; kaynağını aşağıdaki bağlantıdan okuyabilirsin.",
   },
+  desktop: {
+    title: "Masaüstü kısayolunu adım adım kur",
+    steps: [
+      "Windows kurulum komutunu kopyala düğmesine bas.",
+      "Başlat'a PowerShell yaz ve normal kullanıcı olarak aç (yönetici gerekmez).",
+      "Komutu yapıştır, Enter'a bas. Birkaç saniye sürer.",
+      "Masaüstünde ve Başlat menüsünde AION simgesi çıkar; çift tıkla.",
+      "Kaldırmak istersen aynı komutu sonuna -Remove ekleyerek çalıştır.",
+    ],
+    note: "Kurucu yalnız bir kısayol oluşturur: Edge veya Chrome'u uygulama kipinde AION adresine yönlendirir. Bilgisayarına program kurmaz, servis çalıştırmaz.",
+  },
   aion_trade: {
     title: "AION Trade telemetrisi için gerekenler",
     steps: [
@@ -424,6 +435,16 @@ export default function WorkspaceView({
       setDeviceNote("Eşleştirme kodu oluşturulamadı.");
     } finally {
       setDeviceBusy("");
+    }
+  };
+
+  const copyDesktopSetupCommand = async () => {
+    const command = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$p=Join-Path $env:TEMP 'aion-masaustu-kur.ps1'; iwr https://aion.wexon.dev/api/aion/desktop/windows.ps1 -OutFile $p; & $p\"";
+    try {
+      await navigator.clipboard.writeText(command);
+      setInstallNote("Kurulum komutu panoya kopyalandı. PowerShell'e yapıştırıp Enter'a bas.");
+    } catch {
+      setInstallNote("Komut panoya kopyalanamadı; Kurucuyu indir bağlantısını kullanabilirsin.");
     }
   };
 
@@ -1180,14 +1201,12 @@ export default function WorkspaceView({
               <strong>AION'u uygulama olarak yükle</strong>
               {installState === "installed" ? (
                 <p>AION bu cihaza uygulama olarak yüklü; kendi penceresinde açılıyor.</p>
-              ) : installState === "available" ? (
-                <p>Kendi penceresi, kendi ikonu ve görev çubuğunda kendi yeri olur. Tarayıcı sekmesi gerekmez.</p>
               ) : (
-                <p>Bu tarayıcı yükleme düğmesini vermiyor. Edge/Chrome'da adres çubuğundaki yükle simgesini ya da menüden “Uygulamayı yükle” seçeneğini kullan; iPhone'da Paylaş → Ana Ekrana Ekle.</p>
+                <p>Masaüstüne AION simgesi koyar; tıklayınca kendi penceresinde açılır, sekme ve adres çubuğu olmaz.</p>
               )}
               {installNote ? <p className="workspace-integration-note" role="status">{installNote}</p> : null}
-              {installState === "available" ? (
-                <div className="workspace-access-actions">
+              <div className="workspace-access-actions">
+                {installState === "available" ? (
                   <button
                     type="button"
                     className="is-primary"
@@ -1198,14 +1217,30 @@ export default function WorkspaceView({
                           ? "AION uygulama olarak yüklendi."
                           : outcome === "dismissed"
                             ? "Yükleme iptal edildi; istediğinde tekrar deneyebilirsin."
-                            : "Bu tarayıcı yüklemeyi şu anda sunmuyor.");
+                            : "Bu tarayıcı yüklemeyi şu anda sunmuyor; aşağıdaki kurucuyu kullan.");
                       });
                     }}
                   >
-                    <MonitorDown size={14} /> Uygulamayı yükle
+                    <MonitorDown size={14} /> Tek tıkla yükle
                   </button>
-                </div>
-              ) : null}
+                ) : null}
+                <button
+                  type="button"
+                  data-testid="desktop-setup-copy"
+                  onClick={() => { void copyDesktopSetupCommand(); }}
+                >
+                  <Copy size={14} /> Windows kurulum komutunu kopyala
+                </button>
+                <a
+                  className="workspace-companion-link"
+                  href="/api/aion/desktop/windows.ps1"
+                  download="aion-masaustu-kur.ps1"
+                  data-testid="desktop-setup-download"
+                >
+                  <MonitorDown size={14} /> Kurucuyu indir
+                </a>
+              </div>
+              <SetupSteps id="desktop" />
             </div>
           </article>
         </div>
