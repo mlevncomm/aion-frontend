@@ -12,7 +12,7 @@ import { queryClient } from './lib/queryClient'
 // owner on a build that was already replaced.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').then((reg) => {
+    void navigator.serviceWorker.register('/sw.js?release=20260914-r4', { updateViaCache: 'none' }).then((reg) => {
       reg.addEventListener('updatefound', () => {
         const next = reg.installing
         if (!next) return
@@ -21,6 +21,15 @@ if ('serviceWorker' in navigator) {
         })
       })
     }).catch(() => undefined)
+
+    let refreshing = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return
+      if (sessionStorage.getItem('aion-sw-r4-reloaded') === '1') return
+      refreshing = true
+      sessionStorage.setItem('aion-sw-r4-reloaded', '1')
+      window.location.reload()
+    })
   })
 }
 

@@ -56,7 +56,15 @@ export default function Login() {
     }
 
     setSubmitting(true);
-    const isValid = await validateAdminCredentials(username, password);
+    setFeedback("");
+    let isValid = false;
+    try {
+      isValid = await validateAdminCredentials(username, password);
+    } catch {
+      setFeedback("AION sunucusuna ulaşılamadı. Bağlantını kontrol edip tekrar dene.");
+      setSubmitting(false);
+      return;
+    }
 
     if (isValid) {
       clearLoginThrottle();

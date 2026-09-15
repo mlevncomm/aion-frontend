@@ -270,6 +270,16 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(metrics.body).toBeLessThanOrEqual(metrics.width + 1);
 }
 
+test('login recovers from a backend network failure', async ({ page }) => {
+  await page.route('**/api/ui/session', async (route) => { await route.abort('failed'); });
+  await page.goto(`${PUBLIC_URL}/giris`, { waitUntil: 'domcontentloaded' });
+  await page.getByTestId('login-username-input').fill('mehmet');
+  await page.getByTestId('login-password-input').fill('not-a-real-secret');
+  await page.getByTestId('login-submit-button').click();
+  await expect(page.getByTestId('login-feedback')).toContainText('AION sunucusuna ulaşılamadı');
+  await expect(page.getByTestId('login-submit-button')).toBeEnabled();
+});
+
 test('desktop navigation, actions and live chat are functional', async ({ page }) => {
   await authenticate(page);
   await mockProductData(page);
@@ -325,6 +335,22 @@ test('desktop navigation, actions and live chat are functional', async ({ page }
     }
     await expectNoHorizontalOverflow(page);
   }
+
+  await page.getByTestId('sidebar-profile-button').click();
+  await expect(page.getByTestId('sidebar-profile-button')).toHaveClass(/is-active/);
+  await expect(page.locator('.workspace-view h1')).toHaveText("Mehmet'in AION'u");
+  await expect(page.locator('#profile-owner-card')).toContainText('Europe/Istanbul');
+  await expectNoHorizontalOverflow(page);
+
+  // Dashboard metric cards are navigation, not hidden chat commands.
+  await page.getByTestId('sidebar-home-button').click();
+  const metricButtons = page.getByTestId('personal-metrics-grid').locator('button');
+  await metricButtons.nth(2).click();
+  await expect(page.locator('.workspace-view h1')).toHaveText('Görevler');
+  await page.getByTestId('sidebar-home-button').click();
+  await metricButtons.nth(4).click();
+  await expect(page.locator('.workspace-view h1')).toHaveText('Ayarlar');
+  await expect(page.locator('#setup-connections')).toBeVisible();
 
   await page.getByTestId('sidebar-tasks-button').click();
   const taskRequest = page.waitForRequest((request) => request.url().includes('/api/aion/tasks') && request.method() === 'POST');
@@ -418,6 +444,11 @@ test('mobile drawer, sections and full-screen chat stay usable', async ({ page }
     await expect(page.getByTestId('assistant-sidebar')).not.toHaveClass(/is-mobile-open/);
     await expectNoHorizontalOverflow(page);
   }
+
+  await page.getByTestId('mobile-menu-button').click();
+  await page.getByTestId('sidebar-profile-button').click();
+  await expect(page.locator('.workspace-view h1')).toHaveText("Mehmet'in AION'u");
+  await expectNoHorizontalOverflow(page);
 
   await page.getByTestId('mobile-menu-button').click();
   await page.getByTestId('sidebar-settings-button').click();
@@ -580,6 +611,86 @@ test('a stalled voice endpoint can never wedge the chat', async ({ page }) => {
   await page.getByTestId('chat-message-input').fill('İkinci mesaj');
   await page.getByTestId('chat-send-button').click();
   await expect(page.getByTestId('conversation-message-list')).toContainText('İkinci mesaj', { timeout: 20_000 });
+});
+
+test('a tool approval is visible and resumes the same turn', async ({ page }) => {
+  await authenticate(page);
+  await mockProductData(page);
+
+  let approved = false;
+  await page.unroute('**/api/agent-chat/sessions/test-session');
+  await page.route('**/api/agent-chat/sessions/test-session/approvals/approval-1', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toEqual({ decision: 'allow' });
+    approved = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, approval_id: 'approval-1', decision: 'allow' }),
+    });
+  });
+  await page.route('**/api/agent-chat/sessions/test-session', async (route) => {
+    const approval = { seq: 1, ts_ms: Date.now(), kind: 'approval_required', payload: { turn_id: 'turn-1', approval_id: 'approval-1', call_id: 'call-1', name: 'AionRemember', input: { project: 'aion', kind: 'decision', note: 'Stabilite testi' }, summary: 'Save project memory note' } };
+    const events = approved
+      ? [
+          approval,
+          { seq: 2, ts_ms: Date.now(), kind: 'approval_resolved', payload: { turn_id: 'turn-1', approval_id: 'approval-1', decision: 'allow' } },
+          { seq: 3, ts_ms: Date.now(), kind: 'assistant_text', payload: { turn_id: 'turn-1', text: 'Onaylanan işlem tamamlandı.' } },
+          { seq: 4, ts_ms: Date.now(), kind: 'turn_finished', payload: { turn_id: 'turn-1', status: 'done' } },
+        ]
+      : [approval];
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        session: { session_id: 'test-session', title: 'AION', provider: 'openrouter', model: 'test-model', running: !approved },
+        events,
+      }),
+    });
+  });
+
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+  await page.getByTestId('global-chat-fab').click();
+  await page.getByTestId('chat-message-input').fill('Bu kararı AION hafızasına kaydet');
+  await page.getByTestId('chat-send-button').click();
+
+  const card = page.getByTestId('conversation-approval-card');
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await expect(card).toContainText('kalıcı proje hafızasına kaydet');
+  await expect(page.getByTestId('conversation-voice-status')).toHaveText('Onayını bekliyorum');
+
+  const approvalRequest = page.waitForRequest((request) => request.url().includes('/approvals/approval-1') && request.method() === 'POST');
+  await page.getByTestId('conversation-approval-allow').click();
+  await approvalRequest;
+
+  await expect(card).toBeHidden({ timeout: 10_000 });
+  await expect(page.getByTestId('conversation-message-list')).toContainText('Onaylanan işlem tamamlandı.', { timeout: 15_000 });
+});
+
+
+test('iOS-style audio play stall never keeps a completed text turn in thinking', async ({ page }) => {
+  await authenticate(page);
+  await mockProductData(page);
+  await page.addInitScript(() => {
+    // WebKit can return a play promise that never resolves/rejects after an
+    // asynchronous TTS fetch. This reproduces the real iPhone freeze.
+    Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+      configurable: true,
+      value() { return new Promise<void>(() => {}); },
+    });
+  });
+  await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('assistant-home-screen')).toBeVisible();
+  await page.getByTestId('global-chat-fab').click();
+  await page.getByTestId('chat-message-input').fill('Ne haber');
+  await page.getByTestId('chat-send-button').click();
+  await expect(page.getByTestId('conversation-message-list')).toContainText('VPS test yanıtı hazır.', { timeout: 15_000 });
+  await expect(page.getByTestId('conversation-voice-status')).not.toHaveText('Düşünüyorum', { timeout: 2_500 });
+  await expect(page.getByTestId('chat-message-input')).toBeEnabled();
+  await page.getByTestId('chat-message-input').fill('İkinci mesaj');
+  await page.getByTestId('chat-send-button').click();
+  await expect(page.getByTestId('conversation-message-list')).toContainText('İkinci mesaj', { timeout: 10_000 });
 });
 
 test('the desktop app and the Companion are findable from the product', async ({ page }) => {

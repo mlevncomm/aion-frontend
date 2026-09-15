@@ -1543,6 +1543,71 @@ textarea:focus-visible {
   background: rgb(var(--aion-active-rgb) / 0.17);
 }
 
+.conversation-approval {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgb(var(--aion-active-rgb) / 0.34);
+  border-radius: 16px;
+  background: rgb(var(--aion-active-rgb) / 0.09);
+}
+
+.conversation-approval-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.conversation-approval-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  color: rgb(var(--aion-active-rgb));
+  background: rgb(var(--aion-active-rgb) / 0.14);
+}
+
+.conversation-approval-copy strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #f0f4f6;
+  font-size: 14px;
+}
+
+.conversation-approval-copy p {
+  margin: 0;
+  color: rgba(223, 231, 235, 0.72);
+  font-size: 13.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.conversation-approval-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.conversation-approval-actions button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  color: rgba(231, 237, 240, 0.78);
+  background: rgba(255, 255, 255, 0.035);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.conversation-approval-actions button.is-primary {
+  border-color: rgb(var(--aion-active-rgb) / 0.45);
+  color: white;
+  background: rgb(var(--aion-active-rgb) / 0.24);
+}
+
 .typing-dots {
   display: flex;
   gap: 4px;
@@ -7848,4 +7913,32 @@ html[data-aion-theme="reference"] .theme-swatch-reference {
   border-color: rgb(var(--aion-bright-rgb) / 0.4);
   color: rgb(var(--aion-bright-rgb) / 0.95);
   background: rgb(var(--aion-bright-rgb) / 0.07);
+}
+
+.conversation-message-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.conversation-message.is-user .conversation-message-body {
+  align-items: flex-end;
+}
+
+.conversation-speak-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 9px;
+  color: rgba(210,220,226,.72);
+  background: rgba(255,255,255,.035);
+  cursor: pointer;
+}
+
+.conversation-speak-button:active {
+  transform: scale(.94);
 }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
-import { AudioLines, Bot, Menu, Plus, X } from "lucide-react";
+import { AudioLines, Bot, Menu, Plus, ShieldCheck, Volume2, X } from "lucide-react";
 import ChatComposer from "@/components/ChatComposer";
 import type { VoiceStatus } from "@/hooks/useVoiceAssistant";
+import type { AionApprovalDecision, AionApprovalRequest } from "@/lib/aionApi";
 
 export interface ChatMessage {
   id: string;
@@ -13,6 +14,10 @@ interface ConversationPanelProps {
   draft: string;
   interimTranscript: string;
   messages: ChatMessage[];
+  pendingApproval?: AionApprovalRequest | null;
+  isProcessing: boolean;
+  onSpeakMessage?: (text: string) => void;
+  onResolveApproval?: (decision: AionApprovalDecision) => void;
   onChange: (value: string) => void;
   onClose: () => void;
   onMic: () => void;
@@ -36,10 +41,26 @@ const voiceLabels: Record<VoiceStatus, string> = {
   error: "Mikrofon beklemede",
 };
 
+function approvalDetail(request: AionApprovalRequest): string {
+  const input = request.input;
+  if (request.name === "AionDevice" && input.action === "command") {
+    if (input.command === "open_url") return `Tarayıcıda aç: ${String(input.url || "URL")}`;
+    if (input.command === "open_app") return `Uygulama aç: ${String(input.app || "uygulama")}`;
+    if (input.command === "notify") return `Bildirim gönder: ${String(input.text || "AION bildirimi")}`;
+    return "Eşleşmiş cihazda bir komut çalıştır.";
+  }
+  if (request.name === "AionRemember") return "Bu bilgiyi AION'un kalıcı proje hafızasına kaydet.";
+  return request.summary || `${request.name} işlemini çalıştır.`;
+}
+
 export default function ConversationPanel({
   draft,
   interimTranscript,
   messages,
+  pendingApproval,
+  isProcessing,
+  onResolveApproval,
+  onSpeakMessage,
   onChange,
   onClose,
   onMic,
@@ -68,6 +89,8 @@ export default function ConversationPanel({
 
   if (!open) return null;
 
+  const effectiveVoiceStatus: VoiceStatus = !isProcessing && voiceStatus === "processing" ? "idle" : voiceStatus;
+
   return (
     <div className="conversation-layer" data-testid="conversation-layer">
       <button
@@ -92,10 +115,10 @@ export default function ConversationPanel({
             </button>
           ) : null}
           <div className="conversation-heading">
-            <span className={`conversation-voice-dot is-${voiceStatus}`} aria-hidden="true"><AudioLines size={15} /></span>
+            <span className={`conversation-voice-dot is-${effectiveVoiceStatus}`} aria-hidden="true"><AudioLines size={15} /></span>
             <div>
               <h2 id="conversation-title" data-testid="conversation-title">AION ile sohbet</h2>
-              <p data-testid="conversation-voice-status">{voiceLabels[voiceStatus]}</p>
+              <p data-testid="conversation-voice-status">{pendingApproval ? "Onayını bekliyorum" : isProcessing ? "Düşünüyorum" : voiceLabels[effectiveVoiceStatus]}</p>
             </div>
           </div>
           <div className="conversation-header-actions">
@@ -131,10 +154,37 @@ export default function ConversationPanel({
               <span className="conversation-message-avatar" aria-hidden="true">
                 {message.role === "assistant" ? <Bot size={15} /> : "M"}
               </span>
-              <p>{message.text}</p>
+              <div className="conversation-message-body">
+                <p>{message.text}</p>
+                {message.role === "assistant" && onSpeakMessage ? (
+                  <button
+                    type="button"
+                    className="conversation-speak-button"
+                    onClick={() => onSpeakMessage(message.text)}
+                    aria-label="Bu yanıtı seslendir"
+                    title="Sesi oynat"
+                  >
+                    <Volume2 size={14} aria-hidden="true" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           ))}
-          {voiceStatus === "processing" ? (
+          {pendingApproval ? (
+            <div className="conversation-approval" data-testid="conversation-approval-card">
+              <div className="conversation-approval-copy">
+                <span className="conversation-approval-icon" aria-hidden="true"><ShieldCheck size={17} /></span>
+                <div>
+                  <strong>Onay gerekiyor</strong>
+                  <p>{approvalDetail(pendingApproval)}</p>
+                </div>
+              </div>
+              <div className="conversation-approval-actions">
+                <button type="button" onClick={() => onResolveApproval?.("deny")} data-testid="conversation-approval-deny">Reddet</button>
+                <button type="button" className="is-primary" onClick={() => onResolveApproval?.("allow")} data-testid="conversation-approval-allow">Onayla ve devam et</button>
+              </div>
+            </div>
+          ) : isProcessing ? (
             <div className="conversation-message is-assistant is-typing" data-testid="conversation-processing-indicator">
               <span className="conversation-message-avatar" aria-hidden="true"><Bot size={15} /></span>
               <span className="typing-dots" aria-label="AION düşünüyor"><i /><i /><i /></span>

@@ -21,6 +21,8 @@ import {
   selectAionChatSession,
   sendAionMessage,
   type AgentChatSession,
+  type AionApprovalDecision,
+  type AionApprovalRequest,
   type AionIntegrations,
   type AionPersonalProfile,
   type AionSettings,
@@ -59,7 +61,7 @@ const initialMessages: ChatMessage[] = [
 const SPEECH_TURN_CEILING_MS = 70_000;
 // The backend's own answer deadline is 90s; this sits just past the speech
 // ceiling so a wedged turn is released long before the owner gives up.
-const TURN_WATCHDOG_MS = 100_000;
+const TURN_WATCHDOG_MS = 260_000;
 
 const voiceStatusText: Record<VoiceStatus, string> = {
   idle: "Konuşmak için dokun",
@@ -94,6 +96,8 @@ export default function Home() {
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState<AionApprovalRequest | null>(null);
+  const approvalResolverRef = useRef<((decision: AionApprovalDecision) => void) | null>(null);
   const [chatSessionId, setChatSessionId] = useState("");
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<AionStatusSummary | null>(null);
@@ -101,8 +105,9 @@ export default function Home() {
   const [aionIntegrations, setAionIntegrations] = useState<AionIntegrations | null>(null);
   const [personalProfile, setPersonalProfile] = useState<AionPersonalProfile | null>(null);
   const [sessions, setSessions] = useState<AgentChatSession[]>([]);
+  const workspaceRefreshInFlightRef = useRef(false);
   const voice = useVoiceAssistant();
-  const { consumeTranscript, markIdle, markProcessing, speak, transcript } = voice;
+  const { consumeTranscript, markIdle, markProcessing, speak, transcript, unlockPlayback } = voice;
 
   const projectCount = Array.isArray(systemStatus?.projects) ? systemStatus.projects.length : 0;
   const alertCount = Array.isArray(systemStatus?.alerts) ? systemStatus.alerts.length : 0;
@@ -125,25 +130,59 @@ export default function Home() {
     return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(new Date(epochMs));
   }, [systemStatus?.observed_at]);
 
-  const refreshWorkspace = useCallback(async () => {
-    setWorkspaceLoading(true);
-    const [statusResult, settingsResult, integrationsResult, profileResult, sessionsResult] = await Promise.allSettled([
-      getAionStatus(),
-      getAionSettings(),
-      getAionIntegrations(),
-      getAionProfile(),
-      listAionChatSessions(),
-    ]);
+  const requestTurnApproval = useCallback((approval: AionApprovalRequest) => (
+    new Promise<AionApprovalDecision>((resolve) => {
+      // A turn asks sequentially, never concurrently. If a stale resolver somehow
+      // survived a UI transition, fail it closed before showing the new request.
+      approvalResolverRef.current?.("deny");
+      approvalResolverRef.current = resolve;
+      setPendingApproval(approval);
+      setChatOpen(true);
+      setStatusNote("AION bir işlem için onayını bekliyor");
+    })
+  ), []);
 
-    if (statusResult.status === "fulfilled") setSystemStatus(statusResult.value);
-    if (settingsResult.status === "fulfilled") setAionSettings(settingsResult.value);
-    if (integrationsResult.status === "fulfilled") setAionIntegrations(integrationsResult.value);
-    if (profileResult.status === "fulfilled") setPersonalProfile(profileResult.value);
-    if (sessionsResult.status === "fulfilled") setSessions(sessionsResult.value);
+  const resolveTurnApproval = useCallback((decision: AionApprovalDecision) => {
+    const resolve = approvalResolverRef.current;
+    if (!resolve) return;
+    approvalResolverRef.current = null;
+    setPendingApproval(null);
+    setStatusNote(decision === "allow"
+      ? "İşlem onaylandı; AION devam ediyor"
+      : "İşlem reddedildi; AION güvenli şekilde devam ediyor");
+    resolve(decision);
+  }, []);
 
-    const failed = [statusResult, settingsResult, integrationsResult, profileResult, sessionsResult].filter((result) => result.status === "rejected").length;
-    setStatusNote(failed === 0 ? "AION kaynakları güncel" : `${failed} kaynak görünümü alınamadı`);
-    setWorkspaceLoading(false);
+  const refreshWorkspace = useCallback(async (showLoading = false) => {
+    // Focus + visibilitychange + the periodic timer can fire together. The old
+    // code started a second five-request sweep and flipped the whole workspace
+    // back to loading every time, which made a healthy UI look unstable.
+    if (workspaceRefreshInFlightRef.current) return;
+    workspaceRefreshInFlightRef.current = true;
+    if (showLoading) setWorkspaceLoading(true);
+    try {
+      const [statusResult, settingsResult, integrationsResult, profileResult, sessionsResult] = await Promise.allSettled([
+        getAionStatus(),
+        getAionSettings(),
+        getAionIntegrations(),
+        getAionProfile(),
+        listAionChatSessions(),
+      ]);
+
+      if (statusResult.status === "fulfilled") setSystemStatus(statusResult.value);
+      if (settingsResult.status === "fulfilled") setAionSettings(settingsResult.value);
+      if (integrationsResult.status === "fulfilled") setAionIntegrations(integrationsResult.value);
+      if (profileResult.status === "fulfilled") setPersonalProfile(profileResult.value);
+      if (sessionsResult.status === "fulfilled") setSessions(sessionsResult.value);
+
+      const failed = [statusResult, settingsResult, integrationsResult, profileResult, sessionsResult].filter((result) => result.status === "rejected").length;
+      if (failed > 0) setStatusNote(`${failed} kaynak görünümü alınamadı`);
+      else if (showLoading) setStatusNote("AION kaynakları güncel");
+    } finally {
+      // Initial load starts true already; background refreshes remain quiet.
+      setWorkspaceLoading(false);
+      workspaceRefreshInFlightRef.current = false;
+    }
   }, []);
 
 
@@ -156,7 +195,7 @@ export default function Home() {
       .catch(() => {
         if (active) setStatusNote("AION sohbet oturumu başlatılamadı");
       });
-    void refreshWorkspace();
+    void refreshWorkspace(true);
     return () => { active = false; };
   }, [refreshWorkspace]);
 
@@ -167,7 +206,7 @@ export default function Home() {
     // Keep the command center visibly live without hammering provider APIs.
     // The backend observer owns external probes; this keeps browser state in
     // sync with internal task/action changes and new observer snapshots.
-    const timer = window.setInterval(refreshIfVisible, 20_000);
+    const timer = window.setInterval(refreshIfVisible, 60_000);
     window.addEventListener("focus", refreshIfVisible);
     document.addEventListener("visibilitychange", refreshIfVisible);
     return () => {
@@ -222,6 +261,10 @@ export default function Home() {
       return;
     }
 
+    // Must run synchronously while the send/mic action still carries iOS'
+    // user-activation token. Later TTS can then reuse the primed media element.
+    unlockPlayback();
+
     const userMessage: ChatMessage = { id: `user-${Date.now()}`, role: "user", text: trimmedPrompt };
     setMessages((current) => [...current, userMessage]);
     setMessage("");
@@ -230,7 +273,7 @@ export default function Home() {
     setStatusNote("AION gerçek kaynakları kontrol ediyor");
 
     try {
-      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined, inputMode);
+      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined, inputMode, requestTurnApproval);
       setChatSessionId(result.sessionId);
       setMessages((current) => [
         ...current,
@@ -241,13 +284,14 @@ export default function Home() {
       // A tool call may have completed a task, changed an integration or moved
       // a workflow. Refresh immediately instead of waiting for the next poll.
       void refreshWorkspace();
-      // The answer is on screen; speaking it is a side effect. It must never
-      // decide whether the turn is over, because a turn that never ends keeps
-      // isSending true and silently swallows every later message.
-      await Promise.race([
+      // The text turn is DONE here. Audio is deliberately detached from the
+      // request lifecycle: iOS may refuse/defer autoplay, but that must never
+      // keep the composer disabled or show a fake "Düşünüyorum" state.
+      setIsSending(false);
+      void Promise.race([
         speak(result.text),
         new Promise<void>((resolve) => window.setTimeout(resolve, SPEECH_TURN_CEILING_MS)),
-      ]);
+      ]).catch(() => markIdle());
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Bilinmeyen bağlantı hatası";
       setMessages((current) => [
@@ -259,7 +303,12 @@ export default function Home() {
     } finally {
       setIsSending(false);
     }
-  }, [chatSessionId, isSending, markIdle, markProcessing, refreshWorkspace, speak]);
+  }, [chatSessionId, isSending, markIdle, markProcessing, refreshWorkspace, requestTurnApproval, speak, unlockPlayback]);
+
+  const replayAssistantSpeech = useCallback((text: string) => {
+    unlockPlayback();
+    void speak(text).catch(() => markIdle());
+  }, [markIdle, speak, unlockPlayback]);
 
   const handleSubmit = () => {
     if (message.trim()) setChatOpen(true);
@@ -278,14 +327,14 @@ export default function Home() {
   // composer must come back. A chat that cannot accept the next message is
   // indistinguishable from a dead product.
   useEffect(() => {
-    if (!isSending) return;
+    if (!isSending || pendingApproval) return;
     const timer = window.setTimeout(() => {
       setIsSending(false);
       markIdle();
       setStatusNote("Yanıt beklenenden uzun sürdü; tekrar yazabilirsin.");
     }, TURN_WATCHDOG_MS);
     return () => window.clearTimeout(timer);
-  }, [isSending, markIdle]);
+  }, [isSending, markIdle, pendingApproval]);
 
   // Drain whatever was said mid-answer as soon as the turn in flight ends.
   useEffect(() => {
@@ -546,13 +595,13 @@ export default function Home() {
                 <button type="button" onClick={() => handleSidebarSelect("inbox")} className={attentionCount > 0 ? "has-alert" : undefined}>
                   <strong>{workspaceLoading ? "…" : attentionCount}</strong><span>sinyal / uyarı</span><small>{observedChangeCount} yeni gelişme</small>
                 </button>
-                <button type="button" onClick={() => handleQuickAction("tasks")}>
+                <button type="button" onClick={() => handleSidebarSelect("tasks")}>
                   <strong>{workspaceLoading ? "…" : openInternalTasks}</strong><span>iç görev</span><small>{repositoryWorkItems} kaynak işi</small>
                 </button>
                 <button type="button" onClick={() => handleQuickAction("vps")}>
                   <strong>{workspaceLoading ? "…" : `${activeServices}/${totalServices || "?"}`}</strong><span>aktif servis</span><small>VPS</small>
                 </button>
-                <button type="button" onClick={() => handleQuickAction("integrations")} className={blockedIntegrations > 0 ? "has-alert" : undefined}>
+                <button type="button" onClick={() => handleRepairNavigate("settings", "setup-connections")} className={blockedIntegrations > 0 ? "has-alert" : undefined}>
                   <strong>{workspaceLoading ? "…" : blockedIntegrations}</strong><span>eksik bağlantı</span><small>{observedLabel}</small>
                 </button>
               </div>
@@ -589,7 +638,7 @@ export default function Home() {
               profile={personalProfile}
               sessions={sessions}
               loading={workspaceLoading}
-              onRefresh={() => { void refreshWorkspace(); }}
+              onRefresh={() => { void refreshWorkspace(true); }}
               onAsk={handleAskFromWorkspace}
               onOpenSession={(sessionId) => { void handleOpenSession(sessionId); }}
               onDeleteSession={(sessionId) => { void handleDeleteSession(sessionId); }}
@@ -613,6 +662,10 @@ export default function Home() {
           draft={message}
           interimTranscript={voice.interimTranscript}
           messages={messages}
+          pendingApproval={pendingApproval}
+          isProcessing={isSending}
+          onResolveApproval={resolveTurnApproval}
+          onSpeakMessage={replayAssistantSpeech}
           onChange={setMessage}
           onClose={() => setChatOpen(false)}
           onMic={handleMute}

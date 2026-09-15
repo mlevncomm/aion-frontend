@@ -339,6 +339,7 @@ export default function WorkspaceView({
   const [devicePairing, setDevicePairing] = useState<AionDevicePairing | null>(null);
   const [deviceBusy, setDeviceBusy] = useState("");
   const [deviceNote, setDeviceNote] = useState("");
+  const [settingsLoadNote, setSettingsLoadNote] = useState("");
   const projects = useMemo(() => listValue(status?.projects).map(record), [status]);
   const internalTasks = useMemo(() => listValue(status?.internal_tasks).map(record), [status]);
   const observedChanges = useMemo(() => listValue(status?.observed_changes).map(record), [status]);
@@ -364,6 +365,7 @@ export default function WorkspaceView({
     if (view !== "settings") return;
     let cancelled = false;
     setMarketplaceLoading(true);
+    setSettingsLoadNote("");
     Promise.allSettled([getMarketplacePlugins(), getAionVoiceSettings(), getAionOAuthClients(), getAionReadiness()]).then(([catalog, voice, oauth, contract]) => {
       if (cancelled) return;
       if (catalog.status === "fulfilled") setMarketplacePlugins(catalog.value.plugins ?? []);
@@ -373,6 +375,8 @@ export default function WorkspaceView({
       }
       if (oauth.status === "fulfilled") setOauthClients(oauth.value);
       if (contract.status === "fulfilled") setReadiness(contract.value);
+      const failed = [catalog, voice, oauth, contract].filter((result) => result.status === "rejected").length;
+      if (failed > 0) setSettingsLoadNote(`${failed} ayar kaynağı alınamadı. Yenile ile tekrar deneyebilirsin.`);
       setMarketplaceLoading(false);
     });
     if (integrations?.elevenlabs?.configured) {
@@ -388,20 +392,29 @@ export default function WorkspaceView({
     // Presence and history are loaded together: a device that is online but has
     // never run a command is a different situation from one whose commands are
     // failing, and only the pair distinguishes them.
-    const loadHistory = () => {
-      void getAionDeviceCommands()
-        .then((items) => { if (!cancelled) setDeviceCommands(items); })
-        .catch(() => undefined);
+    let pollInFlight = false;
+    const pollDevices = async (initial = false) => {
+      if (pollInFlight) return;
+      pollInFlight = true;
+      try {
+        const [items, history] = await Promise.all([
+          getAionDevices(),
+          getAionDeviceCommands().catch(() => [] as AionDeviceCommand[]),
+        ]);
+        if (!cancelled) {
+          setDevices(items);
+          setDeviceCommands(history);
+          setDeviceNote("");
+        }
+      } catch {
+        if (!cancelled && initial) setDeviceNote("Cihaz listesi alınamadı.");
+      } finally {
+        pollInFlight = false;
+        if (!cancelled && initial) setDeviceBusy("");
+      }
     };
-    void getAionDevices()
-      .then((items) => { if (!cancelled) setDevices(items); })
-      .catch(() => { if (!cancelled) setDeviceNote("Cihaz listesi alınamadı."); })
-      .finally(() => { if (!cancelled) setDeviceBusy(""); });
-    loadHistory();
-    const timer = window.setInterval(() => {
-      void getAionDevices().then((items) => { if (!cancelled) setDevices(items); }).catch(() => undefined);
-      loadHistory();
-    }, 10_000);
+    void pollDevices(true);
+    const timer = window.setInterval(() => { void pollDevices(false); }, 10_000);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [view]);
 
@@ -553,6 +566,36 @@ export default function WorkspaceView({
     }
   };
 
+  const refreshReadiness = async () => {
+    try {
+      setReadiness(await getAionReadiness());
+    } catch {
+      setSettingsLoadNote("Tamamlanma durumu yenilenemedi. Biraz sonra tekrar dene.");
+    }
+  };
+
+  const refreshSettingsDetails = async () => {
+    if (marketplaceLoading) return;
+    setMarketplaceLoading(true);
+    setSettingsLoadNote("");
+    try {
+      const [catalog, voice, oauth, contract] = await Promise.allSettled([
+        getMarketplacePlugins(), getAionVoiceSettings(), getAionOAuthClients(), getAionReadiness(),
+      ]);
+      if (catalog.status === "fulfilled") setMarketplacePlugins(catalog.value.plugins ?? []);
+      if (voice.status === "fulfilled") {
+        setVoiceSettingsState(voice.value);
+        setPronunciationDraft(Object.entries(voice.value.custom_pronunciations ?? {}).map(([term, spoken]) => `${term}=${spoken}`).join("\n"));
+      }
+      if (oauth.status === "fulfilled") setOauthClients(oauth.value);
+      if (contract.status === "fulfilled") setReadiness(contract.value);
+      const failed = [catalog, voice, oauth, contract].filter((result) => result.status === "rejected").length;
+      if (failed > 0) setSettingsLoadNote(`${failed} ayar kaynağı alınamadı. Yenile ile tekrar deneyebilirsin.`);
+    } finally {
+      setMarketplaceLoading(false);
+    }
+  };
+
   const saveIntegration = async (provider: "vercel" | "supabase") => {
     if (integrationBusy) return;
     setIntegrationBusy(provider);
@@ -567,6 +610,7 @@ export default function WorkspaceView({
       }
       setIntegrationNote((current) => ({ ...current, [provider]: "Bağlantı doğrulandı ve güvenli credential store'a kaydedildi." }));
       onRefresh();
+      void refreshReadiness();
     } catch (error) {
       setIntegrationNote((current) => ({
         ...current,
@@ -587,6 +631,7 @@ export default function WorkspaceView({
       setIntegrationNote((current) => ({ ...current, [provider]: "Bağlantı kaldırıldı." }));
       if (provider === "elevenlabs") setElevenVoices([]);
       onRefresh();
+      void refreshReadiness();
     } catch (error) {
       setIntegrationNote((current) => ({
         ...current,
@@ -602,6 +647,7 @@ export default function WorkspaceView({
     try {
       const catalog = await getMarketplacePlugins();
       setMarketplacePlugins(catalog.plugins ?? []);
+      setMarketplaceNote("");
     } catch (error) {
       setMarketplaceNote(apiErrorDetail(error, "Hesap bağlantıları alınamadı."));
     } finally {
@@ -639,6 +685,7 @@ export default function WorkspaceView({
         if (value === "connected") {
           setMarketplaceNote(`${plugin.display_name} hesabı bağlandı ve doğrulandı.`);
           await refreshMarketplace();
+          void refreshReadiness();
           return;
         }
         if (value === "error") throw new Error(stringValue(state.error, "OAuth bağlantısı tamamlanamadı."));
@@ -662,6 +709,7 @@ export default function WorkspaceView({
       setMarketplaceSelected("");
       setMarketplaceNote(`${plugin.display_name} bağlandı ve doğrulandı.`);
       await refreshMarketplace();
+      void refreshReadiness();
     } catch (error) {
       setMarketplaceNote(apiErrorDetail(error, `${plugin.display_name} tokenı doğrulanamadı.`));
     } finally {
@@ -676,6 +724,7 @@ export default function WorkspaceView({
       await disconnectMarketplacePlugin(plugin.id);
       setMarketplaceNote(`${plugin.display_name} bağlantısı kaldırıldı.`);
       await refreshMarketplace();
+      void refreshReadiness();
     } catch (error) {
       setMarketplaceNote(apiErrorDetail(error, `${plugin.display_name} bağlantısı kaldırılamadı.`));
     } finally {
@@ -723,6 +772,7 @@ export default function WorkspaceView({
       setElevenApiKey("");
       setIntegrationNote((current) => ({ ...current, elevenlabs: "Premium kadın ses backend'e bağlandı ve gerçek API ile doğrulandı." }));
       onRefresh();
+      void refreshReadiness();
     } catch (error) {
       setIntegrationNote((current) => ({ ...current, elevenlabs: apiErrorDetail(error, "ElevenLabs bağlantısı kaydedilemedi.") }));
     } finally {
@@ -781,6 +831,7 @@ export default function WorkspaceView({
       setOauthClientSecret("");
       setOauthNote(`${oauthFamily} OAuth uygulaması kaydedildi. Şimdi ilgili hesapta Hesapla giriş yap diyebilirsin.`);
       await refreshMarketplace();
+      void refreshReadiness();
     } catch (error) {
       setOauthNote(apiErrorDetail(error, "OAuth uygulama bilgileri kaydedilemedi."));
     } finally {
@@ -796,6 +847,7 @@ export default function WorkspaceView({
       setOauthClients(await getAionOAuthClients());
       setOauthNote(`${family} OAuth uygulama bilgileri kaldırıldı.`);
       await refreshMarketplace();
+      void refreshReadiness();
     } catch (error) {
       setOauthNote(apiErrorDetail(error, "OAuth uygulama bilgileri kaldırılamadı."));
     } finally {
@@ -942,7 +994,8 @@ export default function WorkspaceView({
           <p>Tek kullanımlık eşleştirme kodu oluştur. Komut yalnız senin bilgisayarında çalışır; device token sohbete veya frontend'e geri gösterilmez.</p>
           <p className="workspace-companion-hint">
             Aranacak ayrı bir uygulama yok: Companion, kopyaladığın komutun indirip çalıştırdığı bir PowerShell betiği.
-            Komutu <strong>PowerShell</strong>'e yapıştırıp Enter'a basman yeterli.
+            Komutu <strong>PowerShell</strong>'e yapıştırıp Enter'a bas. <strong>Bu sürümde o PowerShell oturumu açık kaldığı sürece cihaz çevrimiçi kalır.</strong>
+            OFFLINE görünüyorsa yeni eşleştirme kodu oluşturup komutu tekrar çalıştır.
           </p>
           <div className="workspace-integration-actions">
             <button type="button" className="is-primary" disabled={Boolean(deviceBusy)} onClick={() => { void createDevicePair(); }} data-testid="device-pair-create-button">
@@ -1184,7 +1237,8 @@ export default function WorkspaceView({
     const elevenConfigured = elevenlabs.configured === true;
     return (
       <div className="workspace-view">
-        <Header eyebrow="AION çalışma biçimi" title="Ayarlar" copy="Model, güvenlik, ses ve görünüm yapılandırmasının okunabilir özeti." loading={loading} onRefresh={onRefresh} />
+        <Header eyebrow="AION çalışma biçimi" title="Ayarlar" copy="Model, güvenlik, ses ve görünüm yapılandırmasının okunabilir özeti." loading={loading || marketplaceLoading} onRefresh={() => { onRefresh(); void refreshSettingsDetails(); }} />
+        {settingsLoadNote ? <p className="workspace-integration-note" role="status">{settingsLoadNote}</p> : null}
         <div className="workspace-settings-grid">
           <article className="workspace-setting-card"><span><Bot size={17} /></span><div><small>Model</small><strong>{stringValue(settings?.provider, "Durum alınamadı")}</strong><p>{stringValue(settings?.model, "Model alınamadı")}</p></div></article>
           <article className="workspace-setting-card"><span><KeyRound size={17} /></span><div><small>Model politikası</small><strong>Yönlendirme</strong><p>{stringValue(settings?.model_policy, "Politika alınamadı")}</p></div></article>
@@ -1285,7 +1339,7 @@ export default function WorkspaceView({
               </article>
             ))}
           </div>
-          {!readiness ? <p className="workspace-integration-note">PDF tamamlanma durumu backend'den doğrulanıyor…</p> : null}
+          {!readiness && !settingsLoadNote ? <p className="workspace-integration-note">AION tamamlanma durumu backend'den doğrulanıyor…</p> : null}
           {readiness?.owner_actions?.length ? (
             <div className="workspace-integration-actions">
               <button type="button" onClick={() => onAsk("AION, PDF tamamlanma sözleşmesinde benden işlem gerektiren maddeleri gerçek mevcut duruma göre sırala. Yalnız benim yapmam gereken hesap bağlantısı veya cihaz izni adımlarını kısa ve adım adım anlat.")}>Benden gerekenleri göster</button>
@@ -1583,7 +1637,7 @@ export default function WorkspaceView({
       <div className="workspace-profile-card is-personal-profile" id="profile-owner-card">
         <div className="workspace-profile-avatar">M</div>
         <div className="workspace-profile-copy">
-          <p>Tek kullanıcı · Europe/Istanbul · Türkçe</p>
+          <p>Tek kullanıcı · {owner?.timezone || "Europe/Istanbul"} · {owner?.language || "Türkçe"}</p>
           <h2>{owner?.name || "Mehmet"}</h2>
           <span>{owner?.relationship || "AION kişisel yapay zekâ işletim sistemi"}</span>
         </div>

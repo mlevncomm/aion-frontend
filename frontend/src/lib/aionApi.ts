@@ -2,6 +2,12 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 
 const CHAT_SESSION_KEY = "aion-live-chat-session";
 export const DEFAULT_AION_MODEL = "nex-agi/nex-n2.5-mini:free";
+// Keep the paid-model prohibition intact while giving a stalled free model a
+// second route. OpenRouter's `free` router itself is zero-cost and tool-capable.
+const FALLBACK_AION_MODEL = "openrouter/free";
+const TURN_POLL_INTERVAL_MS = 900;
+const TURN_STALL_TIMEOUT_MS = 60_000;
+const TURN_ABSOLUTE_TIMEOUT_MS = 120_000;
 
 export interface AgentChatSession {
   session_id: string;
@@ -35,6 +41,17 @@ interface TurnAccepted {
   turn_id: string;
   session_id: string;
 }
+
+export type AionApprovalDecision = "allow" | "deny";
+
+export interface AionApprovalRequest {
+  approvalId: string;
+  name: string;
+  summary: string;
+  input: Record<string, unknown>;
+}
+
+type AionApprovalHandler = (request: AionApprovalRequest) => Promise<AionApprovalDecision>;
 
 export interface AionStatusSummary {
   observed_at?: number;
@@ -426,10 +443,10 @@ export async function deleteAionChatSession(sessionId: string): Promise<void> {
   }
 }
 
-export async function createAionChatSession(): Promise<string> {
+export async function createAionChatSession(model = DEFAULT_AION_MODEL): Promise<string> {
   const session = await apiPost<AgentChatSession>("/agent-chat/sessions", {
     provider: "openrouter",
-    model: DEFAULT_AION_MODEL,
+    model,
     permission_mode: "ask",
     title: "AION",
     surface: "jarvis",
@@ -459,9 +476,9 @@ export async function ensureAionChatSession(): Promise<string> {
   return createAionChatSession();
 }
 
-export async function resetAionChatSession(): Promise<string> {
+export async function resetAionChatSession(model = DEFAULT_AION_MODEL): Promise<string> {
   sessionStorage.removeItem(CHAT_SESSION_KEY);
-  return createAionChatSession();
+  return createAionChatSession(model);
 }
 
 function eventTurnId(event: AgentChatEvent): string {
@@ -486,12 +503,119 @@ function turnFinished(events: AgentChatEvent[], turnId: string): { done: boolean
   };
 }
 
+function pendingApprovalForTurn(
+  events: AgentChatEvent[],
+  turnId: string,
+  handled: Set<string>,
+): AionApprovalRequest | null {
+  const resolved = new Set(
+    events
+      .filter((item) => item.kind === "approval_resolved" && eventTurnId(item) === turnId)
+      .map((item) => typeof item.payload.approval_id === "string" ? item.payload.approval_id : "")
+      .filter(Boolean),
+  );
+  for (const item of events) {
+    if (item.kind !== "approval_required" || eventTurnId(item) !== turnId) continue;
+    const approvalId = typeof item.payload.approval_id === "string" ? item.payload.approval_id : "";
+    if (!approvalId || resolved.has(approvalId) || handled.has(approvalId)) continue;
+    const rawInput = item.payload.input;
+    return {
+      approvalId,
+      name: typeof item.payload.name === "string" ? item.payload.name : "AION işlemi",
+      summary: typeof item.payload.summary === "string" ? item.payload.summary : "AION bir işlem için onay istiyor.",
+      input: rawInput && typeof rawInput === "object" && !Array.isArray(rawInput) ? rawInput as Record<string, unknown> : {},
+    };
+  }
+  return null;
+}
+
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+class AionTurnStalledError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AionTurnStalledError";
+  }
+}
+
+async function cancelAionTurn(sessionId: string): Promise<void> {
+  await apiPost(`/agent-chat/sessions/${encodeURIComponent(sessionId)}/cancel`, {}).catch(() => undefined);
+}
+
+async function switchAionSessionModel(sessionId: string, model: string): Promise<void> {
+  await apiPatch<AgentChatSession>(`/agent-chat/sessions/${encodeURIComponent(sessionId)}`, { model });
+}
+
+async function resolveAionApproval(
+  sessionId: string,
+  approvalId: string,
+  decision: AionApprovalDecision,
+): Promise<void> {
+  await apiPost(`/agent-chat/sessions/${encodeURIComponent(sessionId)}/approvals/${encodeURIComponent(approvalId)}`, { decision });
+}
+
+async function waitForAionTurn(
+  sessionId: string,
+  turnId: string,
+  onApproval?: AionApprovalHandler,
+): Promise<string> {
+  let deadlineAt = Date.now() + TURN_ABSOLUTE_TIMEOUT_MS;
+  let lastProgressAt = Date.now();
+  let lastSeq = -1;
+  const handledApprovals = new Set<string>();
+
+  while (Date.now() < deadlineAt) {
+    const snapshot = await apiGet<AgentChatSnapshot>(`/agent-chat/sessions/${encodeURIComponent(sessionId)}`);
+    const newestSeq = snapshot.events.at(-1)?.seq ?? -1;
+    if (newestSeq !== lastSeq) {
+      lastSeq = newestSeq;
+      lastProgressAt = Date.now();
+    }
+
+    const result = turnFinished(snapshot.events, turnId);
+    if (result.done) {
+      if (result.error) throw new Error(result.error);
+      const answer = assistantTextForTurn(snapshot.events, turnId) || snapshot.session.preview?.trim();
+      if (!answer) throw new Error("AION boş bir yanıt döndürdü.");
+      return answer;
+    }
+
+    const approval = pendingApprovalForTurn(snapshot.events, turnId, handledApprovals);
+    if (approval) {
+      if (!onApproval) {
+        await cancelAionTurn(sessionId);
+        throw new Error("AION bir işlem için onay bekliyor fakat bu ekranda onay verilemiyor.");
+      }
+      handledApprovals.add(approval.approvalId);
+      const decision = await onApproval(approval);
+      await resolveAionApproval(sessionId, approval.approvalId, decision);
+      // Human approval time is not model latency. Give the resumed turn a fresh
+      // answer budget instead of cancelling it because the owner read the card.
+      deadlineAt = Date.now() + TURN_ABSOLUTE_TIMEOUT_MS;
+      lastProgressAt = Date.now();
+      continue;
+    }
+
+    // A complex tool run may legitimately take time, so only call a turn
+    // stalled when its event stream has made no progress for a full minute.
+    // This catches the observed 2–5 minute provider queue without killing an
+    // actively progressing workflow.
+    if (Date.now() - lastProgressAt >= TURN_STALL_TIMEOUT_MS) {
+      await cancelAionTurn(sessionId);
+      throw new AionTurnStalledError("AION model yanıtı ilerlemedi; ücretsiz yedek modele geçiliyor.");
+    }
+    await wait(TURN_POLL_INTERVAL_MS);
+  }
+
+  await cancelAionTurn(sessionId);
+  throw new AionTurnStalledError("AION yanıtı süre sınırını aştı; çalışan turn güvenli biçimde durduruldu.");
+}
 
 export async function sendAionMessage(
   text: string,
   sessionId?: string,
   inputMode: "text" | "voice" = "text",
+  onApproval?: AionApprovalHandler,
 ): Promise<{ sessionId: string; text: string }> {
   let activeSession = sessionId ?? await ensureAionChatSession();
   const body = {
@@ -501,42 +625,41 @@ export async function sendAionMessage(
     tool_choices: [],
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul",
   };
-  let accepted = await apiPost<TurnAccepted>(
-    `/agent-chat/sessions/${encodeURIComponent(activeSession)}/messages`,
-    body,
-  );
+  let usedFallback = false;
 
-  const deadline = Date.now() + 90_000;
-  let retried = false;
-  while (Date.now() < deadline) {
-    const snapshot = await apiGet<AgentChatSnapshot>(`/agent-chat/sessions/${encodeURIComponent(activeSession)}`);
-    const result = turnFinished(snapshot.events, accepted.turn_id);
-    if (result.done) {
-      // A session remembers the model it was opened with. When that model
-      // leaves OpenRouter's free tool-capable list, every later turn in the
-      // session dies on the guard and the chat is permanently dead even though
-      // a usable free model exists. Reopen once on the current default rather
-      // than leave the owner with a chat that can never answer again.
-      if (result.error && MODEL_GUARD_ERROR.test(result.error) && !retried) {
-        retried = true;
-        activeSession = await resetAionChatSession();
-        accepted = await apiPost<TurnAccepted>(
-          `/agent-chat/sessions/${encodeURIComponent(activeSession)}/messages`,
-          body,
-        );
-        continue;
-      }
-      if (result.error) throw new Error(result.error);
-      const answer = assistantTextForTurn(snapshot.events, accepted.turn_id) || snapshot.session.preview?.trim();
-      if (!answer) throw new Error("AION boş bir yanıt döndürdü.");
+  while (true) {
+    const accepted = await apiPost<TurnAccepted>(
+      `/agent-chat/sessions/${encodeURIComponent(activeSession)}/messages`,
+      body,
+    );
+
+    try {
+      const answer = await waitForAionTurn(activeSession, accepted.turn_id, onApproval);
       return { sessionId: activeSession, text: answer };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      const shouldFallback = !usedFallback && (
+        error instanceof AionTurnStalledError
+        || MODEL_GUARD_ERROR.test(message)
+        || /zaman aşım/i.test(message)
+      );
+      if (!shouldFallback) throw error;
+
+      usedFallback = true;
+      await cancelAionTurn(activeSession);
+      try {
+        // Preserve the conversation when possible; only the model changes.
+        await switchAionSessionModel(activeSession, FALLBACK_AION_MODEL);
+      } catch {
+        // If the old session cannot be patched, create one clean fallback
+        // session rather than leaving the owner with a permanently dead chat.
+        activeSession = await resetAionChatSession(FALLBACK_AION_MODEL);
+      }
     }
-    await wait(450);
   }
-  throw new Error("AION yanıtı zaman aşımına uğradı.");
 }
 
-export async function speakWithAion(text: string): Promise<HTMLAudioElement> {
+export async function speakWithAion(text: string, reusableAudio?: HTMLAudioElement): Promise<HTMLAudioElement> {
   // Synthesis measured at ~1.3s for a long sentence. A request still pending
   // after 12s is a stalled mobile connection, and the voice loop must be told
   // so rather than waiting on a promise that will never settle.
@@ -557,19 +680,47 @@ export async function speakWithAion(text: string): Promise<HTMLAudioElement> {
   if (!response.ok) throw new Error(`TTS ${response.status}`);
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
-  audio.addEventListener("ended", () => URL.revokeObjectURL(url), { once: true });
-  audio.addEventListener("error", () => URL.revokeObjectURL(url), { once: true });
+  const audio = reusableAudio ?? new Audio();
+  const previousObjectUrl = audio.dataset.aionObjectUrl;
+  if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
+  audio.src = url;
+  audio.preload = "auto";
+  audio.volume = 1;
+  audio.dataset.aionObjectUrl = url;
+  audio.addEventListener("ended", () => {
+    if (audio.dataset.aionObjectUrl === url) {
+      URL.revokeObjectURL(url);
+      delete audio.dataset.aionObjectUrl;
+    }
+  }, { once: true });
+  audio.addEventListener("error", () => {
+    if (audio.dataset.aionObjectUrl === url) {
+      URL.revokeObjectURL(url);
+      delete audio.dataset.aionObjectUrl;
+    }
+  }, { once: true });
   return audio;
 }
 
+const SESSION_FETCH_TIMEOUT_MS = 12_000;
+
+async function sessionFetch(path: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), SESSION_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(path, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export async function backendSessionActive(): Promise<boolean> {
-  const response = await fetch("/api/config", { credentials: "same-origin", cache: "no-store" });
+  const response = await sessionFetch("/api/config", { credentials: "same-origin", cache: "no-store" });
   return response.ok;
 }
 
 export async function createBackendSession(controlKey: string): Promise<boolean> {
-  const response = await fetch("/api/ui/session", {
+  const response = await sessionFetch("/api/ui/session", {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },

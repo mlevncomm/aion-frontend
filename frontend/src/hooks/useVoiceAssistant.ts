@@ -69,7 +69,9 @@ const RECOGNITION_RESTART_MS = 180;
 // so a speaker in a quiet room does not interrupt itself.
 // Ceiling for one spoken reply: synthesis plus playback of a long answer.
 // Passing it means something is wedged, not that AION is still talking.
-const SPEAK_WATCHDOG_MS = 60_000;
+const SPEAK_WATCHDOG_MS = 30_000;
+const SERVER_AUDIO_START_TIMEOUT_MS = 3_500;
+const IOS_UNLOCK_SILENCE = "data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 // Some mobile browsers never fire `onend` for an utterance. Estimating the
 // spoken duration keeps the chunk loop moving instead of waiting forever.
 const UTTERANCE_MS_PER_CHAR = 95;
@@ -191,6 +193,8 @@ export function useVoiceAssistant() {
   const meterStartingRef = useRef(false);
   const speakMeterRef = useRef<number | null>(null);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
+  const reusablePlaybackRef = useRef<HTMLAudioElement | null>(null);
+  const speechRunRef = useRef(0);
   const bargeInArmedRef = useRef(false);
   const bargeInHitsRef = useRef(0);
   const bargeInSinceRef = useRef(0);
@@ -366,6 +370,31 @@ export function useVoiceAssistant() {
     }
   }, [applyLevel, startSpeakingMeter, stopSpeakingMeter]);
 
+  const unlockPlayback = useCallback(() => {
+    // iOS Safari only grants unmuted media playback from a direct user gesture.
+    // Prime ONE reusable element on the send/mic tap, then reuse that exact
+    // element when the asynchronous TTS response arrives seconds later.
+    let audio = reusablePlaybackRef.current;
+    if (!audio) {
+      audio = new Audio(IOS_UNLOCK_SILENCE);
+      audio.preload = "auto";
+      audio.volume = 0.01;
+      reusablePlaybackRef.current = audio;
+    }
+    try {
+      const promise = audio.play();
+      void promise?.then(() => {
+        audio?.pause();
+        if (audio) {
+          audio.currentTime = 0;
+          audio.volume = 1;
+        }
+      }).catch(() => undefined);
+    } catch {
+      // Non-iOS browsers do not need priming; a failed unlock is harmless.
+    }
+  }, []);
+
   const stopRecognition = useCallback(() => {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
@@ -512,7 +541,11 @@ export function useVoiceAssistant() {
   }, [activateContinuous, startAudioMeter, stopAudioMeter, stopRecognition]);
 
   const speak = useCallback(async (text: string) => {
+    const runId = ++speechRunRef.current;
     pausedForResponseRef.current = true;
+    // The textual answer already exists. Audio is now a best-effort side
+    // effect and must never leave the UI claiming the model is still thinking.
+    setStatus("idle");
     stopRecognition();
     playbackRef.current?.pause();
     playbackRef.current = null;
@@ -538,6 +571,7 @@ export function useVoiceAssistant() {
     const resumeAfterSpeech = () => {
       if (resumed) return;
       resumed = true;
+      if (runId !== speechRunRef.current) return;
       if (watchdogRef.current !== null) {
         window.clearTimeout(watchdogRef.current);
         watchdogRef.current = null;
@@ -587,28 +621,55 @@ export function useVoiceAssistant() {
       // the time the owner waits before the written answer is usable.
       if (serverSpeechFailed) return false;
       try {
-        const audio = await speakWithAion(speechText);
+        const audio = await speakWithAion(speechText, reusablePlaybackRef.current ?? undefined);
         // Synthesis is a network round trip; the owner may already have taken
         // the turn back by the time it lands, and starting playback then would
         // talk over them.
         if (interrupted) return true;
         playbackRef.current = audio;
         await new Promise<void>((resolve, reject) => {
+          let started = false;
+          let settled = false;
+          const finish = (error?: Error) => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(startTimer);
+            if (error) reject(error);
+            else resolve();
+          };
+          const startTimer = window.setTimeout(() => {
+            if (!started) finish(new Error("iOS ses oynatmayı başlatmadı."));
+          }, SERVER_AUDIO_START_TIMEOUT_MS);
           audio.addEventListener("play", () => {
+            started = true;
+            window.clearTimeout(startTimer);
+            if (runId !== speechRunRef.current) {
+              audio.pause();
+              finish();
+              return;
+            }
             setStatus("speaking");
             void startPlaybackMeter(audio);
           }, { once: true });
-          audio.addEventListener("ended", () => resolve(), { once: true });
+          audio.addEventListener("ended", () => finish(), { once: true });
           // A barge-in pauses the element; without this the promise would
           // never settle and speak() would hang for the rest of the session.
-          audio.addEventListener("pause", () => resolve(), { once: true });
-          audio.addEventListener("error", () => reject(new Error("AION ses dosyası oynatılamadı.")), { once: true });
-          void audio.play().catch(reject);
+          audio.addEventListener("pause", () => finish(), { once: true });
+          audio.addEventListener("error", () => finish(new Error("AION ses dosyası oynatılamadı.")), { once: true });
+          try {
+            const playPromise = audio.play();
+            void playPromise?.catch((error) => finish(error instanceof Error ? error : new Error("Ses başlatılamadı.")));
+          } catch (error) {
+            finish(error instanceof Error ? error : new Error("Ses başlatılamadı."));
+          }
         });
         playbackRef.current = null;
         resumeAfterSpeech();
         return true;
       } catch {
+        audioSafePause: {
+          try { playbackRef.current?.pause(); } catch { break audioSafePause; }
+        }
         playbackRef.current = null;
         serverSpeechFailed = true;
         return false;
@@ -692,13 +753,23 @@ export function useVoiceAssistant() {
   }, [startAudioMeter, startPlaybackMeter, startSpeakingMeter, stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markProcessing = useCallback(() => {
+    ++speechRunRef.current;
     pausedForResponseRef.current = true;
+    if (watchdogRef.current !== null) {
+      window.clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+    playbackRef.current?.pause();
+    playbackRef.current = null;
+    window.speechSynthesis?.cancel();
+    bargeInArmedRef.current = false;
+    stopSpeakingMeter();
     if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
     voiceTurnTimerRef.current = null;
     stopRecognition();
     stopAudioMeter();
     setStatus("processing");
-  }, [stopAudioMeter, stopRecognition]);
+  }, [stopAudioMeter, stopRecognition, stopSpeakingMeter]);
 
   const markIdle = useCallback(() => {
     pausedForResponseRef.current = false;
@@ -730,6 +801,7 @@ export function useVoiceAssistant() {
   }, []);
 
   useEffect(() => () => {
+    ++speechRunRef.current;
     continuousEnabledRef.current = false;
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     if (voiceTurnTimerRef.current !== null) window.clearTimeout(voiceTurnTimerRef.current);
@@ -756,5 +828,6 @@ export function useVoiceAssistant() {
     status,
     toggleMute,
     transcript,
+    unlockPlayback,
   };
 }
