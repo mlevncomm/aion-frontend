@@ -51,6 +51,12 @@ async function request<T>(method: string, path: string, body?: JsonBody): Promis
   }
 
   // FastAPI reports request-validation failures as 422 with a {detail: [...]} body.
+  if (res.status === 401 && typeof window !== "undefined" && !window.location.pathname.startsWith("/giris")) {
+    // The server no longer knows this browser session (expired or revoked):
+    // send the owner to the login screen instead of showing a raw 401.
+    sessionStorage.removeItem("aion-admin-session");
+    window.location.assign("/giris");
+  }
   if (!res.ok) {
     const errBody = await res.json().catch(() => null);
     throw new ApiError(res.status, errBody);
