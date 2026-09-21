@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, Menu, MessageCircle, Mic, MicOff, Plus } from "lucide-react";
+import { AudioLines, Menu, MessageCircle, Mic, MicOff, PenSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ConversationPanel, { type ChatMessage } from "@/components/ConversationPanel";
+import AppNav, { type AppView } from "@/components/AppNav";
+import ChatView, { type ChatMessage } from "@/components/ChatView";
 import OrbAvatar from "@/components/OrbAvatar";
 import QuickActions from "@/components/QuickActions";
-import Sidebar from "@/components/Sidebar";
 import ThemePicker from "@/components/ThemePicker";
 import WorkspaceView, { type WorkspaceViewId } from "@/components/WorkspaceView";
 import { endFrontendSession } from "@/lib/frontendAuth";
@@ -27,6 +27,7 @@ import {
   type AionPersonalProfile,
   type AionSettings,
   type AionStatusSummary,
+  type AionTurnStep,
 } from "@/lib/aionApi";
 import { useVoiceAssistant, type VoiceStatus } from "@/hooks/useVoiceAssistant";
 
@@ -42,7 +43,8 @@ const quickPrompts: Record<string, string> = {
 
 
 const sectionNames: Record<string, string> = {
-  home: "Ana Sayfa",
+  chat: "Sohbet",
+  home: "Kontrol merkezi",
   projects: "Projeler",
   tasks: "Görevler",
   devices: "Cihazlar",
@@ -53,9 +55,7 @@ const sectionNames: Record<string, string> = {
   profile: "Profil",
 };
 
-const initialMessages: ChatMessage[] = [
-  { id: "welcome", role: "assistant", text: "Merhaba Mehmet. Buradayım; konuşabilir veya yazabilirsin." },
-];
+const initialMessages: ChatMessage[] = [];
 
 // Above the hook's own watchdog, so it only fires if that one is bypassed.
 const SPEECH_TURN_CEILING_MS = 70_000;
@@ -87,14 +87,18 @@ function stringList(value: unknown): string[] {
 
 export default function Home() {
   const navigate = useNavigate();
-  const [activeItem, setActiveItem] = useState("home");
+  const [activeItem, setActiveItem] = useState<AppView>("home");
   const queuedTurnRef = useRef<{ text: string; inputMode: "text" | "voice" } | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [statusNote, setStatusNote] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  const chatOpen = activeItem === "chat";
+  const setChatOpen = useCallback((open: boolean) => {
+    if (open) setActiveItem("chat");
+  }, []);
+  const [turnSteps, setTurnSteps] = useState<AionTurnStep[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [pendingApproval, setPendingApproval] = useState<AionApprovalRequest | null>(null);
   const approvalResolverRef = useRef<((decision: AionApprovalDecision) => void) | null>(null);
@@ -140,7 +144,7 @@ export default function Home() {
       setChatOpen(true);
       setStatusNote("AION bir işlem için onayını bekliyor");
     })
-  ), []);
+  ), [setChatOpen]);
 
   const resolveTurnApproval = useCallback((decision: AionApprovalDecision) => {
     const resolve = approvalResolverRef.current;
@@ -216,11 +220,10 @@ export default function Home() {
     };
   }, [refreshWorkspace]);
 
-  const handleSidebarSelect = (item: string) => {
+  const handleSidebarSelect = (item: AppView) => {
     setActiveItem(item);
     setMobileMenuOpen(false);
     setThemePickerOpen(false);
-    setChatOpen(false);
     setStatusNote(item === "home" ? "" : `${sectionNames[item] ?? item} açıldı`);
   };
 
@@ -229,7 +232,7 @@ export default function Home() {
   // tick; a few animation frames of retry is enough and avoids a timer that
   // would scroll after the owner has already moved on.
   const handleRepairNavigate = (surface: string, anchor: string) => {
-    handleSidebarSelect(surface);
+    handleSidebarSelect(surface as AppView);
     let attempts = 0;
     const focusAnchor = () => {
       const target = document.getElementById(anchor);
@@ -269,11 +272,12 @@ export default function Home() {
     setMessages((current) => [...current, userMessage]);
     setMessage("");
     setIsSending(true);
+    setTurnSteps([]);
     markProcessing();
     setStatusNote("AION gerçek kaynakları kontrol ediyor");
 
     try {
-      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined, inputMode, requestTurnApproval);
+      const result = await sendAionMessage(trimmedPrompt, chatSessionId || undefined, inputMode, requestTurnApproval, setTurnSteps);
       setChatSessionId(result.sessionId);
       setMessages((current) => [
         ...current,
@@ -288,22 +292,30 @@ export default function Home() {
       // request lifecycle: iOS may refuse/defer autoplay, but that must never
       // keep the composer disabled or show a fake "Düşünüyorum" state.
       setIsSending(false);
-      void Promise.race([
-        speak(result.text),
-        new Promise<void>((resolve) => window.setTimeout(resolve, SPEECH_TURN_CEILING_MS)),
-      ]).catch(() => markIdle());
+      setTurnSteps([]);
+      // Read the answer aloud only when the owner is talking to AION. A typed
+      // question gets a typed answer; the speaker button replays it on demand.
+      if (inputMode === "voice" || voice.continuousEnabled) {
+        void Promise.race([
+          speak(result.text),
+          new Promise<void>((resolve) => window.setTimeout(resolve, SPEECH_TURN_CEILING_MS)),
+        ]).catch(() => markIdle());
+      } else {
+        markIdle();
+      }
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Bilinmeyen bağlantı hatası";
       setMessages((current) => [
         ...current,
-        { id: `assistant-error-${Date.now()}`, role: "assistant", text: `Bağlantı hatası: ${detail}` },
+        { id: `assistant-error-${Date.now()}`, role: "assistant", error: true, text: `**Yanıt alınamadı.** ${detail}\n\nAynı mesajı tekrar gönderebilirsin; ücretsiz modeller bazen yoğun olabiliyor.` },
       ]);
       setStatusNote("AION yanıtı alınamadı");
       markIdle();
     } finally {
       setIsSending(false);
+      setTurnSteps([]);
     }
-  }, [chatSessionId, isSending, markIdle, markProcessing, refreshWorkspace, requestTurnApproval, speak, unlockPlayback]);
+  }, [chatSessionId, isSending, markIdle, markProcessing, refreshWorkspace, requestTurnApproval, speak, unlockPlayback, voice.continuousEnabled]);
 
   const replayAssistantSpeech = useCallback((text: string) => {
     unlockPlayback();
@@ -419,7 +431,6 @@ export default function Home() {
   const handleLogout = () => {
     setMobileMenuOpen(false);
     setThemePickerOpen(false);
-    setChatOpen(false);
     void endFrontendSession().finally(() => navigate("/giris", { replace: true }));
   };
 
@@ -470,70 +481,79 @@ export default function Home() {
           : "idle";
 
   return (
-    <div className="assistant-stage">
-      <div className="ambient-light ambient-light-one" aria-hidden="true" />
-      <div className="ambient-light ambient-light-two" aria-hidden="true" />
-      <main className={"assistant-shell"} id="assistant-home-screen" data-testid="assistant-home-screen">
-        {mobileMenuOpen ? (
-          <button
-            type="button"
-            className="mobile-sidebar-backdrop"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Menüyü kapat"
-            data-testid="mobile-sidebar-backdrop"
+    <div className="v2-app">
+      <AppNav
+        active={activeItem}
+        mobileOpen={mobileMenuOpen}
+        sessions={sessions}
+        currentSessionId={chatSessionId}
+        projectCount={projectCount}
+        taskCount={openInternalTasks}
+        alertCount={attentionCount}
+        ownerName={ownerName}
+        busy={isSending}
+        onSelect={handleSidebarSelect}
+        onNewChat={() => { void handleNewChat(); }}
+        onOpenSession={(sessionId) => { setMobileMenuOpen(false); void handleOpenSession(sessionId); }}
+        onOpenTheme={() => { setMobileMenuOpen(false); setThemePickerOpen(true); }}
+        onLogout={handleLogout}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+
+      <ThemePicker
+        open={themePickerOpen}
+        onClose={() => setThemePickerOpen(false)}
+        onThemeChange={(themeLabel) => setStatusNote(`${themeLabel} teması etkinleştirildi`)}
+      />
+
+      <main className={`v2-main is-${activeItem}`} id="assistant-home-screen" data-testid="assistant-home-screen">
+        {chatOpen ? (
+          <ChatView
+            messages={messages}
+            draft={message}
+            isProcessing={isSending}
+            steps={turnSteps}
+            pendingApproval={pendingApproval}
+            voiceStatus={voice.status}
+            voiceError={voice.error}
+            interimTranscript={voice.interimTranscript}
+            ownerName={ownerName}
+            onChange={setMessage}
+            onSubmit={handleSubmit}
+            onSuggestion={(prompt) => { void submitPrompt(prompt); }}
+            onResolveApproval={resolveTurnApproval}
+            onSpeakMessage={replayAssistantSpeech}
+            onStopSpeaking={voice.stopSpeaking}
+            onMic={handleMute}
+            onNewChat={() => { void handleNewChat(); }}
+            onOpenMenu={() => setMobileMenuOpen(true)}
           />
-        ) : null}
-
-        <Sidebar
-          activeItem={activeItem}
-          mobileOpen={mobileMenuOpen}
-          projectCount={projectCount}
-          taskCount={openInternalTasks}
-          alertCount={attentionCount}
-          chatOpen={chatOpen}
-          activeServices={activeServices}
-          totalServices={totalServices}
-          blockedIntegrations={blockedIntegrations}
-          lastObserved={observedLabel}
-          onClose={() => setMobileMenuOpen(false)}
-          onLogout={handleLogout}
-          onSelect={handleSidebarSelect}
-          onOpenChat={openChat}
-          onNewChat={() => { void handleNewChat(); }}
-        />
-
-        <ThemePicker
-          open={themePickerOpen}
-          onClose={() => setThemePickerOpen(false)}
-          onThemeChange={(themeLabel) => setStatusNote(`${themeLabel} teması etkinleştirildi`)}
-        />
-
-        <section className={`assistant-content${activeItem === "home" ? " is-home" : " is-workspace"}`} aria-label="AION çalışma alanı">
-          <div className="content-wash" aria-hidden="true" />
-          <header className="mobile-topbar" data-testid="mobile-topbar">
-            <button
-              type="button"
-              className="mobile-menu-button"
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Menüyü aç"
-              aria-expanded={mobileMenuOpen}
-              data-testid="mobile-menu-button"
-            >
-              <Menu size={21} aria-hidden="true" />
-            </button>
-            <span className="mobile-brand" data-testid="mobile-brand">{sectionNames[activeItem] ?? "AION"}</span>
-            <button
-              type="button"
-              className="mobile-menu-button"
-              onClick={() => { void handleNewChat(); }}
-              aria-label="Yeni sohbet"
-              data-testid="mobile-new-chat-button"
-            >
-              <Plus size={20} aria-hidden="true" />
-            </button>
-          </header>
-
-          {activeItem === "home" ? (
+        ) : (
+          <>
+            <header className="v2-topbar" data-testid="mobile-topbar">
+              <button
+                type="button"
+                className="v2-icon-btn"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Menüyü aç"
+                aria-expanded={mobileMenuOpen}
+                data-testid="mobile-menu-button"
+              >
+                <Menu size={20} aria-hidden="true" />
+              </button>
+              <span className="v2-topbar-title" data-testid="mobile-brand">{sectionNames[activeItem] ?? "AION"}</span>
+              <button
+                type="button"
+                className="v2-icon-btn"
+                onClick={() => { void handleNewChat(); }}
+                aria-label="Yeni sohbet"
+                data-testid="mobile-new-chat-button"
+              >
+                <PenSquare size={19} aria-hidden="true" />
+              </button>
+            </header>
+            <div className={`v2-page assistant-content${activeItem === "home" ? " is-home" : " is-workspace"}`}>
+              {activeItem === "home" ? (
             <div className="hero-content">
               <OrbAvatar activity={orbActivity} onClick={handleVoicePrimary} />
               <div className="greeting" data-testid="greeting-block">
@@ -628,54 +648,37 @@ export default function Home() {
                 {statusNote}
               </p>
             </div>
-          ) : (
-            <WorkspaceView
-              key={activeItem}
-              view={activeItem as WorkspaceViewId}
-              status={systemStatus}
-              settings={aionSettings}
-              integrations={aionIntegrations}
-              profile={personalProfile}
-              sessions={sessions}
-              loading={workspaceLoading}
-              onRefresh={() => { void refreshWorkspace(true); }}
-              onAsk={handleAskFromWorkspace}
-              onOpenSession={(sessionId) => { void handleOpenSession(sessionId); }}
-              onDeleteSession={(sessionId) => { void handleDeleteSession(sessionId); }}
-              onOpenTheme={() => setThemePickerOpen(true)}
-              onNavigate={handleRepairNavigate}
-            />
-          )}
-        </section>
-
-        <button
-          type="button"
-          className="global-chat-fab"
-          onClick={openChat}
-          aria-label="AION sohbetini aç"
-          data-testid="global-chat-fab"
-        >
-          <MessageCircle size={20} aria-hidden="true" />
-        </button>
-
-        <ConversationPanel
-          draft={message}
-          interimTranscript={voice.interimTranscript}
-          messages={messages}
-          pendingApproval={pendingApproval}
-          isProcessing={isSending}
-          onResolveApproval={resolveTurnApproval}
-          onSpeakMessage={replayAssistantSpeech}
-          onChange={setMessage}
-          onClose={() => setChatOpen(false)}
-          onMic={handleMute}
-          onNewChat={() => { void handleNewChat(); }}
-          onOpenMenu={() => setMobileMenuOpen(true)}
-          onSubmit={handleSubmit}
-          open={chatOpen}
-          voiceError={voice.error}
-          voiceStatus={voice.status}
-        />
+              ) : (
+                <WorkspaceView
+                  key={activeItem}
+                  view={activeItem as WorkspaceViewId}
+                  status={systemStatus}
+                  settings={aionSettings}
+                  integrations={aionIntegrations}
+                  profile={personalProfile}
+                  sessions={sessions}
+                  loading={workspaceLoading}
+                  onRefresh={() => { void refreshWorkspace(true); }}
+                  onAsk={handleAskFromWorkspace}
+                  onOpenSession={(sessionId) => { void handleOpenSession(sessionId); }}
+                  onDeleteSession={(sessionId) => { void handleDeleteSession(sessionId); }}
+                  onOpenTheme={() => setThemePickerOpen(true)}
+                  onNavigate={handleRepairNavigate}
+                />
+              )}
+            </div>
+            <button
+              type="button"
+              className="v2-chat-fab"
+              onClick={openChat}
+              aria-label="AION sohbetini aç"
+              data-testid="global-chat-fab"
+            >
+              <MessageCircle size={20} aria-hidden="true" />
+              <span>Sohbet</span>
+            </button>
+          </>
+        )}
       </main>
     </div>
   );

@@ -1,7 +1,9 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 
 const CHAT_SESSION_KEY = "aion-live-chat-session";
-export const DEFAULT_AION_MODEL = "nex-agi/nex-n2.5-mini:free";
+// The mini model answers but does not call tools; the pro model does. AION is
+// only useful when it can act, so the tool-capable free model is the default.
+export const DEFAULT_AION_MODEL = "nex-agi/nex-n2.5-pro:free";
 // Keep the paid-model prohibition intact while giving a stalled free model a
 // second route. OpenRouter's `free` router itself is zero-cost and tool-capable.
 const FALLBACK_AION_MODEL = "openrouter/free";
@@ -52,6 +54,16 @@ export interface AionApprovalRequest {
 }
 
 type AionApprovalHandler = (request: AionApprovalRequest) => Promise<AionApprovalDecision>;
+
+/** One visible step of a running turn (a tool AION is using right now). */
+export interface AionTurnStep {
+  id: string;
+  name: string;
+  done: boolean;
+  failed?: boolean;
+}
+
+type AionProgressHandler = (steps: AionTurnStep[]) => void;
 
 export interface AionStatusSummary {
   observed_at?: number;
@@ -554,10 +566,28 @@ async function resolveAionApproval(
   await apiPost(`/agent-chat/sessions/${encodeURIComponent(sessionId)}/approvals/${encodeURIComponent(approvalId)}`, { decision });
 }
 
+function stepsForTurn(events: AgentChatEvent[], turnId: string): AionTurnStep[] {
+  const steps = new Map<string, AionTurnStep>();
+  for (const event of events) {
+    if (eventTurnId(event) !== turnId) continue;
+    const callId = typeof event.payload.call_id === "string" ? event.payload.call_id : String(event.seq);
+    if (event.kind === "tool_call") {
+      const name = typeof event.payload.name === "string" ? event.payload.name : "araç";
+      steps.set(callId, { id: callId, name, done: false });
+    } else if (event.kind === "tool_result") {
+      const current = steps.get(callId);
+      const name = typeof event.payload.name === "string" ? event.payload.name : current?.name ?? "araç";
+      steps.set(callId, { id: callId, name, done: true, failed: event.payload.is_error === true });
+    }
+  }
+  return [...steps.values()];
+}
+
 async function waitForAionTurn(
   sessionId: string,
   turnId: string,
   onApproval?: AionApprovalHandler,
+  onProgress?: AionProgressHandler,
 ): Promise<string> {
   let deadlineAt = Date.now() + TURN_ABSOLUTE_TIMEOUT_MS;
   let lastProgressAt = Date.now();
@@ -570,6 +600,7 @@ async function waitForAionTurn(
     if (newestSeq !== lastSeq) {
       lastSeq = newestSeq;
       lastProgressAt = Date.now();
+      onProgress?.(stepsForTurn(snapshot.events, turnId));
     }
 
     const result = turnFinished(snapshot.events, turnId);
@@ -616,6 +647,7 @@ export async function sendAionMessage(
   sessionId?: string,
   inputMode: "text" | "voice" = "text",
   onApproval?: AionApprovalHandler,
+  onProgress?: AionProgressHandler,
 ): Promise<{ sessionId: string; text: string }> {
   let activeSession = sessionId ?? await ensureAionChatSession();
   const body = {
@@ -634,7 +666,7 @@ export async function sendAionMessage(
     );
 
     try {
-      const answer = await waitForAionTurn(activeSession, accepted.turn_id, onApproval);
+      const answer = await waitForAionTurn(activeSession, accepted.turn_id, onApproval, onProgress);
       return { sessionId: activeSession, text: answer };
     } catch (error) {
       const message = error instanceof Error ? error.message : "";

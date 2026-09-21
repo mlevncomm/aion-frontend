@@ -5,7 +5,7 @@
 // hashed assets are cached because their name changes when they change, the
 // HTML shell is always fetched from the network first, and /api is never
 // touched at all.
-const VERSION = 'aion-20260914-r4';
+const VERSION = 'aion-20260921-v2';
 const SHELL = 'aion-shell-' + VERSION;
 const ASSETS = 'aion-assets-' + VERSION;
 

@@ -242,9 +242,54 @@ function statusTone(value: string): "ok" | "warn" | "bad" | "muted" {
   return "muted";
 }
 
+// Machine status codes read as Turkish words; the tone still comes from the raw
+// code so colours stay exactly as the backend reports them.
+const STATUS_WORDS: Record<string, string> = {
+  REPOSITORY_CONNECTED: "Repo bağlı",
+  CONNECTED: "Bağlı",
+  NOT_CONNECTED: "Bağlı değil",
+  REACHABLE: "Erişilebilir",
+  NOT_FOUND: "Bulunamadı",
+  AUTH_REQUIRED: "Giriş gerekli",
+  ERROR: "Hata",
+  FAILED: "Başarısız",
+  OK: "Tamam",
+  HEALTHY: "Sağlıklı",
+  ACTIVE: "Aktif",
+  INACTIVE: "Pasif",
+  UNKNOWN: "Bilinmiyor",
+  STALE: "Eski veri",
+  PENDING: "Bekliyor",
+  BLOCKED: "Engelli",
+  ONLINE: "Çevrimiçi",
+  OFFLINE: "Çevrimdışı",
+  READY: "Hazır",
+  READY_WITH_OWNER_ACTIONS: "Hazır · senden adım var",
+  ACTION_REQUIRED: "İşlem gerekli",
+  OWNER_CONNECTION_REQUIRED: "Bağlantın gerekli",
+  VERIFY_ON_DEVICE: "Cihazda doğrula",
+  MISSING: "Eksik",
+  CONFIGURED: "Yapılandırıldı",
+  NOT_CONFIGURED: "Yapılandırılmadı",
+  QUEUED: "Sırada",
+  RUNNING: "Çalışıyor",
+  DONE: "Tamamlandı",
+  CRITICAL: "Kritik",
+  HIGH: "Yüksek",
+  NORMAL: "Normal",
+  LOW: "Düşük",
+};
+
+function statusWords(value: string): string {
+  return value
+    .split(" · ")
+    .map((part) => STATUS_WORDS[part.trim().toUpperCase()] ?? part)
+    .join(" · ");
+}
+
 function StatusPill({ value }: { value: string }) {
   const tone = statusTone(value);
-  return <span className={`workspace-status-pill is-${tone}`}>{value}</span>;
+  return <span className={`workspace-status-pill is-${tone}`} title={value}>{statusWords(value)}</span>;
 }
 
 function EmptyState({ icon, title, copy }: { icon: ReactNode; title: string; copy: string }) {

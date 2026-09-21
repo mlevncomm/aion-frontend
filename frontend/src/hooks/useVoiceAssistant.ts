@@ -783,6 +783,12 @@ export function useVoiceAssistant() {
 
   const consumeTranscript = useCallback(() => setTranscript(""), []);
 
+  // Stop an answer that is being read aloud and hand the session straight back.
+  const stopSpeaking = useCallback(() => {
+    markProcessing();
+    markIdle();
+  }, [markIdle, markProcessing]);
+
   // Browsers throttle or stop speech synthesis when the page is hidden, and a
   // stopped utterance may never deliver its end event. Locking the phone mid
   // answer is exactly that case, so the session is handed back deliberately
@@ -826,6 +832,7 @@ export function useVoiceAssistant() {
     recognitionSupported,
     speak,
     status,
+    stopSpeaking,
     toggleMute,
     transcript,
     unlockPlayback,
