@@ -621,7 +621,13 @@ async function waitForAionTurn(
       }
       handledApprovals.add(approval.approvalId);
       const decision = await onApproval(approval);
-      await resolveAionApproval(sessionId, approval.approvalId, decision);
+      try {
+        await resolveAionApproval(sessionId, approval.approvalId, decision);
+      } catch (err) {
+        // A card the backend already expired answers 404. The turn itself goes
+        // on, and any newer card is picked up by the next poll.
+        if (!/404/.test(err instanceof Error ? err.message : String(err))) throw err;
+      }
       // Human approval time is not model latency. Give the resumed turn a fresh
       // answer budget instead of cancelling it because the owner read the card.
       deadlineAt = Date.now() + TURN_ABSOLUTE_TIMEOUT_MS;
