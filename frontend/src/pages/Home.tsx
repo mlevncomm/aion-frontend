@@ -61,7 +61,7 @@ const initialMessages: ChatMessage[] = [];
 const SPEECH_TURN_CEILING_MS = 70_000;
 // The backend's own answer deadline is 90s; this sits just past the speech
 // ceiling so a wedged turn is released long before the owner gives up.
-const TURN_WATCHDOG_MS = 260_000;
+const TURN_WATCHDOG_MS = 500_000;
 
 const voiceStatusText: Record<VoiceStatus, string> = {
   idle: "Konuşmak için dokun",

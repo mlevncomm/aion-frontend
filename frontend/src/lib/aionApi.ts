@@ -8,8 +8,10 @@ export const DEFAULT_AION_MODEL = "nex-agi/nex-n2.5-pro:free";
 // second route. OpenRouter's `free` router itself is zero-cost and tool-capable.
 const FALLBACK_AION_MODEL = "openrouter/free";
 const TURN_POLL_INTERVAL_MS = 900;
-const TURN_STALL_TIMEOUT_MS = 60_000;
-const TURN_ABSOLUTE_TIMEOUT_MS = 120_000;
+// The backend retries a stalled round on the next free model itself, so the
+// browser only steps in when the whole turn has gone quiet for much longer.
+const TURN_STALL_TIMEOUT_MS = 150_000;
+const TURN_ABSOLUTE_TIMEOUT_MS = 240_000;
 
 export interface AgentChatSession {
   session_id: string;
@@ -679,6 +681,11 @@ export async function sendAionMessage(
 
       usedFallback = true;
       await cancelAionTurn(activeSession);
+      // A stall is retried on the same session and model: the backend walks
+      // its own free-model chain. Only a model the free catalogue no longer
+      // lists is swapped, so one slow answer never pins the chat to the weak
+      // router for good.
+      if (!MODEL_GUARD_ERROR.test(message)) continue;
       try {
         // Preserve the conversation when possible; only the model changes.
         await switchAionSessionModel(activeSession, FALLBACK_AION_MODEL);

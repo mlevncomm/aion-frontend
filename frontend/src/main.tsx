@@ -13,7 +13,7 @@ import { queryClient } from './lib/queryClient'
 // owner on a build that was already replaced.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js?release=20260921-v2', { updateViaCache: 'none' }).then((reg) => {
+    void navigator.serviceWorker.register('/sw.js?release=20260922-v3', { updateViaCache: 'none' }).then((reg) => {
       reg.addEventListener('updatefound', () => {
         const next = reg.installing
         if (!next) return
